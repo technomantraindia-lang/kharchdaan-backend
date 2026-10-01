@@ -17,8 +17,11 @@ if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DB_CONNECTION" ]; then
 fi
 
 # Run database migrations & seed default data (admin, roles, permissions)
-echo "Running database migrations and seeders..."
-php artisan migrate --force --seed || php artisan migrate --force || true
+echo "Running database migrations..."
+php artisan migrate --force || true
+
+echo "Running database seeders..."
+php artisan db:seed --force || true
 
 echo "=================================================="
 echo "KharchDaan Backend starting on 0.0.0.0:${PORT}"

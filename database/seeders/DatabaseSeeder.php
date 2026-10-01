@@ -33,22 +33,22 @@ class DatabaseSeeder extends Seeder
 
         $this->call(PermissionSeeder::class);
 
-        $superAdmin = User::firstOrCreate(
+        $superAdmin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Super Admin',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'phone' => '9876543210',
                 'role_id' => $superAdminRole->id,
                 'status' => 'active',
             ]
         );
 
-        $customer = User::firstOrCreate(
+        $customer = User::updateOrCreate(
             ['email' => 'customer@example.com'],
             [
                 'name' => 'John Doe',
-                'password' => Hash::make('password'),
+                'password' => 'password',
                 'phone' => '9876543211',
                 'role_id' => $customerRole->id,
                 'status' => 'active',
