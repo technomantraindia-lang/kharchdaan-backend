@@ -258,13 +258,6 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        Page::firstOrCreate(
-            ['slug' => 'privacy-policy'],
-            [
-                'title' => 'Privacy Policy',
-                'content' => 'Your privacy is important to us. We protect your personal information.',
-                'status' => 'active',
-            ]
-        );
+        $this->call(MlmSampleDataSeeder::class);
     }
 }
