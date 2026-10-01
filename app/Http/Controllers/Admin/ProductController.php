@@ -52,10 +52,17 @@ class ProductController extends Controller
         $data = $this->validateProduct($request);
         $data['featured'] = $request->boolean('featured');
         $initialStock = (int) ($data['stock_qty'] ?? 0);
-        $data['stock_qty'] = 0;
+        $data['stock_qty'] = $initialStock;
 
         if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
+            $baseSlug = Str::slug($data['name']) ?: 'product-' . time();
+            $slug = $baseSlug;
+            $i = 1;
+            while (Product::where('slug', $slug)->exists()) {
+                $slug = "{$baseSlug}-{$i}";
+                $i++;
+            }
+            $data['slug'] = $slug;
         }
 
         if ($request->hasFile('image')) {
@@ -65,11 +72,7 @@ class ProductController extends Controller
         $product = Product::create($data);
         $this->saveGallery($product, $request);
 
-        if ($initialStock > 0) {
-            $this->inventoryService->adjustStock($product, $initialStock, 'opening_stock');
-        }
-
-        return redirect()->route('admin.products.index')->with('success', 'Product created successfully.');
+        return redirect(admin_route('products.index'))->with('success', "Product '{$product->name}' was added successfully to the catalog!");
     }
 
     public function show(Product $product)
@@ -90,15 +93,22 @@ class ProductController extends Controller
     {
         $data = $this->validateProduct($request, $product->id);
         $data['featured'] = $request->boolean('featured');
-        $targetStock = (int) ($data['stock_qty'] ?? 0);
-        unset($data['stock_qty']);
 
         if (empty($data['slug'])) {
-            $data['slug'] = Str::slug($data['name']);
+            $baseSlug = Str::slug($data['name']) ?: 'product-' . time();
+            $slug = $baseSlug;
+            $i = 1;
+            while (Product::where('slug', $slug)->where('id', '!=', $product->id)->exists()) {
+                $slug = "{$baseSlug}-{$i}";
+                $i++;
+            }
+            $data['slug'] = $slug;
         }
 
         if ($request->hasFile('image')) {
-            $this->uploader->delete($product->image);
+            if ($product->image) {
+                $this->uploader->delete($product->image);
+            }
             $data['image'] = $this->uploader->upload($request->file('image'), 'products');
         }
 
@@ -106,22 +116,21 @@ class ProductController extends Controller
         $this->removeGalleryImages($request->input('remove_gallery', []));
         $this->saveGallery($product, $request);
 
-        if ($targetStock !== (int) $product->stock_qty) {
-            $this->inventoryService->adjustStock($product, $targetStock, 'admin_product_update');
-        }
-
-        return redirect()->route('admin.products.index')->with('success', 'Product updated successfully.');
+        return redirect(admin_route('products.index'))->with('success', "Product '{$product->name}' was updated successfully!");
     }
 
     public function destroy(Product $product)
     {
-        $this->uploader->delete($product->image);
+        $name = $product->name;
+        if ($product->image) {
+            $this->uploader->delete($product->image);
+        }
         foreach ($product->images as $img) {
             $this->uploader->delete($img->image);
         }
         $product->delete();
 
-        return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
+        return redirect(admin_route('products.index'))->with('success', "Product '{$name}' deleted successfully.");
     }
 
     public function bulkCreate()
