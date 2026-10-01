@@ -9,11 +9,16 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force || true
 fi
 
-# Run database migrations if DB is configured and accessible
-if [ -n "$DB_DATABASE" ]; then
-    echo "Running database migrations (if any)..."
-    php artisan migrate --force || true
+# Ensure SQLite database file exists if using SQLite
+if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DB_CONNECTION" ]; then
+    mkdir -p database
+    touch database/database.sqlite
+    chmod 666 database/database.sqlite || true
 fi
+
+# Run database migrations & seed default data (admin, roles, permissions)
+echo "Running database migrations and seeders..."
+php artisan migrate --force --seed || php artisan migrate --force || true
 
 echo "=================================================="
 echo "KharchDaan Backend starting on 0.0.0.0:${PORT}"
