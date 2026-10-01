@@ -33,6 +33,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call(PermissionSeeder::class);
 
+        $subAdminRole = Role::firstOrCreate(['name' => 'Sub Admin'], ['guard_name' => 'web']);
+        $allPermissions = \App\Models\Permission::pluck('id');
+        $subAdminRole->permissions()->sync($allPermissions);
+
         $superAdmin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
             [
@@ -40,6 +44,18 @@ class DatabaseSeeder extends Seeder
                 'password' => 'password',
                 'phone' => '9876543210',
                 'role_id' => $superAdminRole->id,
+                'status' => 'active',
+            ]
+        );
+
+        $subAdmin = User::updateOrCreate(
+            ['email' => 'subadmin@example.com'],
+            [
+                'name' => 'Store Manager (Sub-Admin)',
+                'staff_code' => 'SUB-1001',
+                'password' => 'password',
+                'phone' => '9876543299',
+                'role_id' => $subAdminRole->id,
                 'status' => 'active',
             ]
         );
@@ -217,14 +233,14 @@ class DatabaseSeeder extends Seeder
                 'amount' => 1100.00,
                 'method' => 'cod',
                 'status' => 'paid',
-                'txn_id' => 'TXN-' . time(),
+                'txn_id' => 'TXN-INIT-10001',
             ]
         );
 
         Invoice::firstOrCreate(
-            ['order_id' => $order->id],
+            ['inv_num' => 'INV-10001'],
             [
-                'inv_num' => 'INV-10001',
+                'order_id' => $order->id,
                 'inv_data' => null,
             ]
         );
