@@ -1,0 +1,5 @@
+<div class="mb-3"><label class="form-label">Title *</label><input type="text" name="title" class="form-control" value="{{ old('title', $page->title ?? '') }}" required></div>
+<div class="mb-3"><label class="form-label">Content *</label><textarea name="content" class="form-control" rows="10" required>{{ old('content', $page->content ?? '') }}</textarea></div>
+<div class="mb-3"><label class="form-label">SEO Title</label><input type="text" name="seo_title" class="form-control" value="{{ old('seo_title', $page->seo_title ?? '') }}"></div>
+<div class="mb-3"><label class="form-label">SEO Description</label><textarea name="seo_desc" class="form-control" rows="2">{{ old('seo_desc', $page->seo_desc ?? '') }}</textarea></div>
+<div class="mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="active" @selected(old('status', $page->status ?? 'active')==='active')>Active</option><option value="inactive" @selected(old('status', $page->status ?? '')==='inactive')>Inactive</option></select></div>

@@ -1,0 +1,376 @@
+# Technomantra Project Memory
+
+> This is a persistent locator map, not a claim that file contents are current. Read each target only once per task and rely on normal invalidation after edits.
+
+- Workspace: kharchdaan.com
+- Technology: Vite, Tailwind CSS, Node.js/npm, Laravel/PHP
+- Active file at refresh: None
+- Local code graph: 177 files · 131 edges · 0 matched flows
+- Refreshed: 2026-09-28T04:31:41.336Z
+
+## Framework Intelligence (V4.7.8)
+- Profiles: laravel
+- Package manager: npm
+- Laravel requirement: ^13.8
+
+### Entry / bootstrap candidates
+- artisan
+- routes/web.php
+- routes/api.php
+- public/index.php
+
+### Laravel route / class / method symbols
+- app/Http/Controllers/Admin/ActivityLogController.php: class ActivityLogController, index()
+- app/Http/Controllers/Admin/AdminUserController.php: class AdminUserController, index(), create(), store(), edit(), update(), toggleStatus()
+- app/Http/Controllers/Admin/AttributeController.php: class AttributeController, index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/BackupController.php: class BackupController, index(), create(), download(), destroy()
+- app/Http/Controllers/Admin/BannerController.php: class BannerController, __construct(), index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/BrandController.php: class BrandController, index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/CashbackController.php: class CashbackController, __construct(), index(), reconciliation(), retryReconciliation(), storePool(), select(), createBatch(), approve(), schedule()
+- app/Http/Controllers/Admin/CategoryController.php: class CategoryController, __construct(), index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/CouponController.php: class CouponController, index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/CustomerController.php: class CustomerController, index(), show()
+- app/Http/Controllers/Admin/DashboardController.php: class DashboardController, index()
+- app/Http/Controllers/Admin/FailedJobController.php: class FailedJobController, index(), retry(), retryAll(), destroy()
+- app/Http/Controllers/Admin/GlobalSearchController.php: class GlobalSearchController, search()
+- app/Http/Controllers/Admin/InquiryController.php: class InquiryController, index(), show(), update()
+- app/Http/Controllers/Admin/InventoryController.php: class InventoryController, index(), update()
+- app/Http/Controllers/Admin/InvoiceController.php: class InvoiceController, index(), show()
+- app/Http/Controllers/Admin/LoginController.php: class LoginController, showLoginForm(), login(), logout()
+- app/Http/Controllers/Admin/MlmCalculationController.php: class MlmCalculationController, __construct(), index(), preview(), store()
+- app/Http/Controllers/Admin/MlmMemberController.php: class MlmMemberController, __construct(), index(), tree(), treeChildren(), treeSearch(), moveForm(), moveParentSearch(), movePreview(), move()
+- app/Http/Controllers/Admin/MlmPayoutController.php: class MlmPayoutController, __construct(), index(), storeCycle(), approve(), process(), paid(), failed(), reverse(), adjustment()
+- app/Http/Controllers/Admin/MlmReconciliationController.php: class MlmReconciliationController, __construct(), index(), retry()
+- app/Http/Controllers/Admin/NotificationController.php: class NotificationController, index(), markAsRead(), markAllAsRead(), destroy()
+- app/Http/Controllers/Admin/OrderController.php: class OrderController, index(), show(), update(), verifyPaymentManually(), bulkAction()
+- app/Http/Controllers/Admin/PageController.php: class PageController, index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/PaymentController.php: class PaymentController, index(), show()
+- app/Http/Controllers/Admin/ProductController.php: class ProductController, __construct(), index(), create(), store(), show(), edit(), update(), destroy(), bulkCreate()
+- app/Http/Controllers/Admin/ProductVariationController.php: class ProductVariationController, __construct(), index(), store(), update(), destroy()
+- app/Http/Controllers/Admin/ReportController.php: class ReportController, __construct(), index(), profit(), gst(), export()
+- app/Http/Controllers/Admin/ReturnController.php: class ReturnController, index(), show(), updateStatus()
+- app/Http/Controllers/Admin/RtoController.php: class RtoController, index(), create(), store(), show(), updateStatus()
+- app/Http/Controllers/Admin/SettingController.php: class SettingController, __construct(), index(), update()
+- app/Http/Controllers/Admin/ShippingController.php: class ShippingController, index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/SystemHealthController.php: class SystemHealthController, index()
+- app/Http/Controllers/Admin/TaxController.php: class TaxController, index(), create(), store(), edit(), update(), destroy()
+- app/Http/Controllers/Admin/WooCommerceController.php: class WooCommerceController, index(), testConnection()
+- app/Http/Controllers/Admin/WooCommerceProductSyncController.php: class WooCommerceProductSyncController, index(), syncSingle(), bulkSync(), showError()
+
+### Laravel controller/service/model chains
+- app/Http/Controllers/Admin/ActivityLogController.php -> app/Models/ActivityLog.php, app/Models/User.php
+- app/Http/Controllers/Admin/AdminUserController.php -> app/Models/Role.php, app/Models/User.php, app/Services/ActivityLogService.php
+- app/Http/Controllers/Admin/AttributeController.php -> app/Models/AttributeValue.php, app/Models/ProductAttribute.php
+- app/Http/Controllers/Admin/BackupController.php -> app/Services/ActivityLogService.php
+- app/Http/Controllers/Admin/BannerController.php -> app/Models/Banner.php, app/Services/ImageUploadService.php
+- app/Http/Controllers/Admin/BrandController.php -> app/Models/Brand.php, app/Services/ActivityLogService.php
+- app/Http/Controllers/Admin/CashbackController.php -> app/Http/Requests/Admin/CashbackActionReasonRequest.php, app/Http/Requests/Admin/MarkCashbackBatchPaidRequest.php, app/Http/Requests/Admin/ScheduleCashbackBatchRequest.php, app/Http/Requests/Admin/SelectCashbackRecordsRequest.php, app/Http/Requests/Admin/StoreCashbackProfitPoolRequest.php, app/Models/CashbackEligibility.php, app/Models/CashbackPayoutBatch.php, app/Models/CashbackProfitPool.php, FormRequest StoreCashbackProfitPoolRequest, FormRequest SelectCashbackRecordsRequest
+- app/Http/Controllers/Admin/CategoryController.php -> app/Models/Category.php, app/Services/ImageUploadService.php
+- app/Http/Controllers/Admin/CouponController.php -> app/Models/Coupon.php
+- app/Http/Controllers/Admin/CustomerController.php -> app/Models/Role.php, app/Models/User.php
+- app/Http/Controllers/Admin/DashboardController.php -> app/Models/Category.php, app/Models/Coupon.php, app/Models/Order.php, app/Models/OrderItem.php, app/Models/Product.php, app/Models/User.php
+- app/Http/Controllers/Admin/GlobalSearchController.php -> app/Models/Invoice.php, app/Models/Order.php, app/Models/Product.php, app/Models/User.php
+- app/Http/Controllers/Admin/InquiryController.php -> app/Models/Inquiry.php
+- app/Http/Controllers/Admin/InventoryController.php -> app/Models/InventoryLog.php, app/Models/Product.php
+- app/Http/Controllers/Admin/InvoiceController.php -> app/Models/Invoice.php
+- app/Http/Controllers/Admin/MlmCalculationController.php -> app/Http/Requests/Admin/ManualMlmCalculationRequest.php, app/Models/Member.php, app/Models/MlmCalculationRule.php, app/Models/MlmCalculationRun.php, app/Services/Mlm/MlmCalculationService.php, FormRequest ManualMlmCalculationRequest
+- app/Http/Controllers/Admin/MlmMemberController.php -> app/Http/Requests/Admin/MoveMlmMemberRequest.php, app/Http/Requests/Admin/ReviewMlmKycRequest.php, app/Http/Requests/Admin/StoreMlmMemberRequest.php, app/Http/Requests/Admin/UpdateMlmMemberRequest.php, app/Models/Member.php, app/Models/User.php, app/Services/Mlm/MlmKycService.php, app/Services/Mlm/MlmMemberService.php, FormRequest MoveMlmMemberRequest
+- app/Http/Controllers/Admin/MlmPayoutController.php -> app/Http/Requests/Admin/MarkMlmPayoutPaidRequest.php, app/Http/Requests/Admin/StoreMlmAdjustmentRequest.php, app/Http/Requests/Admin/StoreMlmPayoutCycleRequest.php, app/Models/Member.php, app/Models/MlmCalculationRule.php, app/Models/MlmIncomeLedger.php, app/Models/MlmPayoutCycle.php, app/Services/Mlm/MlmPayoutService.php, FormRequest StoreMlmPayoutCycleRequest, FormRequest MarkMlmPayoutPaidRequest
+- app/Http/Controllers/Admin/MlmReconciliationController.php -> app/Models/Order.php, app/Services/Mlm/MlmOrderIntegrationService.php
+- app/Http/Controllers/Admin/OrderController.php -> app/Models/Order.php, app/Models/OrderStatusHistory.php
+- app/Http/Controllers/Admin/PageController.php -> app/Models/Page.php
+- app/Http/Controllers/Admin/PaymentController.php -> app/Models/Payment.php
+- app/Http/Controllers/Admin/ProductController.php -> app/Models/Brand.php, app/Models/Category.php, app/Models/Product.php, app/Models/ProductImage.php, app/Services/ImageUploadService.php, app/Services/InventoryService.php
+- app/Http/Controllers/Admin/ProductVariationController.php -> app/Models/Product.php, app/Models/ProductAttribute.php, app/Models/ProductVariation.php, app/Services/ActivityLogService.php, app/Services/ImageUploadService.php, app/Services/InventoryService.php, app/Services/WooCommerce/ProductSyncService.php
+- app/Http/Controllers/Admin/ReportController.php -> app/Services/ExportService.php, app/Services/ReportService.php
+- app/Http/Controllers/Admin/ReturnController.php -> app/Models/OrderReturn.php, app/Services/ReturnService.php
+- app/Http/Controllers/Admin/RtoController.php -> app/Models/Order.php, app/Models/RtoShipment.php, app/Services/RtoService.php
+- app/Http/Controllers/Admin/SettingController.php -> app/Models/Setting.php, app/Services/ImageUploadService.php
+- app/Http/Controllers/Admin/ShippingController.php -> app/Models/ShippingMethod.php
+- app/Http/Controllers/Admin/SystemHealthController.php -> app/Models/WebhookLog.php, app/Models/WooCommerceSyncLog.php, app/Services/WooCommerce/WooCommerceClient.php
+
+### Controllers
+- app/Http/Controllers/Admin/ActivityLogController.php
+- app/Http/Controllers/Admin/AdminUserController.php
+- app/Http/Controllers/Admin/AttributeController.php
+- app/Http/Controllers/Admin/BackupController.php
+- app/Http/Controllers/Admin/BannerController.php
+- app/Http/Controllers/Admin/BrandController.php
+- app/Http/Controllers/Admin/CashbackController.php
+- app/Http/Controllers/Admin/CategoryController.php
+- app/Http/Controllers/Admin/CouponController.php
+- app/Http/Controllers/Admin/CustomerController.php
+- app/Http/Controllers/Admin/DashboardController.php
+- app/Http/Controllers/Admin/FailedJobController.php
+- app/Http/Controllers/Admin/GlobalSearchController.php
+- app/Http/Controllers/Admin/InquiryController.php
+- app/Http/Controllers/Admin/InventoryController.php
+- app/Http/Controllers/Admin/InvoiceController.php
+
+### Services / actions
+- app/Services/ActivityLogService.php
+- app/Services/Cashback/CashbackEligibilityService.php
+- app/Services/Cashback/CashbackPayoutService.php
+- app/Services/Cashback/CashbackRefundReconciliationService.php
+- app/Services/ExportService.php
+- app/Services/ImageUploadService.php
+- app/Services/InventoryService.php
+- app/Services/Mlm/MlmCalculationService.php
+- app/Services/Mlm/MlmKycService.php
+- app/Services/Mlm/MlmMemberIdGenerator.php
+- app/Services/Mlm/MlmMemberService.php
+- app/Services/Mlm/MlmMovementService.php
+- app/Services/Mlm/MlmOrderIntegrationService.php
+- app/Services/Mlm/MlmPayoutService.php
+- app/Services/Mlm/MlmSponsorService.php
+- app/Services/Mlm/MlmTreeService.php
+
+### Models / entities
+- app/Models/ActivityLog.php
+- app/Models/Address.php
+- app/Models/AttributeValue.php
+- app/Models/Banner.php
+- app/Models/Brand.php
+- app/Models/Cart.php
+- app/Models/CartItem.php
+- app/Models/CashbackActionHistory.php
+- app/Models/CashbackAdjustment.php
+- app/Models/CashbackEligibility.php
+- app/Models/CashbackPayoutBatch.php
+- app/Models/CashbackPayoutBatchItem.php
+- app/Models/CashbackProfitPool.php
+- app/Models/CashbackStatusHistory.php
+- app/Models/Category.php
+- app/Models/Coupon.php
+
+### Middleware
+- app/Http/Middleware/AdminMiddleware.php
+- app/Http/Middleware/AuthenticateApiToken.php
+- app/Http/Middleware/CheckPermission.php
+
+### Laravel routes
+- routes/web.php
+- routes/api.php
+- routes/console.php
+
+### Laravel requests / validation
+- app/Http/Requests/Admin/CashbackActionReasonRequest.php
+- app/Http/Requests/Admin/ManualMlmCalculationRequest.php
+- app/Http/Requests/Admin/MarkCashbackBatchPaidRequest.php
+- app/Http/Requests/Admin/MarkMlmPayoutPaidRequest.php
+- app/Http/Requests/Admin/MlmMemberRequest.php
+- app/Http/Requests/Admin/MoveMlmMemberRequest.php
+- app/Http/Requests/Admin/ReviewMlmKycRequest.php
+- app/Http/Requests/Admin/ScheduleCashbackBatchRequest.php
+- app/Http/Requests/Admin/SelectCashbackRecordsRequest.php
+- app/Http/Requests/Admin/StoreCashbackProfitPoolRequest.php
+
+### Laravel API/Filament resources
+- app/Http/Resources/AttributeResource.php
+- app/Http/Resources/BrandResource.php
+- app/Http/Resources/CategoryResource.php
+- app/Http/Resources/CustomerResource.php
+- app/Http/Resources/OrderResource.php
+- app/Http/Resources/ProductResource.php
+- app/Http/Resources/VariationResource.php
+
+### Available validation scripts
+- build: vite build
+- dev: vite
+
+### Composer scripts
+- setup
+- dev
+- test
+- post-autoload-dump
+- post-update-cmd
+- post-root-package-install
+- post-create-project-cmd
+- pre-package-uninstall
+
+## Recently edited files
+- None recorded yet
+
+## High-value project files
+- composer.json
+- package.json
+- README.md
+- vite.config.js
+- app/Console/Commands/FixProductImages.php
+- app/Console/Commands/ImportMadhavCatalog.php
+- app/Console/Commands/TestWooCommerceBackend.php
+- app/Http/Controllers/Admin/ActivityLogController.php
+- app/Http/Controllers/Admin/AdminUserController.php
+- app/Http/Controllers/Admin/AttributeController.php
+- app/Http/Controllers/Admin/BackupController.php
+- app/Http/Controllers/Admin/BannerController.php
+- app/Http/Controllers/Admin/BrandController.php
+- app/Http/Controllers/Admin/CashbackController.php
+- app/Http/Controllers/Admin/CategoryController.php
+- app/Http/Controllers/Admin/CouponController.php
+- app/Http/Controllers/Admin/CustomerController.php
+- app/Http/Controllers/Admin/DashboardController.php
+- app/Http/Controllers/Admin/FailedJobController.php
+- app/Http/Controllers/Admin/GlobalSearchController.php
+- app/Http/Controllers/Admin/InquiryController.php
+- app/Http/Controllers/Admin/InventoryController.php
+- app/Http/Controllers/Admin/InvoiceController.php
+- app/Http/Controllers/Admin/LoginController.php
+- app/Http/Controllers/Admin/MlmCalculationController.php
+- app/Http/Controllers/Admin/MlmMemberController.php
+- app/Http/Controllers/Admin/MlmPayoutController.php
+- app/Http/Controllers/Admin/MlmReconciliationController.php
+- app/Http/Controllers/Admin/NotificationController.php
+- app/Http/Controllers/Admin/OrderController.php
+- app/Http/Controllers/Admin/PageController.php
+- app/Http/Controllers/Admin/PaymentController.php
+- app/Http/Controllers/Admin/ProductController.php
+- app/Http/Controllers/Admin/ProductVariationController.php
+- app/Http/Controllers/Admin/ReportController.php
+- app/Http/Controllers/Admin/ReturnController.php
+- app/Http/Controllers/Admin/RtoController.php
+- app/Http/Controllers/Admin/SettingController.php
+- app/Http/Controllers/Admin/ShippingController.php
+- app/Http/Controllers/Admin/SystemHealthController.php
+- app/Http/Controllers/Admin/TaxController.php
+- app/Http/Controllers/Admin/WooCommerceController.php
+- app/Http/Controllers/Admin/WooCommerceProductSyncController.php
+- app/Http/Controllers/Admin/WooCommerceSyncConflictController.php
+- app/Http/Controllers/Admin/WooCommerceSyncLogController.php
+- app/Http/Controllers/Api/ProductController.php
+- app/Http/Controllers/Api/V1/AttributeApiController.php
+- app/Http/Controllers/Api/V1/BrandApiController.php
+- app/Http/Controllers/Api/V1/CategoryApiController.php
+- app/Http/Controllers/Api/V1/CustomerAuthApiController.php
+- app/Http/Controllers/Api/V1/CustomerOrderApiController.php
+- app/Http/Controllers/Api/V1/ProductApiController.php
+- app/Http/Controllers/Api/WooCommerceWebhookController.php
+- app/Http/Controllers/Controller.php
+- app/Http/Controllers/CustomerAuthController.php
+- app/Http/Controllers/Frontend/CartController.php
+- app/Http/Controllers/Frontend/CashbackController.php
+- app/Http/Controllers/Frontend/CategoryController.php
+- app/Http/Controllers/Frontend/HomeController.php
+- app/Http/Controllers/Frontend/LoginController.php
+- app/Http/Controllers/Frontend/PageController.php
+- app/Http/Controllers/Frontend/ProductController.php
+- app/Http/Controllers/Frontend/RegisterController.php
+- app/Http/Middleware/AdminMiddleware.php
+- app/Http/Middleware/AuthenticateApiToken.php
+- app/Http/Middleware/CheckPermission.php
+- app/Http/Requests/Admin/CashbackActionReasonRequest.php
+- app/Http/Requests/Admin/ManualMlmCalculationRequest.php
+- app/Http/Requests/Admin/MarkCashbackBatchPaidRequest.php
+- app/Http/Requests/Admin/MarkMlmPayoutPaidRequest.php
+- app/Http/Requests/Admin/MlmMemberRequest.php
+- app/Http/Requests/Admin/MoveMlmMemberRequest.php
+- app/Http/Requests/Admin/ReviewMlmKycRequest.php
+- app/Http/Requests/Admin/ScheduleCashbackBatchRequest.php
+- app/Http/Requests/Admin/SelectCashbackRecordsRequest.php
+- app/Http/Requests/Admin/StoreCashbackProfitPoolRequest.php
+- app/Http/Requests/Admin/StoreMlmAdjustmentRequest.php
+- app/Http/Requests/Admin/StoreMlmMemberRequest.php
+- app/Http/Requests/Admin/StoreMlmPayoutCycleRequest.php
+- app/Http/Requests/Admin/UpdateMlmMemberRequest.php
+
+## Additional indexed files
+- app/Http/Requests/InventoryAdjustmentRequest.php
+- app/Http/Requests/RefundRequest.php
+- app/Http/Requests/StoreProductRequest.php
+- app/Http/Requests/UpdateAdminUserRequest.php
+- app/Http/Requests/UpdateProductRequest.php
+- app/Http/Resources/AttributeResource.php
+- app/Http/Resources/BrandResource.php
+- app/Http/Resources/CategoryResource.php
+- app/Http/Resources/CustomerResource.php
+- app/Http/Resources/OrderResource.php
+- app/Http/Resources/ProductResource.php
+- app/Http/Resources/VariationResource.php
+- app/Jobs/ImportWooCommerceOrder.php
+- app/Jobs/ProcessMlmEligibleOrder.php
+- app/Jobs/SyncProductInventoryToWooCommerce.php
+- app/Jobs/SyncProductToWooCommerce.php
+- app/Jobs/SyncVariationToWooCommerce.php
+- app/Jobs/SyncWooCommerceCustomer.php
+- app/Jobs/UpdateWooCommerceOrder.php
+- app/Models/ActivityLog.php
+- app/Models/Address.php
+- app/Models/AttributeValue.php
+- app/Models/Banner.php
+- app/Models/Brand.php
+- app/Models/Cart.php
+- app/Models/CartItem.php
+- app/Models/CashbackActionHistory.php
+- app/Models/CashbackAdjustment.php
+- app/Models/CashbackEligibility.php
+- app/Models/CashbackPayoutBatch.php
+- app/Models/CashbackPayoutBatchItem.php
+- app/Models/CashbackProfitPool.php
+- app/Models/CashbackStatusHistory.php
+- app/Models/Category.php
+- app/Models/Coupon.php
+- app/Models/CouponUsage.php
+- app/Models/Inquiry.php
+- app/Models/InventoryLog.php
+- app/Models/InventoryTransaction.php
+- app/Models/Invoice.php
+- app/Models/Member.php
+- app/Models/MlmCalculationAudit.php
+- app/Models/MlmCalculationRule.php
+- app/Models/MlmCalculationRun.php
+- app/Models/MlmIncomeLedger.php
+- app/Models/MlmKycHistory.php
+- app/Models/MlmMemberSequence.php
+- app/Models/MlmPayoutCycle.php
+- app/Models/Order.php
+- app/Models/OrderItem.php
+- app/Models/OrderReturn.php
+- app/Models/OrderStatusHistory.php
+- app/Models/Page.php
+- app/Models/Payment.php
+- app/Models/Permission.php
+- app/Models/PersonalAccessToken.php
+- app/Models/PlacementMovement.php
+- app/Models/Product.php
+- app/Models/ProductAttribute.php
+- app/Models/ProductImage.php
+- app/Models/ProductVariation.php
+- app/Models/Refund.php
+- app/Models/ReturnItem.php
+- app/Models/Role.php
+- app/Models/RtoShipment.php
+- app/Models/Setting.php
+- app/Models/ShippingMethod.php
+- app/Models/Tax.php
+- app/Models/User.php
+- app/Models/VariationAttributeValue.php
+- app/Models/WebhookLog.php
+- app/Models/WooCommerceSyncConflict.php
+- app/Models/WooCommerceSyncLog.php
+- app/Notifications/SystemAlertNotification.php
+- app/Observers/OrderObserver.php
+- app/Policies/CashbackEligibilityPolicy.php
+- app/Providers/AppServiceProvider.php
+- app/Services/ActivityLogService.php
+- app/Services/Cashback/CashbackEligibilityService.php
+- app/Services/Cashback/CashbackPayoutService.php
+- app/Services/Cashback/CashbackRefundReconciliationService.php
+- app/Services/ExportService.php
+- app/Services/ImageUploadService.php
+- app/Services/InventoryService.php
+- app/Services/Mlm/MlmCalculationService.php
+- app/Services/Mlm/MlmKycService.php
+- app/Services/Mlm/MlmMemberIdGenerator.php
+- app/Services/Mlm/MlmMemberService.php
+- app/Services/Mlm/MlmMovementService.php
+- app/Services/Mlm/MlmOrderIntegrationService.php
+- app/Services/Mlm/MlmPayoutService.php
+- app/Services/Mlm/MlmSponsorService.php
+- app/Services/Mlm/MlmTreeService.php
+- app/Services/OrderService.php
+- app/Services/RefundService.php
+- app/Services/ReportService.php
+- app/Services/ReturnService.php
+- app/Services/RtoService.php
+- app/Services/WooCommerce/CustomerSyncService.php
+- app/Services/WooCommerce/InventorySyncService.php

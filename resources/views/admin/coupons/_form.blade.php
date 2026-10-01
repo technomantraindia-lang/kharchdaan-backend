@@ -1,0 +1,12 @@
+<div class="row">
+    <div class="col-md-4 mb-3"><label class="form-label">Code *</label><input type="text" name="code" class="form-control" value="{{ old('code', $coupon->code ?? '') }}" required></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Type *</label><select name="type" class="form-select" required><option value="percentage" @selected(old('type', $coupon->type ?? '')==='percentage')>Percentage</option><option value="fixed" @selected(old('type', $coupon->type ?? '')==='fixed')>Fixed Amount</option></select></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Value *</label><input type="number" step="0.01" name="value" class="form-control" value="{{ old('value', $coupon->value ?? '') }}" required></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Min Order (₹)</label><input type="number" step="0.01" name="min_order" class="form-control" value="{{ old('min_order', $coupon->min_order ?? '') }}"></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Max Discount (₹)</label><input type="number" step="0.01" name="max_discount" class="form-control" value="{{ old('max_discount', $coupon->max_discount ?? '') }}"></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Usage Limit</label><input type="number" name="usage_limit" class="form-control" value="{{ old('usage_limit', $coupon->usage_limit ?? '') }}"></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Per User Limit</label><input type="number" name="per_user_limit" class="form-control" value="{{ old('per_user_limit', $coupon->per_user_limit ?? '') }}"></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Start Date</label><input type="date" name="start_date" class="form-control" value="{{ old('start_date', isset($coupon) ? $coupon->start_date?->format('Y-m-d') : '') }}"></div>
+    <div class="col-md-4 mb-3"><label class="form-label">End Date</label><input type="date" name="end_date" class="form-control" value="{{ old('end_date', isset($coupon) ? $coupon->end_date?->format('Y-m-d') : '') }}"></div>
+    <div class="col-md-4 mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="active" @selected(old('status', $coupon->status ?? 'active')==='active')>Active</option><option value="inactive" @selected(old('status', $coupon->status ?? '')==='inactive')>Inactive</option></select></div>
+</div>

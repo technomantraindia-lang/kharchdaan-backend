@@ -1,0 +1,4 @@
+<div class="mb-3"><label class="form-label">Name *</label><input type="text" name="name" class="form-control" value="{{ old('name', $method->name ?? '') }}" required></div>
+<div class="mb-3"><label class="form-label">Shipping Charge (₹) *</label><input type="number" step="0.01" name="charge" class="form-control" value="{{ old('charge', $method->charge ?? '') }}" required></div>
+<div class="mb-3"><label class="form-label">Free Shipping Above (₹)</label><input type="number" step="0.01" name="min_free_order" class="form-control" value="{{ old('min_free_order', $method->min_free_order ?? '') }}"></div>
+<div class="mb-3"><label class="form-label">Status</label><select name="status" class="form-select"><option value="active" @selected(old('status', $method->status ?? 'active')==='active')>Active</option><option value="inactive" @selected(old('status', $method->status ?? '')==='inactive')>Inactive</option></select></div>

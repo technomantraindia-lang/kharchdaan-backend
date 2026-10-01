@@ -1,0 +1,116 @@
+# Technomantra Local Code Knowledge Graph (V4.8.14)
+
+> Structural local index. Read current source before editing. Secrets are intentionally excluded.
+
+- Indexed source files: 177
+- Structural edges: 131
+- Matched end-to-end flows: 0
+- Updated: 2026-09-28T04:31:41.317Z
+
+## Dependency edges
+- IMPORT app/Console/Commands/FixProductImages.php -> app/Models/Product.php
+- IMPORT app/Console/Commands/ImportMadhavCatalog.php -> app/Models/Category.php, app/Models/Product.php
+- IMPORT app/Console/Commands/TestWooCommerceBackend.php -> app/Models/Product.php, app/Models/WooCommerceSyncConflict.php, app/Models/WooCommerceSyncLog.php
+- IMPORT app/Http/Controllers/Admin/ActivityLogController.php -> app/Http/Controllers/Controller.php, app/Models/ActivityLog.php, app/Models/User.php
+- IMPORT app/Http/Controllers/Admin/AdminUserController.php -> app/Http/Controllers/Controller.php, app/Models/Role.php, app/Models/User.php, app/Services/ActivityLogService.php
+- IMPORT app/Http/Controllers/Admin/AttributeController.php -> app/Http/Controllers/Controller.php, app/Models/AttributeValue.php, app/Models/ProductAttribute.php
+- IMPORT app/Http/Controllers/Admin/BackupController.php -> app/Http/Controllers/Controller.php, app/Services/ActivityLogService.php
+- IMPORT app/Http/Controllers/Admin/BannerController.php -> app/Http/Controllers/Controller.php, app/Models/Banner.php, app/Services/ImageUploadService.php
+- IMPORT app/Http/Controllers/Admin/BrandController.php -> app/Http/Controllers/Controller.php, app/Models/Brand.php, app/Services/ActivityLogService.php
+- IMPORT app/Http/Controllers/Admin/CashbackController.php -> app/Http/Controllers/Controller.php, app/Http/Requests/Admin/CashbackActionReasonRequest.php, app/Http/Requests/Admin/MarkCashbackBatchPaidRequest.php, app/Http/Requests/Admin/ScheduleCashbackBatchRequest.php, app/Http/Requests/Admin/SelectCashbackRecordsRequest.php, app/Http/Requests/Admin/StoreCashbackProfitPoolRequest.php, app/Models/CashbackEligibility.php, app/Models/CashbackPayoutBatch.php
+- IMPORT app/Http/Controllers/Admin/CategoryController.php -> app/Http/Controllers/Controller.php, app/Models/Category.php, app/Services/ImageUploadService.php
+- IMPORT app/Http/Controllers/Admin/CouponController.php -> app/Http/Controllers/Controller.php, app/Models/Coupon.php
+- IMPORT app/Http/Controllers/Admin/CustomerController.php -> app/Http/Controllers/Controller.php, app/Models/Role.php, app/Models/User.php
+- IMPORT app/Http/Controllers/Admin/DashboardController.php -> app/Http/Controllers/Controller.php, app/Models/Category.php, app/Models/Coupon.php, app/Models/Order.php, app/Models/OrderItem.php, app/Models/Product.php, app/Models/User.php
+- IMPORT app/Http/Controllers/Admin/FailedJobController.php -> app/Http/Controllers/Controller.php
+- IMPORT app/Http/Controllers/Admin/GlobalSearchController.php -> app/Http/Controllers/Controller.php, app/Models/Invoice.php, app/Models/Order.php, app/Models/Product.php, app/Models/User.php
+- IMPORT app/Http/Controllers/Admin/InquiryController.php -> app/Http/Controllers/Controller.php, app/Models/Inquiry.php
+- IMPORT app/Http/Controllers/Admin/InventoryController.php -> app/Http/Controllers/Controller.php, app/Models/InventoryLog.php, app/Models/Product.php
+- IMPORT app/Http/Controllers/Admin/InvoiceController.php -> app/Http/Controllers/Controller.php, app/Models/Invoice.php
+- IMPORT app/Http/Controllers/Admin/LoginController.php -> app/Http/Controllers/Controller.php
+- IMPORT app/Http/Controllers/Admin/MlmCalculationController.php -> app/Http/Controllers/Controller.php, app/Http/Requests/Admin/ManualMlmCalculationRequest.php, app/Models/Member.php, app/Models/MlmCalculationRule.php, app/Models/MlmCalculationRun.php, app/Services/Mlm/MlmCalculationService.php
+- IMPORT app/Http/Controllers/Admin/MlmMemberController.php -> app/Http/Controllers/Controller.php, app/Http/Requests/Admin/MoveMlmMemberRequest.php, app/Http/Requests/Admin/ReviewMlmKycRequest.php, app/Http/Requests/Admin/StoreMlmMemberRequest.php, app/Http/Requests/Admin/UpdateMlmMemberRequest.php, app/Models/Member.php, app/Models/User.php, app/Services/Mlm/MlmKycService.php
+- IMPORT app/Http/Controllers/Admin/MlmPayoutController.php -> app/Http/Controllers/Controller.php, app/Http/Requests/Admin/MarkMlmPayoutPaidRequest.php, app/Http/Requests/Admin/StoreMlmAdjustmentRequest.php, app/Http/Requests/Admin/StoreMlmPayoutCycleRequest.php, app/Models/Member.php, app/Models/MlmCalculationRule.php, app/Models/MlmIncomeLedger.php, app/Models/MlmPayoutCycle.php
+- IMPORT app/Http/Controllers/Admin/MlmReconciliationController.php -> app/Http/Controllers/Controller.php, app/Models/Order.php, app/Services/Mlm/MlmOrderIntegrationService.php
+- IMPORT app/Http/Controllers/Admin/NotificationController.php -> app/Http/Controllers/Controller.php
+- IMPORT app/Http/Controllers/Admin/OrderController.php -> app/Http/Controllers/Controller.php, app/Models/Order.php, app/Models/OrderStatusHistory.php
+- IMPORT app/Http/Controllers/Admin/PageController.php -> app/Http/Controllers/Controller.php, app/Models/Page.php
+- IMPORT app/Http/Controllers/Admin/PaymentController.php -> app/Http/Controllers/Controller.php, app/Models/Payment.php
+- IMPORT app/Http/Controllers/Admin/ProductController.php -> app/Http/Controllers/Controller.php, app/Models/Brand.php, app/Models/Category.php, app/Models/Product.php, app/Models/ProductImage.php, app/Services/ImageUploadService.php, app/Services/InventoryService.php
+- IMPORT app/Http/Controllers/Admin/ProductVariationController.php -> app/Http/Controllers/Controller.php, app/Models/Product.php, app/Models/ProductAttribute.php, app/Models/ProductVariation.php, app/Services/ActivityLogService.php, app/Services/ImageUploadService.php, app/Services/InventoryService.php
+- IMPORT app/Http/Controllers/Admin/ReportController.php -> app/Http/Controllers/Controller.php, app/Services/ExportService.php, app/Services/ReportService.php
+- IMPORT app/Http/Controllers/Admin/ReturnController.php -> app/Http/Controllers/Controller.php, app/Models/OrderReturn.php, app/Services/ReturnService.php
+- IMPORT app/Http/Controllers/Admin/RtoController.php -> app/Http/Controllers/Controller.php, app/Models/Order.php, app/Models/RtoShipment.php, app/Services/RtoService.php
+- IMPORT app/Http/Controllers/Admin/SettingController.php -> app/Http/Controllers/Controller.php, app/Models/Setting.php, app/Services/ImageUploadService.php
+- IMPORT app/Http/Controllers/Admin/ShippingController.php -> app/Http/Controllers/Controller.php, app/Models/ShippingMethod.php
+- IMPORT app/Http/Controllers/Admin/SystemHealthController.php -> app/Http/Controllers/Controller.php, app/Models/WebhookLog.php, app/Models/WooCommerceSyncLog.php
+- IMPORT app/Http/Controllers/Admin/TaxController.php -> app/Http/Controllers/Controller.php, app/Models/Tax.php
+- IMPORT app/Http/Controllers/Admin/WooCommerceController.php -> app/Http/Controllers/Controller.php, app/Services/ActivityLogService.php
+- IMPORT app/Http/Controllers/Admin/WooCommerceProductSyncController.php -> app/Http/Controllers/Controller.php, app/Jobs/SyncProductToWooCommerce.php, app/Models/Product.php, app/Models/WooCommerceSyncLog.php
+- IMPORT app/Http/Controllers/Admin/WooCommerceSyncConflictController.php -> app/Http/Controllers/Controller.php, app/Models/Product.php, app/Models/WooCommerceSyncConflict.php, app/Services/ActivityLogService.php, app/Services/WooCommerce/InventorySyncService.php
+- IMPORT app/Http/Controllers/Admin/WooCommerceSyncLogController.php -> app/Http/Controllers/Controller.php, app/Jobs/SyncProductToWooCommerce.php, app/Models/Product.php, app/Models/WooCommerceSyncLog.php
+- IMPORT app/Http/Controllers/Api/ProductController.php -> app/Http/Controllers/Controller.php
+
+## Database references
+- DB vite.config.js -> vite, laravel
+- DB app/Http/Controllers/Admin/DashboardController.php -> roles
+- DB app/Http/Controllers/Admin/FailedJobController.php -> failed_jobs
+- DB app/Http/Controllers/Admin/SystemHealthController.php -> failed_jobs
+- DB app/Models/CashbackActionHistory.php -> cashback_action_histories
+- DB app/Models/CashbackAdjustment.php -> cashback_adjustments
+- DB app/Models/CashbackEligibility.php -> cashback_eligibilities
+- DB app/Models/CashbackPayoutBatch.php -> cashback_payout_batches
+- DB app/Models/CashbackPayoutBatchItem.php -> cashback_payout_batch_items
+- DB app/Models/CashbackProfitPool.php -> cashback_profit_pools
+- DB app/Models/CashbackStatusHistory.php -> cashback_status_histories
+- DB app/Models/CouponUsage.php -> coupon_usages
+- DB app/Models/Member.php -> mlm_members
+- DB app/Models/MlmCalculationAudit.php -> mlm_calculation_audits
+- DB app/Models/MlmCalculationRule.php -> mlm_calculation_rules
+- DB app/Models/MlmCalculationRun.php -> mlm_calculation_runs
+- DB app/Models/MlmIncomeLedger.php -> mlm_income_ledgers
+- DB app/Models/MlmKycHistory.php -> mlm_kyc_histories
+- DB app/Models/MlmMemberSequence.php -> mlm_member_sequences
+- DB app/Models/MlmPayoutCycle.php -> mlm_payout_cycles
+- DB app/Models/OrderReturn.php -> order_returns
+- DB app/Models/OrderStatusHistory.php -> order_status_history
+- DB app/Models/PersonalAccessToken.php -> personal_access_tokens
+- DB app/Models/PlacementMovement.php -> mlm_placement_movements
+
+## Symbols
+- SYMBOL app/Console/Commands/FixProductImages.php: FixProductImages, handle
+- SYMBOL app/Console/Commands/ImportMadhavCatalog.php: ImportMadhavCatalog, handle
+- SYMBOL app/Console/Commands/TestWooCommerceBackend.php: TestWooCommerceBackend, handle, test, summary
+- SYMBOL app/Http/Controllers/Admin/ActivityLogController.php: ActivityLogController, index
+- SYMBOL app/Http/Controllers/Admin/AdminUserController.php: AdminUserController, index, create, store, edit, update, toggleStatus
+- SYMBOL app/Http/Controllers/Admin/AttributeController.php: AttributeController, index, create, store, edit, update, destroy, syncValues
+- SYMBOL app/Http/Controllers/Admin/BackupController.php: BackupController, checkSuperAdmin, index, create, download, destroy
+- SYMBOL app/Http/Controllers/Admin/BannerController.php: BannerController, __construct, index, create, store, edit, update, destroy
+- SYMBOL app/Http/Controllers/Admin/BrandController.php: BrandController, index, create, store, edit, update, destroy
+- SYMBOL app/Http/Controllers/Admin/CashbackController.php: CashbackController, __construct, index, reconciliation, retryReconciliation, storePool, select, createBatch, approve, schedule
+- SYMBOL app/Http/Controllers/Admin/CategoryController.php: CategoryController, __construct, index, create, store, edit, update, destroy, buildCategoryOptions, flattenCategoryOptions
+- SYMBOL app/Http/Controllers/Admin/CouponController.php: CouponController, index, create, store, edit, update, destroy
+- SYMBOL app/Http/Controllers/Admin/CustomerController.php: CustomerController, index, show
+- SYMBOL app/Http/Controllers/Admin/DashboardController.php: DashboardController, index
+- SYMBOL app/Http/Controllers/Admin/FailedJobController.php: FailedJobController, index, retry, retryAll, destroy
+- SYMBOL app/Http/Controllers/Admin/GlobalSearchController.php: GlobalSearchController, search
+- SYMBOL app/Http/Controllers/Admin/InquiryController.php: InquiryController, index, show, update
+- SYMBOL app/Http/Controllers/Admin/InventoryController.php: InventoryController, index, update
+- SYMBOL app/Http/Controllers/Admin/InvoiceController.php: InvoiceController, index, show
+- SYMBOL app/Http/Controllers/Admin/LoginController.php: LoginController, showLoginForm, login, logout
+- SYMBOL app/Http/Controllers/Admin/MlmCalculationController.php: MlmCalculationController, __construct, index, preview, store, pageData
+- SYMBOL app/Http/Controllers/Admin/MlmMemberController.php: MlmMemberController, __construct, index, tree, treeChildren, treeSearch, moveForm, moveParentSearch, movePreview, move
+- SYMBOL app/Http/Controllers/Admin/MlmPayoutController.php: MlmPayoutController, __construct, index, storeCycle, approve, process, paid, failed, reverse, adjustment
+- SYMBOL app/Http/Controllers/Admin/MlmReconciliationController.php: MlmReconciliationController, __construct, index, retry
+- SYMBOL app/Http/Controllers/Admin/NotificationController.php: NotificationController, index, markAsRead, markAllAsRead, destroy
+- SYMBOL app/Http/Controllers/Admin/OrderController.php: OrderController, index, show, update, verifyPaymentManually, bulkAction
+- SYMBOL app/Http/Controllers/Admin/PageController.php: PageController, index, create, store, edit, update, destroy
+- SYMBOL app/Http/Controllers/Admin/PaymentController.php: PaymentController, index, show
+- SYMBOL app/Http/Controllers/Admin/ProductController.php: ProductController, __construct, index, create, store, show, edit, update, destroy, bulkCreate
+- SYMBOL app/Http/Controllers/Admin/ProductVariationController.php: ProductVariationController, __construct, index, store, update, destroy
+- SYMBOL app/Http/Controllers/Admin/ReportController.php: ReportController, __construct, index, profit, gst, export
+- SYMBOL app/Http/Controllers/Admin/ReturnController.php: ReturnController, index, show, updateStatus
+- SYMBOL app/Http/Controllers/Admin/RtoController.php: RtoController, index, create, store, show, updateStatus
+- SYMBOL app/Http/Controllers/Admin/SettingController.php: SettingController, __construct, index, update
+- SYMBOL app/Http/Controllers/Admin/ShippingController.php: ShippingController, index, create, store, edit, update, destroy
+- SYMBOL app/Http/Controllers/Admin/SystemHealthController.php: SystemHealthController, index

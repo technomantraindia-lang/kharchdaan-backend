@@ -1,0 +1,178 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\CartController;
+use App\Http\Controllers\Frontend\ProductController;
+use App\Http\Controllers\Frontend\CategoryController;
+use App\Http\Controllers\Frontend\PageController;
+use App\Http\Controllers\Frontend\RegisterController;
+use App\Http\Controllers\Frontend\LoginController;
+use App\Http\Controllers\Frontend\CashbackController;
+use App\Http\Controllers\Frontend\MlmNetworkController;
+use App\Http\Controllers\Frontend\MlmPayoutController;
+
+/*
+|--------------------------------------------------------------------------
+| Public Website Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    if (auth()->check()) {
+        return auth()->user()->isSuperAdmin()
+            ? redirect()->route('super-admin.dashboard')
+            : redirect()->route('sub-admin.dashboard');
+    }
+    return redirect()->route('login');
+})->name('home');
+
+Route::get('/super-admin', function () {
+    if (auth()->check()) {
+        return auth()->user()->isSuperAdmin()
+            ? redirect()->route('super-admin.dashboard')
+            : redirect()->route('sub-admin.dashboard');
+    }
+    return redirect()->route('super-admin.login');
+});
+
+Route::get('/sub-admin', function () {
+    if (auth()->check()) {
+        return auth()->user()->isSuperAdmin()
+            ? redirect()->route('super-admin.dashboard')
+            : redirect()->route('sub-admin.dashboard');
+    }
+    return redirect()->route('sub-admin.login');
+});
+
+Route::get('/products', [ProductController::class, 'index'])
+    ->name('products.index');
+
+Route::get('/products/{slug}', [ProductController::class, 'show'])
+    ->name('products.show');
+
+Route::get('/cart', [CartController::class, 'index'])
+    ->name('cart.index');
+
+Route::post('/cart/add/{product}', [CartController::class, 'add'])
+    ->name('cart.add');
+
+Route::post('/cart/buy-now/{product}', [CartController::class, 'buyNow'])
+    ->name('cart.buyNow');
+
+Route::post('/cart/remove/{product}', [CartController::class, 'remove'])
+    ->name('cart.remove');
+
+Route::get('/category/{slug}', [CategoryController::class, 'show'])
+    ->name('categories.show');
+
+Route::get('/page/{slug}', [PageController::class, 'show'])
+    ->name('pages.show');
+
+Route::get('/media/{path}', function (string $path) {
+    $relativePath = ltrim($path, '/');
+    if (str_contains($relativePath, '..')) {
+        abort(404);
+    }
+
+    $absolutePath = storage_path('app/public/' . $relativePath);
+    $resolvedPath = realpath($absolutePath);
+    $storageRoot = realpath(storage_path('app/public'));
+
+    if (! $resolvedPath || ! $storageRoot || ! str_starts_with($resolvedPath, $storageRoot) || ! is_file($resolvedPath)) {
+        abort(404);
+    }
+
+    return response()->file($resolvedPath);
+})->where('path', '.*')->name('media.file');
+
+/*
+|--------------------------------------------------------------------------
+| Customer Guest Routes
+|--------------------------------------------------------------------------
+|
+| These pages can only be opened when the customer is not logged in.
+|
+*/
+
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])
+        ->name('register');
+
+    Route::post('/register', [RegisterController::class, 'register'])
+        ->name('register.post');
+
+    Route::get('/login', [LoginController::class, 'showLoginForm'])
+        ->name('login');
+
+    Route::post('/login', [LoginController::class, 'login'])
+        ->name('login.post');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Logged-in Customer Routes
+|--------------------------------------------------------------------------
+|
+| These pages can only be opened after customer login.
+|
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/my-account', function () {
+        return view('frontend.account', [
+            'user' => auth()->user(),
+        ]);
+    })->name('account');
+
+    Route::get('/my-account/cashback', [CashbackController::class, 'index'])
+        ->name('cashback.index');
+    Route::get('/my-account/cashback/{cashback}', [CashbackController::class, 'show'])
+        ->name('cashback.show');
+    Route::get('/my-account/cashback/{cashback}/payment-proof', [CashbackController::class, 'paymentProof'])
+        ->name('cashback.payment-proof');
+
+    Route::get('/my-account/network', [MlmNetworkController::class, 'index'])
+        ->name('network.index');
+    Route::get('/my-account/network/levels', [MlmNetworkController::class, 'levels'])
+        ->name('network.levels');
+    Route::get('/my-account/network/children/{member}', [MlmNetworkController::class, 'children'])
+        ->name('network.children');
+    Route::get('/my-account/mlm-payouts', [MlmPayoutController::class, 'index'])
+        ->name('mlm-payouts.index');
+    Route::get('/my-account/mlm-payouts/{cycle}/payment-proof', [MlmPayoutController::class, 'paymentProof'])
+        ->name('mlm-payouts.payment-proof');
+
+    Route::post('/logout', [LoginController::class, 'logout'])
+        ->name('logout');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Super Admin & Sub-Admin Dedicated Portals
+|--------------------------------------------------------------------------
+*/
+
+// Super Admin Portal Prefix
+Route::prefix('super-admin')
+    ->name('super-admin.')
+    ->group(base_path('routes/admin.php'));
+
+// Sub-Admin Staff Portal Prefix
+Route::prefix('sub-admin')
+    ->name('sub-admin.')
+    ->group(base_path('routes/admin.php'));
+
+// Universal Portal Login
+Route::get('/login', [\App\Http\Controllers\Admin\LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [\App\Http\Controllers\Admin\LoginController::class, 'login'])->name('login.post');
+
+// Catch any legacy /admin or /admin/{path} and immediately redirect to super-admin or sub-admin
+Route::any('/admin/{any?}', function ($any = null) {
+    if (auth()->check()) {
+        $prefix = auth()->user()->isSuperAdmin() ? 'super-admin' : 'sub-admin';
+        return redirect('/' . $prefix . ($any ? '/' . $any : '/dashboard'));
+    }
+    return redirect('/login');
+})->where('any', '.*');

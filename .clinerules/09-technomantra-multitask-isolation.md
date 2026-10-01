@@ -1,0 +1,24 @@
+# Technomantra Project Session Isolation V4.13.0
+
+This workspace uses a persistent project session. Different projects/windows remain isolated, while prompts in the same project continue the same working memory by default.
+
+## Hard separation
+1. Treat this VS Code window and this workspace root as the only active task lane. Do not borrow goals, files, edits, screenshots, terminal outputs, or decisions from another window/project.
+2. Every user prompt in this same workspace/window continues the active project session unless the developer explicitly clicks New Project Thread or clearly says the work is unrelated.
+3. Before editing, combine the new instruction with retained project decisions, current source state, changed files, active errors, preview URL and unfinished work. The newest explicit instruction wins when it changes an earlier decision.
+4. If a new prompt arrives while work is incomplete, preserve completed edits and pending work, then incorporate the new instruction without discarding the project context.
+5. Never edit a file because it appeared in another task's context. Edit only files resolved from the current prompt, current workspace, current source map, or current visual selection.
+
+## File-level safety
+1. Preserve unrelated developer changes. Before broad edits, inspect current file state and change only the target range.
+2. Do not apply an edit if the file path is outside the locked workspace root.
+3. When two tasks touch the same file, complete the current prompt with a minimal range edit and verify the exact changed region. Do not rewrite the whole file to combine both tasks.
+4. If there is evidence that another prompt/window changed the file during this task, reread only the affected small range and reconcile conservatively. Do not overwrite unknown changes.
+
+## Parallel development behavior
+1. For Laravel, React, Node.js and HTML projects, isolate task reasoning by route/page/component/controller/service/selector. Do not scan or modify unrelated modules just because they were recently used.
+2. For multiple open VS Code windows, task history, project memory, rules, checkpoints, file caches and request headers must remain workspace/window/task scoped.
+3. If context looks contradictory, use current source and the newest explicit developer instruction. Ask one focused question only when the contradiction materially changes the implementation.
+4. Keep context compact but intelligent: current task goal, accepted constraints, current files, current diffs, current blocker and relevant learned patterns. Drop old prompt/tool output that does not belong to this task, but do not drop important architecture decisions.
+
+Final response must describe only the current task's changed files and verification. Do not mention files from unrelated parallel tasks.
