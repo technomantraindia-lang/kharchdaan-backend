@@ -87,11 +87,16 @@ class PermissionSeeder extends Seeder
             );
         }
 
-        // Grant permissions to Admin role
+        // Grant standard store operations permissions to Admin role (excluding system master settings & staff management)
         $adminRole = Role::where('name', 'Admin')->first();
         if ($adminRole) {
-            $allPermissionIds = Permission::pluck('id');
-            $adminRole->permissions()->sync($allPermissionIds);
+            $adminPermissionIds = Permission::whereNotIn('name', [
+                'users.view', 'users.manage',
+                'roles.view', 'roles.manage',
+                'settings.view', 'settings.manage',
+                'activity_logs.view',
+            ])->pluck('id');
+            $adminRole->permissions()->sync($adminPermissionIds);
         }
     }
 }

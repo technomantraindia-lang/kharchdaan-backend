@@ -34,8 +34,22 @@ class DatabaseSeeder extends Seeder
         $this->call(PermissionSeeder::class);
 
         $subAdminRole = Role::firstOrCreate(['name' => 'Sub Admin'], ['guard_name' => 'web']);
-        $allPermissions = \App\Models\Permission::pluck('id');
-        $subAdminRole->permissions()->sync($allPermissions);
+        $limitedPermissions = \App\Models\Permission::whereIn('name', [
+            'dashboard.view',
+            'products.view',
+            'products.create',
+            'products.edit',
+            'categories.view',
+            'brands.view',
+            'inventory.view',
+            'inventory.adjust',
+            'orders.view',
+            'orders.edit',
+            'orders.status',
+            'customers.view',
+            'inquiries.view',
+        ])->pluck('id');
+        $subAdminRole->permissions()->sync($limitedPermissions);
 
         $superAdmin = User::updateOrCreate(
             ['email' => 'admin@example.com'],
