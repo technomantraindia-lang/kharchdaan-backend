@@ -1,13 +1,12 @@
-FROM dunglas/frankenphp:php8.4
+FROM php:8.4-cli-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Install composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Install PHP extensions required by Laravel & MySQL
-RUN install-php-extensions \
+# Install system dependencies and PHP extensions required by Laravel
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions \
     pdo_mysql \
     pdo_sqlite \
     bcmath \
@@ -15,6 +14,9 @@ RUN install-php-extensions \
     intl \
     zip \
     opcache
+
+# Install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copy project files
 COPY . .
@@ -28,17 +30,20 @@ RUN mkdir -p \
     storage/app/public \
     storage/app/private \
     bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R 777 storage bootstrap/cache
 
-# Install production dependencies
+# Install composer production dependencies
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction
 
-# Bind to Render's dynamic PORT or default 80
-ENV SERVER_NAME=:${PORT:-80}
-EXPOSE 80 10000
+# Copy entrypoint script and make executable
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+    sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
 
-CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]
+# Expose Render dynamic port (default 10000)
+EXPOSE 10000
+
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
