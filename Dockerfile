@@ -9,6 +9,8 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions \
     pdo_mysql \
     pdo_sqlite \
+    pdo_pgsql \
+    pgsql \
     bcmath \
     gd \
     intl \
