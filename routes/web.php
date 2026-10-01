@@ -164,15 +164,11 @@ Route::prefix('sub-admin')
     ->name('sub-admin.')
     ->group(base_path('routes/admin.php'));
 
+// Admin Alias Prefix for universal route generation
+Route::prefix('admin')
+    ->name('admin.')
+    ->group(base_path('routes/admin.php'));
+
 // Universal Portal Login
 Route::get('/login', [\App\Http\Controllers\Admin\LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [\App\Http\Controllers\Admin\LoginController::class, 'login'])->name('login.post');
-
-// Catch any legacy /admin or /admin/{path} and immediately redirect to super-admin or sub-admin
-Route::any('/admin/{any?}', function ($any = null) {
-    if (auth()->check()) {
-        $prefix = auth()->user()->isSuperAdmin() ? 'super-admin' : 'sub-admin';
-        return redirect('/' . $prefix . ($any ? '/' . $any : '/dashboard'));
-    }
-    return redirect('/login');
-})->where('any', '.*');

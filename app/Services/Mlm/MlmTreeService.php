@@ -86,8 +86,8 @@ class MlmTreeService
                 'customer_id' => $member->placementParent->customer_id,
                 'name' => $member->placementParent->user?->name ?? 'Unknown',
             ] : null,
-            'details_url' => route('admin.mlm.members.show', $member),
-            'move_url' => route('admin.mlm.tree.move.form', $member),
+            'details_url' => admin_route('mlm.members.show', $member),
+            'move_url' => admin_route('mlm.tree.move.form', $member),
         ];
     }
 
@@ -271,7 +271,7 @@ class MlmTreeService
                     'kyc_status' => $member->kyc_status,
                     'has_children' => $hasChildren,
                     'children_count' => isset($childrenMap[$member->id]) ? count($childrenMap[$member->id]) : 0,
-                    'details_url' => route('admin.mlm.members.show', $member),
+                    'details_url' => admin_route('mlm.members.show', $member),
                 ];
 
                 if (isset($childrenMap[$member->id])) {
