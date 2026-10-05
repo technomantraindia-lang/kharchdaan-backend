@@ -40,7 +40,7 @@
             </div>
             <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/60">
                 <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Network PV</div>
-                <div class="text-2xl font-extrabold font-mono text-blue-600 mt-1">{{ number_format($stats['total_pv'] ?? 0, 4) }} <span class="text-xs font-sans text-slate-400 font-normal">PV</span></div>
+                <div class="text-2xl font-extrabold font-mono text-blue-600 mt-1">{{ number_format($stats['total_pv'] ?? 0, 2) }} <span class="text-xs font-sans text-slate-400 font-normal">PV</span></div>
                 <div class="text-xs text-slate-400 mt-1">Levels 0–19 cumulative volume</div>
             </div>
             <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/60">

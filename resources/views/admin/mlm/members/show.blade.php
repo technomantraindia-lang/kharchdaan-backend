@@ -69,7 +69,7 @@
         <div class="card border-0 shadow-sm bg-white h-100">
             <div class="card-body">
                 <div class="text-muted small fw-bold text-uppercase">Accumulated Network PV</div>
-                <h3 class="fw-bold text-primary mt-1 mb-0">{{ number_format($totalPv, 4) }} <small class="fs-6 text-muted">PV</small></h3>
+                <h3 class="fw-bold text-primary mt-1 mb-0">{{ number_format($totalPv, 2) }} <small class="fs-6 text-muted">PV</small></h3>
                 <div class="small text-muted mt-1">Placement Level: <span class="badge bg-secondary">Level {{ $placementLevel }}</span></div>
             </div>
         </div>
@@ -349,7 +349,7 @@
                         <div class="card border p-3 h-100">
                             <h6 class="fw-bold text-success mb-3"><i class="fas fa-coins me-2"></i>Financial & Commission Summary</h6>
                             <table class="table table-borderless table-sm mb-0">
-                                <tr><td class="text-muted" style="width: 180px;">Accumulated PV:</td><td><strong class="text-primary">{{ number_format($totalPv, 4) }} PV</strong></td></tr>
+                                <tr><td class="text-muted" style="width: 180px;">Accumulated PV:</td><td><strong class="text-primary">{{ number_format($totalPv, 2) }} PV</strong></td></tr>
                                 <tr><td class="text-muted">Gross Income Earned:</td><td><strong class="text-success fs-5">₹{{ number_format(round($totalIncome)) }}</strong></td></tr>
                                 <tr><td class="text-muted">Income Paid Out:</td><td><strong class="text-dark">₹{{ number_format(round($paidIncome)) }}</strong></td></tr>
                                 <tr><td class="text-muted">Pending In-Cycle:</td><td><strong class="text-warning">₹{{ number_format(round($pendingIncome)) }}</strong></td></tr>
@@ -364,7 +364,7 @@
             <div class="tab-pane fade" id="tab-ledgers" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold text-dark mb-0"><i class="fas fa-list text-primary me-2"></i>Detailed Income Ledgers by Level</h6>
-                    <span class="badge bg-light text-dark border">Total PV: {{ number_format($totalPv, 4) }} &bull; Total: ₹{{ number_format(round($totalIncome)) }}</span>
+                    <span class="badge bg-light text-dark border">Total PV: {{ number_format($totalPv, 2) }} &bull; Total: ₹{{ number_format(round($totalIncome)) }}</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -397,7 +397,7 @@
                                     </span>
                                 </td>
                                 <td class="text-end">₹{{ number_format($ledger->eligible_amount, 2) }}</td>
-                                <td class="text-end fw-semibold text-primary">{{ number_format($ledger->pv, 4) }} PV</td>
+                                <td class="text-end fw-semibold text-primary">{{ number_format($ledger->pv, 2) }} PV</td>
                                 <td class="text-end">{{ number_format($ledger->rate * 100, 0) }}%</td>
                                 <td class="text-end fw-bold text-success">₹{{ number_format(round($ledger->calculated_amount)) }}</td>
                                 <td>

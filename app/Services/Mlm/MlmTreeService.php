@@ -205,7 +205,7 @@ class MlmTreeService
                 'direct_referrals_count' => $child->sponsored_members_count,
                 'total_downline_count' => count($childDownlineIds),
                 'active_downline_count' => count($childDownlineIds) > 0 ? Member::whereIn('id', $childDownlineIds)->where('status', Member::STATUS_ACTIVE)->count() : 0,
-                'network_pv' => round($childPv, 4),
+                'network_pv' => round($childPv, 2),
             ];
         })->all();
 
@@ -215,9 +215,9 @@ class MlmTreeService
             'active_direct_count' => $activeDirectCount,
             'total_downline_count' => $totalDownlineCount,
             'active_downline_count' => $activeDownlineCount,
-            'network_pv' => round($networkPv, 4),
+            'network_pv' => round($networkPv, 2),
             'network_income' => (int) round($networkIncome),
-            'personal_pv' => round($rootPersonalPv, 4),
+            'personal_pv' => round($rootPersonalPv, 2),
             'personal_income' => (int) round($rootPersonalIncome),
             'direct_referrals' => $directReferralsPayload,
         ];
@@ -361,11 +361,11 @@ class MlmTreeService
                 'income_rate' => '20%',
                 'income_rate_decimal' => $incomeRate,
                 'example_amount' => 1000.0,
-                'example_pv' => round($examplePv, 4),
+                'example_pv' => round($examplePv, 2),
                 'example_income' => (int) round($exampleIncome),
                 'member_count' => $levelCounts[$i],
                 'active_member_count' => $levelActiveCounts[$i],
-                'db_total_pv' => $lStat ? round((float) $lStat->total_pv, 4) : 0.0,
+                'db_total_pv' => $lStat ? round((float) $lStat->total_pv, 2) : 0.0,
                 'db_total_income' => $lStat ? (int) round((float) $lStat->total_income) : 0,
             ];
         }
@@ -395,7 +395,7 @@ class MlmTreeService
                 'level' => $lvl,
                 'tier' => $isHighTier ? 'High PV (13.5)' : 'Low PV (0.75)',
                 'factor' => $pvFactor,
-                'pv' => round($pv, 4),
+                'pv' => round($pv, 2),
                 'income_rate' => '20%',
                 'income' => (int) round($income),
             ];
@@ -405,7 +405,7 @@ class MlmTreeService
             'amount' => $amount,
             'member' => $member ? $this->memberPayload($member) : null,
             'breakdown' => $breakdown,
-            'total_pv' => round($totalPv, 4),
+            'total_pv' => round($totalPv, 2),
             'total_income' => (int) round($totalIncome),
         ];
     }

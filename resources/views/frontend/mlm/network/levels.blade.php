@@ -42,7 +42,7 @@
                 <td>{{ $row['meaning'] }}</td>
                 @if($row['calculated'])
                     <td class="fw-semibold">{{ $row['member_count'] }}</td>
-                    <td class="font-monospace">{{ number_format((float) $row['pv'], 4) }} PV</td>
+                    <td class="font-monospace">{{ number_format((float) $row['pv'], 2) }} PV</td>
                     <td class="fw-bold text-success">₹{{ number_format(round((float) $row['income'])) }}</td>
                 @else
                     <td colspan="3" class="text-muted small">No transactions yet</td>

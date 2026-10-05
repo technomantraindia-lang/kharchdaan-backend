@@ -119,7 +119,7 @@
                 </div>
                 <div>
                     <div class="text-[11px] text-slate-500 font-semibold uppercase">Total Cumulative PV</div>
-                    <div class="text-lg font-mono font-bold text-indigo-600 mt-0.5">{{ number_format($simulation['total_pv'], 4) }} PV</div>
+                    <div class="text-lg font-mono font-bold text-indigo-600 mt-0.5">{{ number_format($simulation['total_pv'], 2) }} PV</div>
                 </div>
                 <div>
                     <div class="text-[11px] text-slate-500 font-semibold uppercase">Total 20-Level Commission</div>
@@ -153,7 +153,7 @@
                                 </td>
                                 <td class="py-2 px-4 text-slate-500">{{ $b['tier'] }}</td>
                                 <td class="py-2 px-4 text-center font-mono font-semibold text-slate-700">{{ $b['factor'] }}</td>
-                                <td class="py-2 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($b['pv'], 4) }} PV</td>
+                                <td class="py-2 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($b['pv'], 2) }} PV</td>
                                 <td class="py-2 px-4 text-right text-slate-600">{{ $b['income_rate'] }}</td>
                                 <td class="py-2 px-4 text-right font-bold text-emerald-600">₹{{ number_format(round($b['income'])) }}</td>
                             </tr>
@@ -162,7 +162,7 @@
                     <tfoot class="bg-slate-50 border-t border-slate-200 font-bold text-xs">
                         <tr>
                             <td colspan="3" class="py-2.5 px-4 text-slate-900 uppercase">Total 20-Level Output:</td>
-                            <td class="py-2.5 px-4 text-right font-mono text-indigo-700">{{ number_format($simulation['total_pv'], 4) }} PV</td>
+                            <td class="py-2.5 px-4 text-right font-mono text-indigo-700">{{ number_format($simulation['total_pv'], 2) }} PV</td>
                             <td></td>
                             <td class="py-2.5 px-4 text-right text-emerald-700 text-sm">₹{{ number_format(round($simulation['total_income'])) }}</td>
                         </tr>
@@ -206,7 +206,7 @@
                             <td class="py-2.5 px-4 font-mono text-slate-600 text-[11px]">{{ $stat['pv_formula'] }} &bull; Rate: 20%</td>
                             <td class="py-2.5 px-4 text-center font-bold text-slate-900">{{ number_format($stat['member_count']) }}</td>
                             <td class="py-2.5 px-4 text-center font-semibold text-emerald-600">{{ number_format($stat['active_member_count']) }}</td>
-                            <td class="py-2.5 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($stat['db_total_pv'], 4) }}</td>
+                            <td class="py-2.5 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($stat['db_total_pv'], 2) }}</td>
                             <td class="py-2.5 px-4 text-right font-bold text-emerald-600">₹{{ number_format(round($stat['db_total_income'])) }}</td>
                         </tr>
                     @endforeach

@@ -90,7 +90,7 @@
                 </div>
             </div>
             <div class="mt-3">
-                <div class="text-2xl font-extrabold font-mono text-indigo-600 tracking-tight">{{ number_format($stats['total_network_pv'], 4) }} <span class="text-xs font-normal text-slate-500 font-sans">PV</span></div>
+                <div class="text-2xl font-extrabold font-mono text-indigo-600 tracking-tight">{{ number_format($stats['total_network_pv'], 2) }} <span class="text-xs font-normal text-slate-500 font-sans">PV</span></div>
                 <div class="text-xs text-slate-500 mt-1">Levels 0&ndash;19 cumulative point volume</div>
             </div>
         </div>
@@ -279,7 +279,7 @@
                             </td>
                             <td class="py-2.5 px-4 text-slate-500">{{ $inc['tier'] }}</td>
                             <td class="py-2.5 px-4 text-center font-semibold text-slate-800">{{ $inc['member_count'] }}</td>
-                            <td class="py-2.5 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($inc['pv'], 4) }} PV</td>
+                            <td class="py-2.5 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($inc['pv'], 2) }} PV</td>
                             <td class="py-2.5 px-4 text-right font-bold text-emerald-600 text-sm">₹{{ number_format($inc['income'], 2) }}</td>
                         </tr>
                     @endforeach
@@ -321,7 +321,7 @@
                                     <div class="text-[11px] font-mono text-slate-500">{{ $calc->purchasingMember?->customer_id }}</div>
                                 </td>
                                 <td class="py-3 px-4 text-right font-medium text-slate-900">₹{{ number_format($calc->eligible_amount, 2) }}</td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($calc->total_pv, 4) }}</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($calc->total_pv, 2) }}</td>
                                 <td class="py-3 px-4 text-right font-bold text-emerald-600">₹{{ number_format(round($calc->total_income)) }}</td>
                             </tr>
                         @empty

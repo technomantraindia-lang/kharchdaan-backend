@@ -93,9 +93,9 @@
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Team Network PV</div>
             <div class="text-2xl font-extrabold font-mono text-emerald-600 mt-2">
-                {{ number_format($networkData['network_pv'], 4) }} <span class="text-xs font-sans text-slate-400 font-normal">PV</span>
+                {{ number_format($networkData['network_pv'], 2) }} <span class="text-xs font-sans text-slate-400 font-normal">PV</span>
             </div>
-            <div class="text-xs text-slate-400 mt-1">Personal: {{ number_format($networkData['personal_pv'], 4) }} PV</div>
+            <div class="text-xs text-slate-400 mt-1">Personal: {{ number_format($networkData['personal_pv'], 2) }} PV</div>
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
@@ -188,7 +188,7 @@
                             <span class="font-bold text-slate-900">{{ $item['total_downline_count'] }}</span>
                             <span class="text-[10px] text-emerald-600">({{ $item['active_downline_count'] }} active)</span>
                         </td>
-                        <td class="px-5 py-3 text-right font-mono font-semibold text-blue-600">{{ number_format($item['network_pv'], 4) }} PV</td>
+                        <td class="px-5 py-3 text-right font-mono font-semibold text-blue-600">{{ number_format($item['network_pv'], 2) }} PV</td>
                         <td class="px-5 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $m['status'] === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
                                 {{ $m['status_label'] }}

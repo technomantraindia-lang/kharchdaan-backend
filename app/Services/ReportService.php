@@ -236,7 +236,7 @@ class ReportService
                 'total_members' => $totalMembers,
                 'active_members' => $activeMembers,
                 'new_members' => $newMembers,
-                'total_pv' => round($totalPv, 4),
+                'total_pv' => round($totalPv, 2),
                 'total_direct_selling_income' => round($totalDirectSellingIncome, 2),
                 'pending_payouts' => round($pendingPayouts, 2),
                 'paid_payouts' => round($paidPayouts, 2),
@@ -437,7 +437,7 @@ class ReportService
                 'rate' => '20%',
                 'tx_count' => $row ? (int) $row->tx_count : 0,
                 'member_count' => $row ? (int) $row->member_count : 0,
-                'total_pv' => $row ? round((float) $row->total_pv, 4) : 0.0,
+                'total_pv' => $row ? round((float) $row->total_pv, 2) : 0.0,
                 'total_income' => $row ? (int) round((float) $row->total_income) : 0,
             ];
         }
@@ -490,7 +490,7 @@ class ReportService
 
         return [
             'summary' => [
-                'total_pv' => round($totalPv, 4),
+                'total_pv' => round($totalPv, 2),
                 'total_income' => (int) round($totalIncome),
                 'paid_income' => (int) round($paidIncome),
                 'pending_income' => (int) round($pendingIncome),

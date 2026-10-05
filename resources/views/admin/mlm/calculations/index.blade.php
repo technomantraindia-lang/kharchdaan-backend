@@ -45,7 +45,7 @@
                     </div>
                 </div>
                 <div class="pt-1 text-[11px] text-slate-600">
-                    Example on ₹1,000 purchase: <strong class="text-slate-900">4.5000 PV</strong> &bull; <strong class="text-emerald-600">₹0.90 Income</strong>
+                    Example on ₹1,000 purchase: <strong class="text-slate-900">4.50 PV</strong> &bull; <strong class="text-emerald-600">₹0.90 Income</strong>
                 </div>
             </div>
         </div>
@@ -71,7 +71,7 @@
                     </div>
                 </div>
                 <div class="pt-1 text-[11px] text-slate-600">
-                    Example on ₹1,000 purchase: <strong class="text-slate-900">0.2500 PV</strong> &bull; <strong class="text-emerald-600">₹0.05 Income</strong>
+                    Example on ₹1,000 purchase: <strong class="text-slate-900">0.25 PV</strong> &bull; <strong class="text-emerald-600">₹0.05 Income</strong>
                 </div>
             </div>
         </div>
@@ -169,7 +169,7 @@
                 </div>
                 <div>
                     <div class="text-[11px] text-slate-500 font-semibold uppercase">Total PV Distributed</div>
-                    <div class="text-lg font-mono font-bold text-indigo-600 mt-1">{{ number_format((float) $preview['total_pv'], 4) }} PV</div>
+                    <div class="text-lg font-mono font-bold text-indigo-600 mt-1">{{ number_format((float) $preview['total_pv'], 2) }} PV</div>
                 </div>
                 <div>
                     <div class="text-[11px] text-slate-500 font-semibold uppercase">Total Direct Selling Income</div>
@@ -196,7 +196,7 @@
                             @php
                                 $isHigh = $line['level'] <= 7;
                                 $pvFormulaStr = "({$preview['eligible_amount']} × " . ($isHigh ? '13.5' : '0.75') . ") / 3000";
-                                $incomeFormulaStr = number_format((float) $line['pv'], 4) . " PV × 20%";
+                                $incomeFormulaStr = number_format((float) $line['pv'], 2) . " PV × 20%";
                             @endphp
                             <tr class="hover:bg-slate-50/70 transition">
                                 <td class="py-3 px-4">
@@ -214,7 +214,7 @@
                                     </span>
                                 </td>
                                 <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">{{ $pvFormulaStr }}</td>
-                                <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format((float) $line['pv'], 4) }} PV</td>
+                                <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format((float) $line['pv'], 2) }} PV</td>
                                 <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">{{ $incomeFormulaStr }}</td>
                                 <td class="py-3 px-4 text-right font-bold text-emerald-600 text-sm">₹{{ number_format(round((float) $line['calculated_amount'])) }}</td>
                             </tr>
@@ -223,7 +223,7 @@
                     <tfoot>
                         <tr class="bg-slate-50/90 border-t border-slate-200 font-bold text-xs text-slate-900">
                             <td colspan="4" class="py-3 px-4 text-right">Grand Totals:</td>
-                            <td class="py-3 px-4 text-right font-mono text-indigo-700">{{ number_format((float) $preview['total_pv'], 4) }} PV</td>
+                            <td class="py-3 px-4 text-right font-mono text-indigo-700">{{ number_format((float) $preview['total_pv'], 2) }} PV</td>
                             <td></td>
                             <td class="py-3 px-4 text-right text-emerald-700 text-base">₹{{ number_format(round((float) $preview['total_income'])) }}</td>
                         </tr>
@@ -285,7 +285,7 @@
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-right font-semibold text-slate-900">₹{{ number_format((float) $run->eligible_amount, 2) }}</td>
-                            <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format((float) $run->total_pv, 4) }} PV</td>
+                            <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format((float) $run->total_pv, 2) }} PV</td>
                             <td class="py-3 px-4 text-right font-bold text-emerald-600">₹{{ number_format(round((float) $run->total_income)) }}</td>
                             <td class="py-3 px-4 text-slate-500 text-[11px]">
                                 {{ $run->processed_at?->format('M d, Y H:i') ?? $run->created_at?->format('M d, Y H:i') }}

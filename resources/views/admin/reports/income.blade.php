@@ -24,7 +24,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Network PV Generated</div>
-            <div class="text-2xl font-extrabold font-mono text-blue-600 mt-2">{{ number_format($summary['total_pv'], 4) }} <span class="text-xs font-sans text-slate-400 font-normal">PV</span></div>
+            <div class="text-2xl font-extrabold font-mono text-blue-600 mt-2">{{ number_format($summary['total_pv'], 2) }} <span class="text-xs font-sans text-slate-400 font-normal">PV</span></div>
             <div class="text-xs text-slate-400 mt-1">Points volume across all 20 levels</div>
         </div>
 
@@ -81,7 +81,7 @@
                             <td class="px-5 py-2.5 text-slate-500 text-[11px]">{{ $lvl['tier'] }}</td>
                             <td class="px-5 py-2.5 text-center font-semibold text-slate-800">{{ $lvl['tx_count'] }}</td>
                             <td class="px-5 py-2.5 text-center font-semibold text-slate-800">{{ $lvl['member_count'] }}</td>
-                            <td class="px-5 py-2.5 text-right font-mono font-semibold text-blue-600">{{ number_format($lvl['total_pv'], 4) }}</td>
+                            <td class="px-5 py-2.5 text-right font-mono font-semibold text-blue-600">{{ number_format($lvl['total_pv'], 2) }}</td>
                             <td class="px-5 py-2.5 text-right font-bold text-emerald-600">₹{{ number_format(round($lvl['total_income'])) }}</td>
                         </tr>
                         @endforeach
@@ -186,7 +186,7 @@
                             </span>
                         </td>
                         <td class="px-5 py-3 text-right text-slate-800">₹{{ number_format($ledger->eligible_amount, 2) }}</td>
-                        <td class="px-5 py-3 text-right font-mono font-semibold text-blue-600">{{ number_format($ledger->pv, 4) }} PV</td>
+                        <td class="px-5 py-3 text-right font-mono font-semibold text-blue-600">{{ number_format($ledger->pv, 2) }} PV</td>
                         <td class="px-5 py-3 text-right text-slate-500">{{ number_format($ledger->rate * 100, 0) }}%</td>
                         <td class="px-5 py-3 text-right font-bold text-emerald-600">₹{{ number_format(round($ledger->calculated_amount)) }}</td>
                         <td class="px-5 py-3">
