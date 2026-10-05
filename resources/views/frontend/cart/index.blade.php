@@ -78,20 +78,30 @@
 
                 <dl class="space-y-3 text-xs">
                     <div class="flex justify-between text-slate-600">
-                        <dt>Subtotal ({{ count($items) }} items)</dt>
+                        <dt>Items Subtotal ({{ count($items) }} items)</dt>
                         <dd class="font-bold text-slate-900">₹{{ number_format(round($subtotal)) }}</dd>
                     </div>
                     <div class="flex justify-between text-slate-600">
-                        <dt>Up to 100% Cashback Eligibility</dt>
-                        <dd class="font-bold text-orange-600">Qualified ("तेरा तुझको अर्पण")</dd>
+                        <dt>Delivery Fee</dt>
+                        <dd class="font-bold text-emerald-600 flex items-center gap-1.5">
+                            <span class="line-through text-slate-400 font-normal">₹40</span>
+                            <span class="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200">FREE</span>
+                        </dd>
+                    </div>
+                    <div class="flex justify-between text-slate-600 items-center">
+                        <dt class="flex items-center gap-1">
+                            <span>Platform & Convenience Fee</span>
+                            <span class="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded font-semibold" title="Nominal fee for direct Swadeshi supply chain & instant cashback dispatch">₹{{ number_format($platformFee ?? 5) }}</span>
+                        </dt>
+                        <dd class="font-bold text-slate-900">₹{{ number_format($platformFee ?? 5) }}</dd>
                     </div>
                     <div class="flex justify-between text-slate-600">
-                        <dt>Estimated Taxes (GST)</dt>
-                        <dd class="font-medium text-slate-700">Calculated at Checkout</dd>
+                        <dt>Up to 100% Cashback Opportunity</dt>
+                        <dd class="font-bold text-orange-600">Qualified ("तेरा तुझको अर्पण")</dd>
                     </div>
-                    <div class="pt-3 border-t border-slate-100 flex justify-between text-sm font-black text-slate-900">
-                        <dt>Total Amount</dt>
-                        <dd class="text-xl text-orange-600">₹{{ number_format(round($subtotal)) }}</dd>
+                    <div class="pt-3 border-t border-slate-100 flex justify-between text-sm font-black text-slate-900 items-baseline">
+                        <dt>Grand Total (To Pay)</dt>
+                        <dd class="text-xl font-black text-orange-600">₹{{ number_format(round($grandTotal ?? ($subtotal + 5))) }}</dd>
                     </div>
                 </dl>
 

@@ -54,6 +54,10 @@
                         <label class="block font-semibold text-slate-700 mb-1.5">Order Number Prefix</label>
                         <input type="text" name="order_prefix" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition font-mono" value="{{ $settings['order_prefix'] ?? 'BG' }}">
                     </div>
+                    <div>
+                        <label class="block font-semibold text-slate-700 mb-1.5">Platform & Convenience Fee (₹)</label>
+                        <input type="number" step="0.5" min="0" name="platform_fee" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition font-semibold" value="{{ $settings['platform_fee'] ?? '5' }}" placeholder="5.00">
+                    </div>
                     <div class="sm:col-span-2 lg:col-span-3">
                         <label class="block font-semibold text-slate-700 mb-1.5">Registered Office Address</label>
                         <textarea name="company_address" rows="2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition">{{ $settings['company_address'] ?? '' }}</textarea>

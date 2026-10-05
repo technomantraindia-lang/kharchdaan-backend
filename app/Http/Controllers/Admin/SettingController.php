@@ -28,6 +28,7 @@ class SettingController extends Controller
             'currency' => 'nullable|string|max:10',
             'order_prefix' => 'nullable|string|max:20',
             'min_order_amount' => 'nullable|numeric|min:0',
+            'platform_fee' => 'nullable|numeric|min:0',
             'facebook_url' => 'nullable|url|max:255',
             'instagram_url' => 'nullable|url|max:255',
             'twitter_url' => 'nullable|url|max:255',

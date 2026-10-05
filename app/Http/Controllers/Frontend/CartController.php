@@ -35,7 +35,10 @@ class CartController extends Controller
             ];
         }
 
-        return view('frontend.cart.index', compact('items', 'subtotal'));
+        $platformFee = count($items) > 0 ? (float) (\App\Models\Setting::get('platform_fee', 5)) : 0;
+        $grandTotal = $subtotal + $platformFee;
+
+        return view('frontend.cart.index', compact('items', 'subtotal', 'platformFee', 'grandTotal'));
     }
 
     public function add(Request $request, Product $product)
