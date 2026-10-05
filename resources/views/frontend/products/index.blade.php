@@ -14,7 +14,7 @@
                 All Products & Starter Packages
             </h1>
             <p class="text-sm text-slate-500 mt-1">
-                Explore our catalog of direct selling products eligible for Point Volume (PV) and 100% Cashback.
+                Explore our catalog of direct selling products eligible for Point Volume (PV) and Up to 100% Cashback.
             </p>
         </div>
 

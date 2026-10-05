@@ -49,7 +49,7 @@
                 <div class="text-xs text-slate-400 mt-1">₹{{ number_format($stats['paid_payouts'] ?? 0, 2) }} paid out to members</div>
             </div>
             <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/60">
-                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">100% Cashback Eligible</div>
+                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Up to 100% Cashback Eligible</div>
                 <div class="text-2xl font-extrabold text-amber-600 mt-1">₹{{ number_format($stats['cashback_eligible_amount'] ?? 0, 2) }}</div>
                 <div class="text-xs text-slate-400 mt-1">{{ $stats['cashback_eligible_count'] ?? 0 }} purchases eligible</div>
             </div>

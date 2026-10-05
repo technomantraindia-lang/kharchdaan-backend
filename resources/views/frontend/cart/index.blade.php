@@ -82,7 +82,7 @@
                         <dd class="font-bold text-slate-900">₹{{ number_format(round($subtotal)) }}</dd>
                     </div>
                     <div class="flex justify-between text-slate-600">
-                        <dt>100% Cashback Eligibility</dt>
+                        <dt>Up to 100% Cashback Eligibility</dt>
                         <dd class="font-bold text-orange-600">Qualified ("तेरा तुझको अर्पण")</dd>
                     </div>
                     <div class="flex justify-between text-slate-600">

@@ -1,6 +1,6 @@
 @extends('frontend.layouts.app')
 
-@section('title', 'Direct Selling & 100% Cashback Platform')
+@section('title', 'Direct Selling & Up to 100% Cashback Platform')
 
 @section('content')
 <div class="space-y-24 pb-20">
@@ -26,7 +26,7 @@
                     </div>
 
                     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-                        Next-Gen <span class="text-orange-600">Direct Selling</span> & <span class="text-amber-500">100% Cashback</span>
+                        Next-Gen <span class="text-orange-600">Direct Selling</span> & <span class="text-amber-500">Up to 100% Cashback</span>
                     </h1>
 
                     <div class="text-xl sm:text-2xl font-bold text-orange-600 tracking-wide">
@@ -108,8 +108,8 @@
                                     <i class="fas fa-hand-holding-dollar"></i>
                                 </div>
                                 <div>
-                                    <div class="text-xs font-bold text-slate-900">100% Conditional Profit Cashback</div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">"तेरा तुझको अर्पण" — 100% cashback returned upon company declared profits.</div>
+                                    <div class="text-xs font-bold text-slate-900">Up to 100% Conditional Profit Cashback</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">"तेरा तुझको अर्पण" — up to 100% cashback returned upon company declared profits.</div>
                                 </div>
                             </div>
 
@@ -133,17 +133,17 @@
                 </div>
             </div>
 
-            <!-- SLIDE 2: 100% Cashback Program ("तेरा तुझको अर्पण") -->
+            <!-- SLIDE 2: Up to 100% Cashback Program ("तेरा तुझको अर्पण") -->
             <div class="hero-slide hidden-slide grid grid-cols-1 lg:grid-cols-12 gap-12 items-center w-full transition-opacity duration-700 ease-in-out" data-slide="1">
                 <!-- Slide 2 Left: Content -->
                 <div class="lg:col-span-7 space-y-6 text-center lg:text-left">
                     <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
                         <i class="fas fa-hand-holding-dollar text-emerald-600 text-xs"></i>
-                        <span>"तेरा तुझको अर्पण" &mdash; 100% Profit Pools</span>
+                        <span>"तेरा तुझको अर्पण" &mdash; Profit Pools</span>
                     </div>
 
                     <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
-                        Shop Products & Earn <span class="text-emerald-600">100% Cashback</span>
+                        Shop Products & Earn <span class="text-emerald-600">Up to 100% Cashback</span>
                     </h1>
 
                     <div class="text-xl sm:text-2xl font-bold text-amber-500 tracking-wide">
@@ -151,13 +151,13 @@
                     </div>
 
                     <p class="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                        Every qualifying product purchase participates in transparent company profit pool batches. When profits are declared, 100% of qualifying cashback is disbursed directly to your bank account.
+                        Every qualifying product purchase participates in transparent company profit pool batches. When profits are declared, up to 100% of qualifying cashback is disbursed directly to your bank account.
                     </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3.5 pt-2">
                         <a href="#cashback-section" class="inline-flex items-center gap-2 px-6 py-3.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition duration-200">
-                            <i class="fas fa-piggy-bank"></i> How 100% Cashback Works
+                            <i class="fas fa-piggy-bank"></i> How Up to 100% Cashback Works
                         </a>
                         <a href="{{ route('products.index') }}" class="inline-flex items-center gap-2 px-5 py-3.5 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition shadow-2xs">
                             <i class="fas fa-tag text-emerald-600"></i> Browse Cashback Products
@@ -206,7 +206,7 @@
                                 </div>
                                 <div>
                                     <div class="text-xs font-bold text-slate-900">Step 1: Qualifying Purchase</div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">Shop any product or package tagged with 100% cashback eligibility.</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">Shop any product or package tagged with up to 100% cashback eligibility.</div>
                                 </div>
                             </div>
 
@@ -226,7 +226,7 @@
                                 </div>
                                 <div>
                                     <div class="text-xs font-bold text-slate-900">Step 3: Direct Bank Disbursement</div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">100% cashback returned upon company declared profits with bank UTR proof.</div>
+                                    <div class="text-[11px] text-slate-500 mt-0.5">Up to 100% cashback returned upon company declared profits with bank UTR proof.</div>
                                 </div>
                             </div>
                         </div>
@@ -512,7 +512,7 @@
     </section>
 
     <!-- ========================================================================= -->
-    <!-- 100% CASHBACK PROGRAM SPOTLIGHT ("तेरा तुझको अर्पण") -->
+    <!-- UP TO 100% CASHBACK PROGRAM SPOTLIGHT ("तेरा तुझको अर्पण") -->
     <!-- ========================================================================= -->
     <section id="cashback-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-12 shadow-xs">
@@ -523,7 +523,7 @@
                     </div>
 
                     <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                        100% Conditional Profit Cashback Program
+                        Up to 100% Conditional Profit Cashback Program
                     </h2>
 
                     <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
@@ -557,13 +557,13 @@
                 <!-- Right Visual -->
                 <div class="lg:col-span-5">
                     <div class="bg-slate-50 rounded-2xl border border-slate-200/80 p-6 space-y-4">
-                        <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">How 100% Cashback Works</div>
+                        <div class="text-xs font-bold text-slate-700 uppercase tracking-wider">How Up to 100% Cashback Works</div>
                         
                         <div class="space-y-3 text-xs">
                             <div class="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-200/60">
                                 <div class="w-6 h-6 rounded-full bg-orange-600 text-white font-bold flex items-center justify-center flex-shrink-0 text-[11px]">1</div>
                                 <div>
-                                    <strong class="text-slate-900">Shop Qualifying Products:</strong> Purchase items tagged with 100% cashback eligibility.
+                                    <strong class="text-slate-900">Shop Qualifying Products:</strong> Purchase items tagged with up to 100% cashback eligibility.
                                 </div>
                             </div>
                             <div class="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-200/60">
@@ -575,7 +575,7 @@
                             <div class="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-200/60">
                                 <div class="w-6 h-6 rounded-full bg-orange-600 text-white font-bold flex items-center justify-center flex-shrink-0 text-[11px]">3</div>
                                 <div>
-                                    <strong class="text-slate-900">Declared Profit Allocation:</strong> Once audited, 100% cashback is approved.
+                                    <strong class="text-slate-900">Declared Profit Allocation:</strong> Once audited, up to 100% cashback is approved.
                                 </div>
                             </div>
                             <div class="flex items-start gap-3 bg-white p-3 rounded-xl border border-slate-200/60">

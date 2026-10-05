@@ -1,13 +1,13 @@
 @extends('admin.layouts.app')
 
-@section('title', '100% Cashback Reports')
+@section('title', 'Up to 100% Cashback Reports')
 
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">100% Cashback & Profit Pool Reports</h1>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Up to 100% Cashback & Profit Pool Reports</h1>
             <p class="text-xs text-slate-500 mt-0.5">Customer cashback recovery, company profit allocations, distribution batches, and reconciliation</p>
         </div>
         <div>
@@ -134,7 +134,7 @@
     <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <i class="fas fa-list text-blue-600"></i> Member 100% Cashback Records
+                <i class="fas fa-list text-blue-600"></i> Member Up to 100% Cashback Records
             </h2>
             <form method="GET" class="flex flex-wrap items-center gap-2">
                 <input type="hidden" name="date_preset" value="{{ $range['preset'] }}">

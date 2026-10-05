@@ -17,7 +17,7 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> v2.0 Active
                     </span>
                 </div>
-                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">Direct Selling & 100% Cashback Platform</h1>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">Direct Selling & Up to 100% Cashback Platform</h1>
                 <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
                     <span class="font-bold text-orange-600">"तेरा तुझको अर्पण"</span> &mdash; 1:3 physical placement matrix, 20-level PV distribution engine, weekly settlements, and company profit cashback.
                 </p>
@@ -126,9 +126,9 @@
             <div class="text-xs text-slate-400 mt-0.5">Disbursed with bank audit proof</div>
         </div>
 
-        <!-- 100% Cashback Eligible -->
+        <!-- Up to 100% Cashback Eligible -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">100% Cashback Eligible</span>
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Up to 100% Cashback Eligible</span>
             <div class="text-xl font-bold text-orange-600 mt-2">₹{{ number_format(round($stats['cashback_eligible_amount'])) }}</div>
             <div class="text-xs text-slate-400 mt-0.5">₹{{ number_format(round($stats['cashback_paid_amount'])) }} disbursed</div>
         </div>

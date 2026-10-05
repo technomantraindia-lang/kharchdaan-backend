@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'BachatGanga.Org') - "तेरा तुझको अर्पण" | Direct Selling & 100% Cashback Platform</title>
+    <title>@yield('title', 'BachatGanga.Org') - "तेरा तुझको अर्पण" | Direct Selling & Up to 100% Cashback Platform</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -228,7 +228,7 @@
                     
                     <a href="{{ route('home') }}#cashback-section" class="px-3 py-2 rounded-xl text-slate-700 hover:text-orange-600 hover:bg-orange-50/60 transition inline-flex items-center gap-1.5 whitespace-nowrap">
                         <i class="fas fa-hand-holding-dollar text-xs text-amber-500"></i>
-                        <span>100% Cashback</span>
+                        <span>Up to 100% Cashback</span>
                         <span class="px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold">100%</span>
                     </a>
                     
@@ -315,7 +315,7 @@
             </a>
             <a href="{{ route('home') }}#cashback-section" class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-700 hover:bg-orange-50 hover:text-orange-600 text-sm font-semibold">
                 <div class="flex items-center gap-2.5">
-                    <i class="fas fa-hand-holding-dollar text-xs text-amber-500"></i> 100% Cashback Program
+                    <i class="fas fa-hand-holding-dollar text-xs text-amber-500"></i> Up to 100% Cashback Program
                 </div>
                 <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black">100%</span>
             </a>
@@ -424,7 +424,7 @@
                     <ul class="space-y-2 text-xs">
                         <li><a href="{{ route('login') }}" class="hover:text-orange-400 transition">Member Login</a></li>
                         <li><a href="{{ route('register') }}" class="hover:text-orange-400 transition">Join Direct Selling</a></li>
-                        <li><a href="{{ route('home') }}#cashback-section" class="hover:text-orange-400 transition">100% Cashback Rules</a></li>
+                        <li><a href="{{ route('home') }}#cashback-section" class="hover:text-orange-400 transition">Up to 100% Cashback Rules</a></li>
                         <li><a href="{{ route('home') }}#matrix-section" class="hover:text-orange-400 transition">1:3 Placement Matrix</a></li>
                         <li><a href="{{ route('admin.login') }}" class="hover:text-orange-400 transition">Admin Portal</a></li>
                     </ul>

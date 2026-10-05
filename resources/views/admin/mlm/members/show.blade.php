@@ -95,7 +95,7 @@
     <div class="col-md-3">
         <div class="card border-0 shadow-sm bg-white h-100">
             <div class="card-body">
-                <div class="text-muted small fw-bold text-uppercase">100% Cashback Purchases</div>
+                <div class="text-muted small fw-bold text-uppercase">Up to 100% Cashback Purchases</div>
                 <h3 class="fw-bold text-warning mt-1 mb-0">{{ count($cashbacks) }} <small class="fs-6 text-muted">Records</small></h3>
                 <div class="small text-muted mt-1">₹{{ number_format($cashbacks->sum('eligible_amount'), 2) }} eligible volume</div>
             </div>
@@ -139,7 +139,7 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link py-3 fw-semibold" id="cashback-tab" data-bs-toggle="tab" data-bs-target="#tab-cashback" type="button" role="tab">
-                    <i class="fas fa-hand-holding-usd me-1 text-warning"></i> 100% Cashback ({{ count($cashbacks) }})
+                    <i class="fas fa-hand-holding-usd me-1 text-warning"></i> Up to 100% Cashback ({{ count($cashbacks) }})
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -353,7 +353,7 @@
                                 <tr><td class="text-muted">Gross Income Earned:</td><td><strong class="text-success fs-5">₹{{ number_format(round($totalIncome)) }}</strong></td></tr>
                                 <tr><td class="text-muted">Income Paid Out:</td><td><strong class="text-dark">₹{{ number_format(round($paidIncome)) }}</strong></td></tr>
                                 <tr><td class="text-muted">Pending In-Cycle:</td><td><strong class="text-warning">₹{{ number_format(round($pendingIncome)) }}</strong></td></tr>
-                                <tr><td class="text-muted">100% Cashback Count:</td><td><strong>{{ count($cashbacks) }}</strong> orders</td></tr>
+                                <tr><td class="text-muted">Up to 100% Cashback Count:</td><td><strong>{{ count($cashbacks) }}</strong> orders</td></tr>
                             </table>
                         </div>
                     </div>
@@ -459,9 +459,9 @@
                 </div>
             </div>
 
-            {{-- TAB 7: 100% CASHBACK --}}
+            {{-- TAB 7: UP TO 100% CASHBACK --}}
             <div class="tab-pane fade" id="tab-cashback" role="tabpanel">
-                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-hand-holding-usd text-warning me-2"></i>100% Cashback Eligibility Records</h6>
+                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-hand-holding-usd text-warning me-2"></i>Up to 100% Cashback Eligibility Records</h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
@@ -491,7 +491,7 @@
                                 <td class="small text-muted">{{ $cb->created_at->format('M d, Y') }}</td>
                             </tr>
                             @empty
-                            <tr><td colspan="7" class="text-center text-muted py-4">No 100% cashback records registered for this member.</td></tr>
+                            <tr><td colspan="7" class="text-center text-muted py-4">No up to 100% cashback records registered for this member.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
                 <i class="fas fa-check-double text-blue-600"></i> Direct Selling Order Reconciliation
             </h1>
-            <p class="text-sm text-slate-500 mt-1">Reconcile purchase order transactions, payment status, reversals, and 100% cashback eligibility.</p>
+            <p class="text-sm text-slate-500 mt-1">Reconcile purchase order transactions, payment status, reversals, and up to 100% cashback eligibility.</p>
         </div>
         <div class="flex items-center gap-2.5">
             <a href="{{ admin_route('mlm.calculations.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
@@ -69,7 +69,7 @@
                         <th class="py-3 px-4 text-right">Eligible Amount</th>
                         <th class="py-3 px-4">Calculation Status</th>
                         <th class="py-3 px-4">Calculation Run</th>
-                        <th class="py-3 px-4">100% Cashback</th>
+                        <th class="py-3 px-4">Up to 100% Cashback</th>
                         <th class="py-3 px-4 text-right">Actions</th>
                     </tr>
                 </thead>

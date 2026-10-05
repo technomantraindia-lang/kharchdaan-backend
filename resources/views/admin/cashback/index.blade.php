@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', '100% Cashback Management')
+@section('title', 'Up to 100% Cashback Management')
 
 @php
     $label = fn (string $value) => ucwords(str_replace('_', ' ', $value));
@@ -13,7 +13,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                <i class="fas fa-hand-holding-dollar text-emerald-600"></i> 100% Conditional Cashback Program
+                <i class="fas fa-hand-holding-dollar text-emerald-600"></i> Up to 100% Conditional Cashback Program
             </h1>
             <p class="text-sm text-slate-500 mt-1">Cashback recovery strictly conditional on declared company profit pool allocations.</p>
         </div>
@@ -53,7 +53,7 @@
         <h2 class="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
             <i class="fas fa-coins text-amber-500"></i> Declare Approved Company Profit Pool
         </h2>
-        <p class="text-xs text-slate-500 mb-4">Set aside verified company profits for conditional 100% cashback disbursement.</p>
+        <p class="text-xs text-slate-500 mb-4">Set aside verified company profits for conditional up to 100% cashback disbursement.</p>
 
         <form method="POST" action="{{ admin_route('cashback.pools.store') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             @csrf

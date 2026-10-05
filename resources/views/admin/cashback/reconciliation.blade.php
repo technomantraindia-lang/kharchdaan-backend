@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', '100% Cashback Reconciliation')
+@section('title', 'Up to 100% Cashback Reconciliation')
 
 @section('content')
 @php
@@ -12,7 +12,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
-                <i class="fas fa-clipboard-check text-blue-600"></i> 100% Cashback Reconciliation
+                <i class="fas fa-clipboard-check text-blue-600"></i> Up to 100% Cashback Reconciliation
             </h1>
             <p class="text-sm text-slate-500 mt-1">Reconcile conditional cashback allocations, recoveries, profit pools, and settlement statuses.</p>
         </div>

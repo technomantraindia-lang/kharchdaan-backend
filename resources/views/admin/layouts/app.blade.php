@@ -553,10 +553,10 @@
             </div>
             @endif
 
-            <!-- 4. 100% CASHBACK -->
+            <!-- 4. UP TO 100% CASHBACK -->
             @if(auth()->user()->hasPermission('cashback.view') || auth()->user()->isSuperAdmin())
             <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">100% Cashback</div>
+                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Up to 100% Cashback</div>
                 <div class="space-y-0.5">
                     <a href="{{ admin_route('cashback.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.cashback.index') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-hand-holding-dollar w-4 text-center text-sm {{ request()->routeIs('*.cashback.index') ? 'text-white' : 'text-slate-400' }}"></i>
