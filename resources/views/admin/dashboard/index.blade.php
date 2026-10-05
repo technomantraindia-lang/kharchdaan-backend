@@ -11,7 +11,7 @@
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200 shadow-xs">
-                        <i class="fas fa-layer-group text-[10px] text-orange-600"></i> KharchDaan Direct Selling Engine
+                        <i class="fas fa-layer-group text-[10px] text-orange-600"></i> BachatGanga Direct Selling Engine
                     </span>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> v2.0 Active

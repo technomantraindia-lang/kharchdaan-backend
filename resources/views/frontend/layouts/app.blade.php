@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'KharchDaan.Com') - "तेरा तुझको अर्पण" | Direct Selling & 100% Cashback Platform</title>
+    <title>@yield('title', 'BachatGanga.Org') - "तेरा तुझको अर्पण" | Direct Selling & 100% Cashback Platform</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -201,7 +201,7 @@
                     </div>
                     <div>
                         <div class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none group-hover:text-orange-600 transition duration-200">
-                            KharchDaan<span class="text-orange-600">.Com</span>
+                            BachatGanga<span class="text-orange-600">.Org</span>
                         </div>
                         <div class="flex items-center gap-1.5 mt-1">
                             <span class="text-[10px] sm:text-[11px] font-black text-orange-600 tracking-wider">
@@ -392,12 +392,12 @@
                             <i class="fas fa-layer-group text-lg"></i>
                         </div>
                         <div>
-                            <div class="text-xl font-extrabold text-white tracking-tight">KharchDaan<span class="text-orange-500">.Com</span></div>
+                            <div class="text-xl font-extrabold text-white tracking-tight">BachatGanga<span class="text-orange-500">.Org</span></div>
                             <div class="text-xs font-semibold text-amber-400">"तेरा तुझको अर्पण"</div>
                         </div>
                     </div>
                     <p class="text-sm text-slate-400 leading-relaxed max-w-sm">
-                        KharchDaan.Com is India's next-generation Direct Selling & 100% Conditional Profit Cashback ecosystem. Built with absolute transparency, balanced 1:3 placement matrix hierarchy, and automated weekly direct settlements.
+                        BachatGanga.Org is India's next-generation Direct Selling & 100% Conditional Profit Cashback ecosystem. Built with absolute transparency, balanced 1:3 placement matrix hierarchy, and automated weekly direct settlements.
                     </p>
                     <div class="flex items-center gap-3 pt-2">
                         <span class="w-8 h-8 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center text-slate-400 hover:text-orange-400 hover:border-orange-500/40 transition cursor-pointer"><i class="fab fa-facebook-f text-xs"></i></span>
@@ -454,7 +454,7 @@
             <!-- Bottom Copyright & Tagline -->
             <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
                 <div>
-                    &copy; {{ date('Y') }} <strong class="text-slate-300">KharchDaan.Com</strong>. All rights reserved.
+                    &copy; {{ date('Y') }} <strong class="text-slate-300">BachatGanga.Org</strong>. All rights reserved.
                 </div>
                 <div class="text-amber-400/90 font-semibold text-center sm:text-right">
                     "तेरा तुझको अर्पण" &mdash; Direct Selling & 100% Profit Cashback Management Engine

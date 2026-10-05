@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KharchDaan.Com - Management Portal Login</title>
+    <title>BachatGanga.Org - Management Portal Login</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,7 +128,7 @@
             <div class="login-brand-icon">
                 <i class="fas fa-layer-group"></i>
             </div>
-            <h1>KharchDaan<span class="brand-accent">.Com</span></h1>
+            <h1>BachatGanga<span class="brand-accent">.Org</span></h1>
             <div class="tagline">"तेरा तुझको अर्पण"</div>
             <p>Management Portal Login</p>
         </div>

@@ -9,7 +9,7 @@
     <div class="card-body">
         <div class="row mb-4">
             <div class="col-md-6">
-                <h5 class="fw-bold text-primary">KharchDaan.Com</h5>
+                <h5 class="fw-bold text-primary">BachatGanga.Org</h5>
                 <div class="text-muted small">"तेरा तुझको अर्पण"</div>
                 <p class="text-muted mt-1">Invoice: <strong>{{ $invoice->inv_num }}</strong><br>Date: {{ $invoice->created_at->format('M d, Y') }}</p>
             </div>

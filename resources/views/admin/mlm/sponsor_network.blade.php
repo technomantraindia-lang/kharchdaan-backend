@@ -29,7 +29,7 @@
             <div>
                 <div class="font-bold text-xs text-blue-950">Sponsor Network vs. Placement Tree</div>
                 <div class="text-[11px] text-blue-800/90 mt-0.5 max-w-3xl">
-                    The <strong>Sponsor Network</strong> tracks who directly referred whom to KharchDaan. The <strong>Placement Tree</strong> is the 1:3 physical matrix where 20-level commission PV is distributed.
+                    The <strong>Sponsor Network</strong> tracks who directly referred whom to BachatGanga. The <strong>Placement Tree</strong> is the 1:3 physical matrix where 20-level commission PV is distributed.
                 </div>
             </div>
         </div>

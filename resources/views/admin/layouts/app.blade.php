@@ -8,7 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Direct Selling Admin') - KharchDaan.Com</title>
+    <title>@yield('title', 'Direct Selling Admin') - BachatGanga.Org</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -479,7 +479,7 @@
                     <i class="fas {{ \App\Helpers\AdminHelper::isSuperAdminPortal() ? 'fa-crown' : 'fa-user-gear' }} text-sm"></i>
                 </div>
                 <div>
-                    <div class="font-bold text-white text-base tracking-tight leading-none group-hover:text-orange-300 transition">KharchDaan<span class="{{ \App\Helpers\AdminHelper::isSuperAdminPortal() ? 'text-amber-400' : 'text-purple-400' }}">.Com</span></div>
+                    <div class="font-bold text-white text-base tracking-tight leading-none group-hover:text-orange-300 transition">BachatGanga<span class="{{ \App\Helpers\AdminHelper::isSuperAdminPortal() ? 'text-amber-400' : 'text-purple-400' }}">.Org</span></div>
                     <div class="text-[10px] font-bold tracking-wider uppercase mt-1 {{ \App\Helpers\AdminHelper::isSuperAdminPortal() ? 'text-amber-400' : 'text-purple-300' }}">
                         {{ \App\Helpers\AdminHelper::isSuperAdminPortal() ? '👑 Super Admin Master' : '👤 Sub-Admin Staff' }}
                     </div>
@@ -938,7 +938,7 @@
             <!-- Footer -->
             <footer class="max-w-7xl mx-auto mt-12 pt-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
                 <div class="flex items-center gap-2">
-                    <span class="font-bold text-slate-600">KharchDaan.Com</span>
+                    <span class="font-bold text-slate-600">BachatGanga.Org</span>
                     <span>&mdash;</span>
                     <span class="italic font-medium text-amber-600">"तेरा तुझको अर्पण"</span>
                     <span>&bull;</span>

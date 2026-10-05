@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
                 <i class="fas fa-calculator text-blue-600"></i> Direct Selling Calculation Engine
             </h1>
-            <p class="text-sm text-slate-500 mt-1">Automated 20-level PV distribution and commission engine adhering to KharchDaan.Com formula guidelines.</p>
+            <p class="text-sm text-slate-500 mt-1">Automated 20-level PV distribution and commission engine adhering to BachatGanga.Org formula guidelines.</p>
         </div>
         <div class="flex items-center gap-2.5">
             <a href="{{ admin_route('mlm.levels') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
