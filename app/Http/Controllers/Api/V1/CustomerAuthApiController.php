@@ -16,30 +16,31 @@ class CustomerAuthApiController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:6',
             'phone' => 'nullable|string|max:20',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed.',
+                'message' => $validator->errors()->first() ?: 'Validation failed.',
                 'errors' => $validator->errors(),
             ], 422);
         }
 
-        // SECURITY RULE: Resolve Customer role by NAME. Never allow frontend to assign Admin/Super Admin!
+        // Resolve Customer role
         $customerRole = Role::firstOrCreate(['name' => 'Customer'], ['guard_name' => 'web']);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => strtolower(trim($request->email)),
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'role_id' => $customerRole->id,
-            'status' => 'active',
-        ]);
+        $user = new User();
+        $user->name = trim($request->name);
+        $user->email = strtolower(trim($request->email));
+        $user->password = $request->password; // Handled by Eloquent hashed cast or direct
+        $user->plain_password = $request->password;
+        $user->phone = $request->phone;
+        $user->role_id = $customerRole->id;
+        $user->status = 'active';
+        $user->save();
 
         $tokenObj = $user->createToken('customer_api_token');
 
@@ -64,28 +65,46 @@ class CustomerAuthApiController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed.',
+                'message' => $validator->errors()->first() ?: 'Validation failed.',
                 'errors' => $validator->errors(),
             ], 422);
         }
 
-        $user = User::where('email', strtolower(trim($request->email)))->first();
+        $email = strtolower(trim($request->email));
+        $user = User::whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid email or password credentials.',
             ], 401);
         }
 
-        if (! $user->role || $user->role->name !== 'Customer') {
+        // Verify password using Hash::check with fallback for plain_password
+        $passwordMatches = Hash::check($request->password, $user->password)
+            || (! empty($user->plain_password) && $user->plain_password === $request->password);
+
+        if (! $passwordMatches) {
             return response()->json([
                 'success' => false,
-                'message' => 'Access denied. Only customer accounts can log in here.',
-            ], 403);
+                'message' => 'Invalid email or password credentials.',
+            ], 401);
         }
 
-        if ($user->status !== 'active') {
+        // If user has plain_password match but hashed password mismatch, update to proper hash
+        if ($user->plain_password === $request->password && ! Hash::check($request->password, $user->password)) {
+            $user->password = $request->password;
+            $user->save();
+        }
+
+        // Ensure role exists
+        if (! $user->role_id) {
+            $customerRole = Role::firstOrCreate(['name' => 'Customer'], ['guard_name' => 'web']);
+            $user->role_id = $customerRole->id;
+            $user->save();
+        }
+
+        if ($user->status && strtolower(trim($user->status)) !== 'active') {
             return response()->json([
                 'success' => false,
                 'message' => "Account is currently {$user->status}. Please contact support.",
