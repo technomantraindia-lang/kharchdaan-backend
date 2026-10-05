@@ -51,8 +51,35 @@
         </select>
     </div>
     <div class="col-md-4 mb-3">
-        <label class="form-label">HSN Code</label>
-        <input type="text" name="hsn_code" class="form-control" value="{{ old('hsn_code', $product->hsn_code ?? '') }}" placeholder="e.g. 1006 / 0405">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label m-0">HSN Code & GST Category *</label>
+            <span class="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded" id="autoHsnBadge" style="display:none;">
+                <i class="fas fa-magic me-1"></i> Auto-Matched
+            </span>
+        </div>
+        @php
+            $currentHsn = old('hsn_code', $product->hsn_code ?? '');
+            $hsnList = $hsnCodes ?? \App\Http\Controllers\Admin\ProductController::getHsnCodesList();
+            $groupedHsn = collect($hsnList)->groupBy('category');
+            $isKnownHsn = collect($hsnList)->pluck('code')->contains($currentHsn);
+        @endphp
+        <select name="hsn_code" id="productHsnCode" class="form-select @error('hsn_code') is-invalid @enderror">
+            <option value="" data-gst="5">-- Select Product HSN & Tax Rate --</option>
+            @foreach($groupedHsn as $categoryName => $items)
+                <optgroup label="{{ $categoryName }}">
+                    @foreach($items as $hsn)
+                        <option value="{{ $hsn['code'] }}" data-gst="{{ $hsn['gst'] }}" data-name="{{ $hsn['name'] }}" @selected($currentHsn == $hsn['code'])>
+                            HSN {{ $hsn['code'] }} - {{ $hsn['name'] }} ({{ $hsn['gst'] }}% GST)
+                        </option>
+                    @endforeach
+                </optgroup>
+            @endforeach
+            <option value="custom" data-gst="5" @selected($currentHsn && !$isKnownHsn)>Custom / Other HSN Code...</option>
+        </select>
+        <div id="customHsnContainer" class="mt-2 {{ $currentHsn && !$isKnownHsn ? '' : 'd-none' }}">
+            <input type="text" name="custom_hsn_code" id="customHsnInput" class="form-control form-control-sm" placeholder="Type custom HSN code (e.g. 1234)" value="{{ $currentHsn && !$isKnownHsn ? $currentHsn : '' }}">
+        </div>
+        @error('hsn_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4 mb-3">
         <label class="form-label">Status *</label>
@@ -361,6 +388,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const galleryInput = document.getElementById('galleryImages');
     const galleryPreview = document.getElementById('galleryPreview');
     const productBaseSkuInput = document.getElementById('productBaseSku');
+    const productNameInput = document.getElementById('productName');
+
+    const hsnSelect = document.getElementById('productHsnCode');
+    const customHsnContainer = document.getElementById('customHsnContainer');
+    const customHsnInput = document.getElementById('customHsnInput');
+    const autoHsnBadge = document.getElementById('autoHsnBadge');
 
     const variationsTableBody = document.getElementById('variationsTableBody');
     const noVariationsNotice = document.getElementById('noVariationsNotice');
@@ -388,6 +421,81 @@ document.addEventListener('DOMContentLoaded', function () {
         gstAmountInput.value = formatAmount(gstAmount);
         priceAfterGstInput.value = formatAmount(basePrice + gstAmount);
     }
+
+    function syncHsnGstRate() {
+        if (!hsnSelect) return;
+        const selectedOption = hsnSelect.selectedOptions[0];
+        if (hsnSelect.value === 'custom') {
+            if (customHsnContainer) customHsnContainer.classList.remove('d-none');
+        } else {
+            if (customHsnContainer) customHsnContainer.classList.add('d-none');
+        }
+
+        if (selectedOption && selectedOption.dataset.gst !== undefined && selectedOption.value !== '') {
+            const gst = parseFloat(selectedOption.dataset.gst);
+            if (!isNaN(gst) && gstPercentageInput) {
+                gstPercentageInput.value = gst;
+                updateGstCalculation();
+            }
+        }
+    }
+
+    hsnSelect?.addEventListener('change', function () {
+        this.dataset.userChanged = '1';
+        if (autoHsnBadge) autoHsnBadge.style.display = 'none';
+        syncHsnGstRate();
+    });
+
+    // Smart auto-match HSN Code and GST % from Product Name
+    const hsnKeywordsMap = [
+        { regex: /rice|chawal|basmati|paddy/i, code: '1006', gst: 5 },
+        { regex: /atta|flour|maida|suji|sooji|wheat/i, code: '1101', gst: 5 },
+        { regex: /dal|pulse|moong|chana|toor|urad|rajma|legume/i, code: '0713', gst: 5 },
+        { regex: /ghee|butter|makhan/i, code: '0405', gst: 12 },
+        { regex: /milk|paneer|dahi|curd|dairy/i, code: '0401', gst: 0 },
+        { regex: /honey|madhu/i, code: '0409', gst: 5 },
+        { regex: /tea|chai|green tea/i, code: '0902', gst: 5 },
+        { regex: /coffee/i, code: '0901', gst: 5 },
+        { regex: /turmeric|haldi|ginger|adrak|masala|garam masala|saffron|kesar/i, code: '0910', gst: 5 },
+        { regex: /pepper|mirch|chilli|cumin|jeera|coriander|dhaniya|spice/i, code: '0904', gst: 5 },
+        { regex: /oil|tel|mustard|sarson|groundnut|coconut oil/i, code: '1515', gst: 5 },
+        { regex: /sugar|cheeni|jaggery|gur|shakkar|sweetener/i, code: '1701', gst: 5 },
+        { regex: /khakhra|farsan|namkeen|snack|bhujia/i, code: '1905', gst: 5 },
+        { regex: /biscuit|cookie|confectionery|chocolate|wafer/i, code: '1905B', gst: 18 },
+        { regex: /almond|badam|cashew|kaju|walnut|akhrot|pista|raisin|kismis|dry fruit/i, code: '0801', gst: 12 },
+        { regex: /agarbatti|dhoop|hawan|samagri|camphor|kapoor|puja|spiritual/i, code: '3307', gst: 5 },
+        { regex: /ayurved|chyawanprash|kadha|herbal|vati|churna/i, code: '3004', gst: 12 },
+        { regex: /soap|sabun|shampoo|face wash|cleanser/i, code: '3401', gst: 18 },
+        { regex: /cream|lotion|moisturizer|serum|skincare|beauty/i, code: '3304', gst: 18 },
+        { regex: /khadi|kurta|cotton|fabric|saree|dupatta|textile/i, code: '5208', gst: 5 },
+        { regex: /detergent|dishwash|cleaner|floor cleaner/i, code: '3402', gst: 18 },
+        { regex: /protein|supplement|health drink|food prep/i, code: '2106', gst: 18 },
+    ];
+
+    productNameInput?.addEventListener('input', function () {
+        if (hsnSelect && !hsnSelect.dataset.userChanged && (!hsnSelect.value || hsnSelect.dataset.autoMatched === '1')) {
+            const val = this.value;
+            let matched = false;
+            for (const item of hsnKeywordsMap) {
+                if (item.regex.test(val)) {
+                    hsnSelect.value = item.code;
+                    hsnSelect.dataset.autoMatched = '1';
+                    if (gstPercentageInput) {
+                        gstPercentageInput.value = item.gst;
+                    }
+                    updateGstCalculation();
+                    if (autoHsnBadge) autoHsnBadge.style.display = 'inline-block';
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched && hsnSelect.dataset.autoMatched === '1') {
+                hsnSelect.value = '';
+                delete hsnSelect.dataset.autoMatched;
+                if (autoHsnBadge) autoHsnBadge.style.display = 'none';
+            }
+        }
+    });
 
     [priceInput, salePriceInput, gstPercentageInput].forEach((input) => {
         input?.addEventListener('input', updateGstCalculation);
@@ -592,6 +700,7 @@ document.addEventListener('DOMContentLoaded', function () {
         renderGalleryPreview(files);
     });
 
+    syncHsnGstRate();
     updateGstCalculation();
     updateVariationsUI();
 });

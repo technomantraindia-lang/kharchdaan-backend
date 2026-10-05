@@ -73,6 +73,10 @@ class ProductController extends Controller
             $data['image'] = $this->uploader->upload($request->file('image'), 'products');
         }
 
+        if ($request->input('hsn_code') === 'custom' && $request->filled('custom_hsn_code')) {
+            $data['hsn_code'] = trim((string)$request->input('custom_hsn_code'));
+        }
+
         $variationsData = $this->extractVariations($request);
 
         // If variations are provided, align base price and base stock to variations if not explicitly given
@@ -136,6 +140,10 @@ class ProductController extends Controller
                 $this->uploader->delete($product->image);
             }
             $data['image'] = $this->uploader->upload($request->file('image'), 'products');
+        }
+
+        if ($request->input('hsn_code') === 'custom' && $request->filled('custom_hsn_code')) {
+            $data['hsn_code'] = trim((string)$request->input('custom_hsn_code'));
         }
 
         $variationsData = $this->extractVariations($request);
@@ -311,6 +319,7 @@ class ProductController extends Controller
             'sale_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'hsn_code' => 'nullable|string|max:50',
+            'custom_hsn_code' => 'nullable|string|max:50',
             'gst_percentage' => 'nullable|numeric|min:0|max:100',
             'stock_qty' => 'required|integer|min:0',
             'low_stock_qty' => 'nullable|integer|min:0',
@@ -358,6 +367,37 @@ class ProductController extends Controller
             'brands' => Brand::where('status', 'active')->orderBy('name')->get(),
             'units' => ['pcs', 'kg', 'g', 'box', 'packet', 'litre', 'ml'],
             'attributes' => ProductAttribute::with(['values' => fn($q) => $q->where('status', 'active')])->where('status', 'active')->orderBy('name')->get(),
+            'hsnCodes' => self::getHsnCodesList(),
+        ];
+    }
+
+    public static function getHsnCodesList(): array
+    {
+        return [
+            ['code' => '1006', 'name' => 'Basmati & Regular Rice, Grains & Cereals', 'gst' => 5, 'category' => 'Grains, Rice & Cereals'],
+            ['code' => '1101', 'name' => 'Wheat Flour / Atta / Maida / Suji', 'gst' => 5, 'category' => 'Grains, Rice & Cereals'],
+            ['code' => '0713', 'name' => 'Dried Legumes / Pulses & Dals (Moong, Toor, Chana)', 'gst' => 5, 'category' => 'Pulses & Dals'],
+            ['code' => '0405', 'name' => 'Pure Desi Ghee / Butter / Dairy Fats', 'gst' => 12, 'category' => 'Dairy Products & Ghee'],
+            ['code' => '0401', 'name' => 'Fresh Milk / Pasteurized Milk / Paneer / Dahi', 'gst' => 0, 'category' => 'Dairy Products & Ghee'],
+            ['code' => '0409', 'name' => 'Natural Forest Honey', 'gst' => 5, 'category' => 'Honey & Natural Sweeteners'],
+            ['code' => '0902', 'name' => 'Tea Leaves / CTC & Green Tea / Chai', 'gst' => 5, 'category' => 'Beverages, Tea & Coffee'],
+            ['code' => '0901', 'name' => 'Coffee Beans / Ground Filter Coffee', 'gst' => 5, 'category' => 'Beverages, Tea & Coffee'],
+            ['code' => '0910', 'name' => 'Ginger, Turmeric / Haldi, Saffron, Garam Masala', 'gst' => 5, 'category' => 'Spices & Seasonings'],
+            ['code' => '0904', 'name' => 'Black Pepper, Red Chilli, Cumin / Jeera, Coriander', 'gst' => 5, 'category' => 'Spices & Seasonings'],
+            ['code' => '1515', 'name' => 'Mustard, Groundnut, Coconut & Cooking Oils', 'gst' => 5, 'category' => 'Cooking & Edible Oils'],
+            ['code' => '1701', 'name' => 'Cane Sugar, Organic Jaggery / Gur / Shakkar', 'gst' => 5, 'category' => 'Sugar, Jaggery & Sweeteners'],
+            ['code' => '1905', 'name' => 'Khakhra, Farsan, Namkeen & Traditional Snacks', 'gst' => 5, 'category' => 'Snacks & Bakery'],
+            ['code' => '1905B', 'name' => 'Biscuits, Cookies, Wafers & Confectionery', 'gst' => 18, 'category' => 'Snacks & Bakery'],
+            ['code' => '0801', 'name' => 'Almonds, Cashews, Walnuts, Pistachios & Raisins', 'gst' => 12, 'category' => 'Dry Fruits & Nuts'],
+            ['code' => '3004', 'name' => 'Ayurvedic Formulations, Chyawanprash & Herbal Meds', 'gst' => 12, 'category' => 'Ayurveda & Health Wellness'],
+            ['code' => '3307', 'name' => 'Agarbatti, Dhoop Sticks, Hawan Samagri & Puja Items', 'gst' => 5, 'category' => 'Puja, Spiritual & Incense'],
+            ['code' => '3401', 'name' => 'Herbal Bath Soaps, Shampoos & Cleansing Bars', 'gst' => 18, 'category' => 'Personal Care & Hygiene'],
+            ['code' => '3304', 'name' => 'Face Creams, Body Lotions & Skincare Beauty', 'gst' => 18, 'category' => 'Cosmetics & Skincare'],
+            ['code' => '5208', 'name' => 'Khadi, Cotton Apparel, Kurtas & Handloom', 'gst' => 5, 'category' => 'Apparel, Khadi & Textiles'],
+            ['code' => '3402', 'name' => 'Detergents, Dishwash & Home Cleaners', 'gst' => 18, 'category' => 'Home Care & Cleaning'],
+            ['code' => '2106', 'name' => 'Food Preparations, Health Mixes & Supplements', 'gst' => 18, 'category' => 'Packaged & Health Foods'],
+            ['code' => '9999', 'name' => 'General FMCG & Standard Consumer Goods (18% GST)', 'gst' => 18, 'category' => 'General Goods'],
+            ['code' => '0000', 'name' => 'Exempted Fresh Produce & Agricultural Staples (0% GST)', 'gst' => 0, 'category' => 'Tax-Exempt Produce'],
         ];
     }
 
