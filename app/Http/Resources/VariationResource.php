@@ -30,6 +30,8 @@ class VariationResource extends JsonResource
             'image' => $this->image ? route('media.file', ['path' => ltrim($this->image, '/')]) : null,
             'weight' => $this->weight ? (float) $this->weight : null,
             'attributes' => $attributes,
+            'attribute_name' => $this->attribute?->name ?? null,
+            'attribute_value' => $this->attr_val ?? null,
         ];
     }
 }

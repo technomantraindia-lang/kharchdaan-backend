@@ -6,7 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductAttribute;
+use App\Models\AttributeValue;
 use App\Models\ProductImage;
+use App\Models\ProductVariation;
+use App\Models\VariationAttributeValue;
 use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +27,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand'])->latest();
+        $query = Product::with(['category', 'brand', 'variations.attribute'])->withCount('variations')->latest();
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -69,22 +73,44 @@ class ProductController extends Controller
             $data['image'] = $this->uploader->upload($request->file('image'), 'products');
         }
 
-        $product = Product::create($data);
-        $this->saveGallery($product, $request);
+        $variationsData = $this->extractVariations($request);
+
+        // If variations are provided, align base price and base stock to variations if not explicitly given
+        if (!empty($variationsData)) {
+            $validPrices = collect($variationsData)->pluck('price')->filter(fn($p) => $p > 0);
+            if ($validPrices->isNotEmpty() && (empty($data['price']) || $data['price'] == 0)) {
+                $data['price'] = $validPrices->min();
+            }
+            $validSalePrices = collect($variationsData)->pluck('sale_price')->filter(fn($p) => !is_null($p) && $p > 0);
+            if ($validSalePrices->isNotEmpty() && empty($data['sale_price'])) {
+                $data['sale_price'] = $validSalePrices->min();
+            }
+            $totalVarStock = collect($variationsData)->sum('stock_qty');
+            if ($totalVarStock > 0 && ($data['stock_qty'] ?? 0) == 0) {
+                $data['stock_qty'] = $totalVarStock;
+            }
+        }
+
+        $product = DB::transaction(function () use ($data, $request, $variationsData) {
+            $product = Product::create($data);
+            $this->saveGallery($product, $request);
+            $this->saveVariations($product, $variationsData);
+            return $product;
+        });
 
         return redirect(admin_route('products.index'))->with('success', "Product '{$product->name}' was added successfully to the catalog!");
     }
 
     public function show(Product $product)
     {
-        $product->load(['category', 'subCategory', 'subSubCategory', 'brand', 'images', 'variations', 'inventoryLogs.user']);
+        $product->load(['category', 'subCategory', 'subSubCategory', 'brand', 'images', 'variations.attribute', 'inventoryLogs.user']);
 
         return view('admin.products.show', compact('product'));
     }
 
     public function edit(Product $product)
     {
-        $product->load('images');
+        $product->load(['images', 'variations.attribute']);
 
         return view('admin.products.edit', array_merge(['product' => $product], $this->formData()));
     }
@@ -112,9 +138,25 @@ class ProductController extends Controller
             $data['image'] = $this->uploader->upload($request->file('image'), 'products');
         }
 
-        $product->update($data);
-        $this->removeGalleryImages($request->input('remove_gallery', []));
-        $this->saveGallery($product, $request);
+        $variationsData = $this->extractVariations($request);
+
+        if (!empty($variationsData)) {
+            $validPrices = collect($variationsData)->pluck('price')->filter(fn($p) => $p > 0);
+            if ($validPrices->isNotEmpty() && (empty($data['price']) || $data['price'] == 0)) {
+                $data['price'] = $validPrices->min();
+            }
+            $validSalePrices = collect($variationsData)->pluck('sale_price')->filter(fn($p) => !is_null($p) && $p > 0);
+            if ($validSalePrices->isNotEmpty() && empty($data['sale_price'])) {
+                $data['sale_price'] = $validSalePrices->min();
+            }
+        }
+
+        DB::transaction(function () use ($product, $data, $request, $variationsData) {
+            $product->update($data);
+            $this->removeGalleryImages($request->input('remove_gallery', []));
+            $this->saveGallery($product, $request);
+            $this->syncVariations($product, $variationsData);
+        });
 
         return redirect(admin_route('products.index'))->with('success', "Product '{$product->name}' was updated successfully!");
     }
@@ -315,6 +357,128 @@ class ProductController extends Controller
             'subCategories' => Category::where('status', 'active')->whereNotNull('parent_id')->whereHas('parent', fn($q) => $q->whereNull('parent_id'))->orderBy('name')->get(),
             'brands' => Brand::where('status', 'active')->orderBy('name')->get(),
             'units' => ['pcs', 'kg', 'g', 'box', 'packet', 'litre', 'ml'],
+            'attributes' => ProductAttribute::with(['values' => fn($q) => $q->where('status', 'active')])->where('status', 'active')->orderBy('name')->get(),
         ];
+    }
+
+    private function extractVariations(Request $request): array
+    {
+        $rawVariations = $request->input('variations', []);
+        if (!is_array($rawVariations)) {
+            return [];
+        }
+
+        $cleaned = [];
+        $seenSkus = [];
+        $baseSku = trim((string)($request->input('sku') ?: 'PROD-' . time()));
+
+        foreach ($rawVariations as $index => $var) {
+            if (!is_array($var)) {
+                continue;
+            }
+
+            $attrVal = trim((string)($var['attr_val'] ?? ''));
+            $price = isset($var['price']) && $var['price'] !== '' ? (float)$var['price'] : null;
+            $stockQty = isset($var['stock_qty']) && $var['stock_qty'] !== '' ? (int)$var['stock_qty'] : null;
+
+            // Skip empty placeholder row if no attribute value, price, or custom SKU was given
+            if (empty($attrVal) && $price === null && empty($var['sku'])) {
+                continue;
+            }
+
+            // Determine or generate SKU
+            $sku = trim((string)($var['sku'] ?? ''));
+            if (empty($sku)) {
+                $suffix = Str::slug($attrVal) ?: ($index + 1);
+                $sku = strtoupper("{$baseSku}-{$suffix}");
+            }
+
+            // Ensure unique SKU in this set
+            $originalSku = $sku;
+            $c = 1;
+            while (in_array($sku, $seenSkus)) {
+                $sku = "{$originalSku}-{$c}";
+                $c++;
+            }
+            $seenSkus[] = $sku;
+
+            $cleaned[] = [
+                'id' => !empty($var['id']) ? (int)$var['id'] : null,
+                'attr_id' => !empty($var['attr_id']) ? (int)$var['attr_id'] : null,
+                'attr_val' => $attrVal ?: null,
+                'sku' => $sku,
+                'price' => $price ?? (float)($request->input('price') ?? 0),
+                'sale_price' => isset($var['sale_price']) && $var['sale_price'] !== '' ? (float)$var['sale_price'] : null,
+                'cost_price' => isset($var['cost_price']) && $var['cost_price'] !== '' ? (float)$var['cost_price'] : null,
+                'stock_qty' => max($stockQty ?? 0, 0),
+                'weight' => isset($var['weight']) && $var['weight'] !== '' ? (float)$var['weight'] : null,
+                'status' => in_array($var['status'] ?? '', ['active', 'inactive']) ? $var['status'] : 'active',
+            ];
+        }
+
+        return $cleaned;
+    }
+
+    private function saveVariations(Product $product, array $variations): void
+    {
+        foreach ($variations as $varData) {
+            unset($varData['id']);
+            $varData['product_id'] = $product->id;
+            $variation = ProductVariation::create($varData);
+            $this->linkVariationAttributeValue($variation);
+        }
+    }
+
+    private function syncVariations(Product $product, array $variations): void
+    {
+        $keepIds = [];
+        foreach ($variations as $varData) {
+            $id = $varData['id'] ?? null;
+            unset($varData['id']);
+            $varData['product_id'] = $product->id;
+
+            if ($id) {
+                $existing = ProductVariation::where('id', $id)->where('product_id', $product->id)->first();
+                if ($existing) {
+                    $existing->update($varData);
+                    $this->linkVariationAttributeValue($existing);
+                    $keepIds[] = $existing->id;
+                    continue;
+                }
+            }
+
+            $variation = ProductVariation::create($varData);
+            $this->linkVariationAttributeValue($variation);
+            $keepIds[] = $variation->id;
+        }
+
+        if (!empty($keepIds)) {
+            $product->variations()->whereNotIn('id', $keepIds)->delete();
+        } elseif (empty($variations) && $product->variations()->exists()) {
+            $product->variations()->delete();
+        }
+    }
+
+    private function linkVariationAttributeValue(ProductVariation $variation): void
+    {
+        if ($variation->attr_id && $variation->attr_val) {
+            $attrValModel = AttributeValue::where('attribute_id', $variation->attr_id)
+                ->where(function ($q) use ($variation) {
+                    $q->where('value', $variation->attr_val)
+                      ->orWhere('slug', Str::slug($variation->attr_val));
+                })->first();
+
+            if ($attrValModel) {
+                VariationAttributeValue::updateOrCreate(
+                    [
+                        'product_variation_id' => $variation->id,
+                        'product_attribute_id' => $variation->attr_id,
+                    ],
+                    [
+                        'attribute_value_id' => $attrValModel->id,
+                    ]
+                );
+            }
+        }
     }
 }

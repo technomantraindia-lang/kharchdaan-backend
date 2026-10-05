@@ -331,20 +331,46 @@
                         <thead>
                             <tr class="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
                                 <th class="py-2.5 px-4">Variant SKU</th>
-                                <th class="py-2.5 px-4">Attributes</th>
+                                <th class="py-2.5 px-4">Attribute / Option</th>
                                 <th class="py-2.5 px-4">Price</th>
                                 <th class="py-2.5 px-4">Stock</th>
+                                <th class="py-2.5 px-4 text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @foreach($product->variations as $variation)
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="py-2.5 px-4 font-mono font-semibold text-slate-800">{{ $variation->sku }}</td>
-                                <td class="py-2.5 px-4 text-slate-600">
-                                    {{ is_array($variation->attributes) ? json_encode($variation->attributes) : $variation->attributes }}
+                                <td class="py-2.5 px-4 text-slate-700 font-medium">
+                                    @if($variation->attribute)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                            {{ $variation->attribute->name }}: {{ $variation->attr_val }}
+                                        </span>
+                                    @elseif($variation->attr_val)
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                            {{ $variation->attr_val }}
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400">Default</span>
+                                    @endif
                                 </td>
-                                <td class="py-2.5 px-4 font-bold text-slate-900">₹{{ number_format($variation->price, 2) }}</td>
-                                <td class="py-2.5 px-4 font-semibold text-slate-700">{{ $variation->stock_qty }}</td>
+                                <td class="py-2.5 px-4">
+                                    <div class="font-bold text-slate-900">₹{{ number_format($variation->sale_price ?? $variation->price, 2) }}</div>
+                                    @if($variation->sale_price && $variation->sale_price < $variation->price)
+                                        <div class="text-[10px] text-slate-400 line-through">₹{{ number_format($variation->price, 2) }}</div>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-4">
+                                    <span class="font-semibold text-slate-800">{{ $variation->stock_qty }}</span>
+                                    @if($variation->reserved_stock > 0)
+                                        <span class="text-[10px] text-amber-600 ml-1">(Res: {{ $variation->reserved_stock }})</span>
+                                    @endif
+                                </td>
+                                <td class="py-2.5 px-4 text-center">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold {{ $variation->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600' }}">
+                                        {{ ucfirst($variation->status) }}
+                                    </span>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>

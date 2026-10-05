@@ -76,7 +76,29 @@ class Product extends Model
 
     public function getDisplayPriceAttribute(): float
     {
-        return (float) ($this->sale_price ?? $this->price);
+        if ($this->relationLoaded('variations') && $this->variations->isNotEmpty()) {
+            $minVarPrice = $this->variations->where('status', 'active')->map(fn($v) => (float)($v->sale_price ?? $v->price))->filter(fn($p) => $p > 0)->min();
+            if ($minVarPrice !== null) {
+                return (float) $minVarPrice;
+            }
+        }
+
+        return (float) ($this->sale_price ?? $this->price ?? 0);
+    }
+
+    public function getPriceRangeAttribute(): ?array
+    {
+        if ($this->relationLoaded('variations') && $this->variations->isNotEmpty()) {
+            $prices = $this->variations->where('status', 'active')->map(fn($v) => (float)($v->sale_price ?? $v->price))->filter(fn($p) => $p > 0)->values();
+            if ($prices->isNotEmpty()) {
+                return [
+                    'min' => (float) $prices->min(),
+                    'max' => (float) $prices->max(),
+                ];
+            }
+        }
+
+        return null;
     }
 
     public function getImageUrlAttribute(): string

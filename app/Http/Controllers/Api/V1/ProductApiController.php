@@ -12,7 +12,7 @@ class ProductApiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
+        $query = Product::with(['category', 'brand', 'variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
             ->where('status', 'active');
 
         // 1. Search Query
@@ -155,7 +155,7 @@ class ProductApiController extends Controller
 
     public function show($slug)
     {
-        $product = Product::with(['category', 'brand', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
+        $product = Product::with(['category', 'brand', 'variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
             ->where('status', 'active')
             ->where(function ($q) use ($slug) {
                 if (is_numeric($slug)) {
@@ -182,7 +182,7 @@ class ProductApiController extends Controller
 
     public function variations(Product $product)
     {
-        $product->load(['variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue']);
+        $product->load(['variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue']);
 
         return response()->json([
             'success' => true,

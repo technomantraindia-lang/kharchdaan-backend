@@ -156,9 +156,21 @@
                             </span>
                         </td>
                         <td class="py-3.5 px-4">
-                            <div class="font-bold text-slate-900">₹{{ number_format($product->display_price, 2) }}</div>
-                            @if($product->sale_price && $product->sale_price < $product->price)
+                            @php
+                                $priceRange = $product->price_range;
+                            @endphp
+                            @if($priceRange && $priceRange['min'] < $priceRange['max'])
+                                <div class="font-bold text-slate-900">₹{{ number_format($priceRange['min'], 2) }} - ₹{{ number_format($priceRange['max'], 2) }}</div>
+                            @else
+                                <div class="font-bold text-slate-900">₹{{ number_format($product->display_price, 2) }}</div>
+                            @endif
+                            @if($product->sale_price && $product->sale_price < $product->price && !$priceRange)
                                 <div class="text-[11px] text-slate-400 line-through">₹{{ number_format($product->price, 2) }}</div>
+                            @endif
+                            @if($product->variations_count > 0 || ($product->relationLoaded('variations') && $product->variations->count() > 0))
+                                <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded mt-1">
+                                    <i class="fas fa-layer-group text-[9px]"></i> {{ $product->variations_count ?? $product->variations->count() }} Variants
+                                </span>
                             @endif
                         </td>
                         <td class="py-3.5 px-4">

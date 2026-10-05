@@ -1,7 +1,14 @@
 <div class="row">
+    <!-- 1. Basic Product Info -->
+    <div class="col-12 mb-2">
+        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+            <i class="fas fa-info-circle text-blue-500"></i> General Information
+        </h5>
+    </div>
+
     <div class="col-md-8 mb-3">
         <label class="form-label">Product Name *</label>
-        <input type="text" name="name" id="productName" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $product->name ?? '') }}" required>
+        <input type="text" name="name" id="productName" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $product->name ?? '') }}" required placeholder="e.g. Premium Basmati Rice / Pure Desi Ghee">
         @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4 mb-3">
@@ -10,8 +17,8 @@
         @error('slug')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4 mb-3">
-        <label class="form-label">SKU *</label>
-        <input type="text" name="sku" class="form-control @error('sku') is-invalid @enderror" value="{{ old('sku', $product->sku ?? '') }}" required>
+        <label class="form-label">Main Base SKU *</label>
+        <input type="text" name="sku" id="productBaseSku" class="form-control @error('sku') is-invalid @enderror" value="{{ old('sku', $product->sku ?? '') }}" required placeholder="e.g. BG-RICE-01">
         @error('sku')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4 mb-3">
@@ -37,26 +44,46 @@
     <div class="col-md-4 mb-3">
         <label class="form-label">Brand</label>
         <select name="brand_id" class="form-select">
-            <option value="">None</option>
+            <option value="">None / House Brand</option>
             @foreach($brands as $brand)
                 <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id ?? '') == $brand->id)>{{ $brand->name }}</option>
             @endforeach
         </select>
     </div>
-    <div class="col-md-2 mb-3">
+    <div class="col-md-4 mb-3">
         <label class="form-label">HSN Code</label>
-        <input type="text" name="hsn_code" class="form-control" value="{{ old('hsn_code', $product->hsn_code ?? '') }}" placeholder="e.g. 1006">
+        <input type="text" name="hsn_code" class="form-control" value="{{ old('hsn_code', $product->hsn_code ?? '') }}" placeholder="e.g. 1006 / 0405">
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Status *</label>
+        <select name="status" class="form-select" required>
+            <option value="active" @selected(old('status', $product->status ?? 'active') === 'active')>Active</option>
+            <option value="inactive" @selected(old('status', $product->status ?? '') === 'inactive')>Inactive</option>
+        </select>
+    </div>
+
+    <!-- 2. Base Pricing & Stock Settings -->
+    <div class="col-12 mt-3 mb-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="text-xs font-bold uppercase tracking-wider text-slate-500 m-0 flex items-center gap-2">
+                <i class="fas fa-tag text-emerald-500"></i> Base Pricing & Inventory
+            </h5>
+            <span class="text-xs text-slate-400">Default pricing (overridden per variation if configured below)</span>
+        </div>
+        <hr class="my-2 border-slate-100">
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <label class="form-label">Base Regular Price (&#8377;) *</label>
+        <input type="number" step="0.01" name="price" id="productPrice" class="form-control @error('price') is-invalid @enderror" value="{{ old('price', $product->price ?? '') }}" required placeholder="0.00">
+        @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-3 mb-3">
-        <label class="form-label">Regular Price (&#8377;) *</label>
-        <input type="number" step="0.01" name="price" id="productPrice" class="form-control" value="{{ old('price', $product->price ?? '') }}" required>
+        <label class="form-label">Base Sale Price (&#8377;)</label>
+        <input type="number" step="0.01" name="sale_price" id="productSalePrice" class="form-control" value="{{ old('sale_price', $product->sale_price ?? '') }}" placeholder="0.00 (Optional)">
     </div>
     <div class="col-md-3 mb-3">
-        <label class="form-label">Sale Price (&#8377;)</label>
-        <input type="number" step="0.01" name="sale_price" id="productSalePrice" class="form-control" value="{{ old('sale_price', $product->sale_price ?? '') }}">
-    </div>
-    <div class="col-md-3 mb-3">
-        <label class="form-label text-primary">Cost Price (&#8377;) <small class="text-muted">(Internal Only)</small></label>
+        <label class="form-label text-primary">Cost Price (&#8377;) <small class="text-muted">(Internal)</small></label>
         <input type="number" step="0.01" name="cost_price" id="productCostPrice" class="form-control" value="{{ old('cost_price', $product->cost_price ?? '') }}" placeholder="0.00">
     </div>
     <div class="col-md-3 mb-3">
@@ -64,8 +91,9 @@
         <input type="number" step="0.01" name="gst_percentage" id="gstPercentage" class="form-control" value="{{ old('gst_percentage', $product->gst_percentage ?? 5) }}">
     </div>
     <div class="col-md-3 mb-3">
-        <label class="form-label">Physical Stock *</label>
-        <input type="number" name="stock_qty" class="form-control" value="{{ old('stock_qty', $product->stock_qty ?? 0) }}" required>
+        <label class="form-label">Base Physical Stock *</label>
+        <input type="number" name="stock_qty" id="productBaseStock" class="form-control @error('stock_qty') is-invalid @enderror" value="{{ old('stock_qty', $product->stock_qty ?? 0) }}" required min="0">
+        @error('stock_qty')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-3 mb-3">
         <label class="form-label">Reserved Stock</label>
@@ -77,7 +105,7 @@
         <input type="number" class="form-control bg-light fw-bold text-success" value="{{ isset($product) ? $product->available_stock : 0 }}" readonly>
         <small class="text-muted">Physical - Reserved</small>
     </div>
-    <div class="col-md-2 mb-3">
+    <div class="col-md-3 mb-3">
         <label class="form-label">Unit</label>
         <select name="unit" class="form-select">
             @foreach($units as $u)
@@ -85,87 +113,237 @@
             @endforeach
         </select>
     </div>
-    <div class="col-md-2 mb-3">
+    <div class="col-md-3 mb-3">
         <label class="form-label">Min Order Qty</label>
         <input type="number" name="min_order_qty" class="form-control" value="{{ old('min_order_qty', $product->min_order_qty ?? 1) }}" min="1">
     </div>
-    <div class="col-md-2 mb-3">
+    <div class="col-md-3 mb-3">
         <label class="form-label">Low Stock Alert</label>
         <input type="number" name="low_stock_qty" class="form-control" value="{{ old('low_stock_qty', $product->low_stock_qty ?? 5) }}">
     </div>
-    <div class="col-md-2 mb-3">
-        <label class="form-label">Weight (kg)</label>
-        <input type="number" step="0.01" name="weight" class="form-control" value="{{ old('weight', $product->weight ?? '') }}">
-    </div>
     <div class="col-md-3 mb-3">
-        <label class="form-label">Status *</label>
-        <select name="status" class="form-select" required>
-            <option value="active" @selected(old('status', $product->status ?? 'active') === 'active')>Active</option>
-            <option value="inactive" @selected(old('status', $product->status ?? '') === 'inactive')>Inactive</option>
-        </select>
+        <label class="form-label">Weight (kg)</label>
+        <input type="number" step="0.01" name="weight" class="form-control" value="{{ old('weight', $product->weight ?? '') }}" placeholder="e.g. 1.0">
     </div>
     <div class="col-md-3 mb-3 d-flex align-items-end">
         <div class="form-check mb-2">
             <input type="checkbox" name="featured" value="1" class="form-check-input" id="featured" @checked(old('featured', $product->featured ?? false))>
-            <label class="form-check-label" for="featured">Featured Product</label>
+            <label class="form-check-label font-semibold text-slate-700" for="featured">Featured Product</label>
         </div>
     </div>
-    <div class="col-md-4 mb-3">
-        <label class="form-label">GST Amount (&#8377;)</label>
-        <input type="text" id="gstAmount" class="form-control" value="0.00" readonly>
-    </div>
-    <div class="col-md-4 mb-3">
-        <label class="form-label">Price After GST (&#8377;)</label>
-        <input type="text" id="priceAfterGst" class="form-control" value="0.00" readonly>
+    <div class="col-md-6 mb-3">
+        <label class="form-label">GST Tax Amount (&#8377;)</label>
+        <input type="text" id="gstAmount" class="form-control bg-slate-50" value="0.00" readonly>
     </div>
     <div class="col-md-6 mb-3">
-        <label class="form-label">Main Product Image</label>
+        <label class="form-label">Estimated Price After GST (&#8377;)</label>
+        <input type="text" id="priceAfterGst" class="form-control bg-slate-50 font-bold text-slate-800" value="0.00" readonly>
+    </div>
+
+    <!-- 3. Product Attributes & Variations Matrix -->
+    <div class="col-12 mt-4 mb-2">
+        <div class="card border border-indigo-200 bg-indigo-50/30 rounded-xl overflow-hidden shadow-2xs">
+            <div class="card-header bg-white border-b border-indigo-100 p-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-900 m-0 flex items-center gap-2">
+                            <i class="fas fa-layer-group text-indigo-600"></i> Product Attributes & Price Variations
+                            <span id="variationCountBadge" class="badge bg-indigo-100 text-indigo-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">
+                                {{ isset($product) && $product->variations ? $product->variations->count() : 0 }} configured
+                            </span>
+                        </h4>
+                        <p class="text-xs text-slate-500 m-0 mt-1">
+                            Add attribute variations (e.g. Weight: <code>500g</code>, <code>1kg</code> or Pack Size: <code>Small</code>, <code>Large</code>) with separate prices and stock levels.
+                        </p>
+                    </div>
+                    <div class="d-flex items-center gap-2 flex-wrap">
+                        <select id="attrQuickSelect" class="form-select form-select-sm" style="max-width: 220px;">
+                            <option value="">-- Choose Attribute --</option>
+                            @foreach($attributes as $attr)
+                                <option value="{{ $attr->id }}" data-name="{{ $attr->name }}" data-values="{{ json_encode($attr->values->pluck('value')) }}">
+                                    {{ $attr->name }} ({{ $attr->values->pluck('value')->join(', ') }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <button type="button" id="btnAutoGenerate" class="btn btn-sm btn-outline-indigo inline-flex items-center gap-1.5" title="Generate variation rows for all option values of selected attribute">
+                            <i class="fas fa-bolt text-amber-500"></i> Auto-Generate
+                        </button>
+                        <button type="button" id="btnAddVariationRow" class="btn btn-sm btn-primary inline-flex items-center gap-1.5">
+                            <i class="fas fa-plus"></i> Add Row
+                        </button>
+                        <button type="button" id="btnClearAllVariations" class="btn btn-sm btn-outline-danger" title="Clear all variation rows">
+                            <i class="fas fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-xs" id="variationsTable">
+                        <thead class="bg-slate-100/80 text-slate-700 font-semibold border-b border-slate-200">
+                            <tr>
+                                <th style="min-width: 140px;">Attribute</th>
+                                <th style="min-width: 140px;">Option Value / Variant *</th>
+                                <th style="min-width: 150px;">Variant SKU *</th>
+                                <th style="min-width: 120px;">Regular Price (&#8377;) *</th>
+                                <th style="min-width: 120px;">Sale Price (&#8377;)</th>
+                                <th style="min-width: 110px;">Cost Price (&#8377;)</th>
+                                <th style="min-width: 100px;">Stock Qty *</th>
+                                <th style="min-width: 90px;">Weight (kg)</th>
+                                <th style="min-width: 100px;">Status</th>
+                                <th class="text-center" style="width: 50px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="variationsTableBody" class="divide-y divide-slate-100">
+                            @php
+                                $existingVariations = old('variations', isset($product) ? $product->variations : []);
+                            @endphp
+
+                            @forelse($existingVariations as $idx => $v)
+                                @php
+                                    $varId = is_array($v) ? ($v['id'] ?? null) : $v->id;
+                                    $varAttrId = is_array($v) ? ($v['attr_id'] ?? null) : $v->attr_id;
+                                    $varAttrVal = is_array($v) ? ($v['attr_val'] ?? '') : $v->attr_val;
+                                    $varSku = is_array($v) ? ($v['sku'] ?? '') : $v->sku;
+                                    $varPrice = is_array($v) ? ($v['price'] ?? '') : $v->price;
+                                    $varSalePrice = is_array($v) ? ($v['sale_price'] ?? '') : $v->sale_price;
+                                    $varCostPrice = is_array($v) ? ($v['cost_price'] ?? '') : $v->cost_price;
+                                    $varStock = is_array($v) ? ($v['stock_qty'] ?? 0) : $v->stock_qty;
+                                    $varWeight = is_array($v) ? ($v['weight'] ?? '') : $v->weight;
+                                    $varStatus = is_array($v) ? ($v['status'] ?? 'active') : $v->status;
+                                @endphp
+                                <tr class="variation-row bg-white" data-index="{{ $idx }}">
+                                    <td>
+                                        @if($varId)
+                                            <input type="hidden" name="variations[{{ $idx }}][id]" value="{{ $varId }}">
+                                        @endif
+                                        <select name="variations[{{ $idx }}][attr_id]" class="form-select form-select-sm var-attr-id">
+                                            <option value="">Custom / Direct</option>
+                                            @foreach($attributes as $attr)
+                                                <option value="{{ $attr->id }}" @selected($varAttrId == $attr->id)>{{ $attr->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="variations[{{ $idx }}][attr_val]" class="form-control form-control-sm var-attr-val" value="{{ $varAttrVal }}" placeholder="e.g. 500g, 1kg, Large" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="variations[{{ $idx }}][sku]" class="form-control form-control-sm font-mono var-sku" value="{{ $varSku }}" placeholder="e.g. SKU-500G" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="variations[{{ $idx }}][price]" class="form-control form-control-sm font-bold text-slate-900 var-price" value="{{ $varPrice }}" placeholder="0.00" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="variations[{{ $idx }}][sale_price]" class="form-control form-control-sm text-emerald-600 var-sale-price" value="{{ $varSalePrice }}" placeholder="0.00">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="variations[{{ $idx }}][cost_price]" class="form-control form-control-sm var-cost-price" value="{{ $varCostPrice }}" placeholder="0.00">
+                                    </td>
+                                    <td>
+                                        <input type="number" min="0" name="variations[{{ $idx }}][stock_qty]" class="form-control form-control-sm var-stock" value="{{ $varStock }}" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="variations[{{ $idx }}][weight]" class="form-control form-control-sm var-weight" value="{{ $varWeight }}" placeholder="kg">
+                                    </td>
+                                    <td>
+                                        <select name="variations[{{ $idx }}][status]" class="form-select form-select-sm var-status">
+                                            <option value="active" @selected($varStatus === 'active')>Active</option>
+                                            <option value="inactive" @selected($varStatus === 'inactive')>Inactive</option>
+                                        </select>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row p-1 px-2" title="Remove Variation">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @empty
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="noVariationsNotice" class="p-6 text-center text-slate-400 {{ (isset($product) && $product->variations->count()) || old('variations') ? 'd-none' : '' }}">
+                    <i class="fas fa-boxes-stacked text-3xl text-slate-300 mb-2 block"></i>
+                    <p class="font-medium text-slate-600 text-xs m-0">No product variations configured.</p>
+                    <p class="text-[11px] text-slate-400 m-0 mt-1">If this is a simple single-price product, leave this empty. To add attribute-based pricing (e.g. 500g, 1kg), select an attribute and click <strong>"Auto-Generate"</strong> or <strong>"Add Row"</strong> above.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Media & Gallery Images -->
+    <div class="col-12 mt-4 mb-2">
+        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+            <i class="fas fa-image text-blue-500"></i> Media & Gallery Assets
+        </h5>
+        <hr class="my-2 border-slate-100">
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label font-semibold text-slate-700">Main Product Image</label>
         <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp">
         @if(isset($product) && $product->image)
-            <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="mt-2 rounded" style="max-height:120px;">
+            <div class="mt-2.5 p-2 bg-slate-50 border rounded-lg inline-block">
+                <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="rounded" style="max-height:110px; max-width:160px; object-fit:contain;">
+            </div>
         @endif
     </div>
     <div class="col-md-6 mb-3">
-        <label class="form-label">Gallery Images</label>
+        <label class="form-label font-semibold text-slate-700">Gallery Images</label>
         <input type="file" name="gallery[]" id="galleryImages" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp" multiple>
-        <small class="text-muted d-block mt-1">Select up to 10 images at a time.</small>
+        <small class="text-muted d-block mt-1">Select up to 10 additional images.</small>
         <div id="galleryPreview" class="d-flex flex-wrap gap-2 mt-3"></div>
         @if(isset($product) && $product->images->count())
             <div class="d-flex flex-wrap gap-2 mt-2">
                 @foreach($product->images as $img)
-                    <div class="position-relative border rounded p-1">
-                        <img src="{{ $img->image_url }}" alt="{{ $product->name }} gallery image" style="width:80px;height:80px;object-fit:cover;" class="rounded">
-                        <label class="d-block small text-danger mt-1"><input type="checkbox" name="remove_gallery[]" value="{{ $img->id }}"> Remove</label>
+                    <div class="position-relative border rounded p-1 bg-white shadow-2xs">
+                        <img src="{{ $img->image_url }}" alt="{{ $product->name }} gallery image" style="width:75px;height:75px;object-fit:cover;" class="rounded">
+                        <label class="d-block text-[11px] text-danger mt-1 cursor-pointer"><input type="checkbox" name="remove_gallery[]" value="{{ $img->id }}"> Remove</label>
                     </div>
                 @endforeach
             </div>
         @endif
     </div>
+
+    <!-- 5. Descriptions & SEO -->
+    <div class="col-12 mt-4 mb-2">
+        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+            <i class="fas fa-file-lines text-blue-500"></i> Descriptions & SEO
+        </h5>
+        <hr class="my-2 border-slate-100">
+    </div>
+
     <div class="col-md-12 mb-3">
         <label class="form-label">Short Description</label>
-        <textarea name="short_desc" class="form-control" rows="2">{{ old('short_desc', $product->short_desc ?? '') }}</textarea>
+        <textarea name="short_desc" class="form-control" rows="2" placeholder="Brief summary of the product displayed on product cards and quick view">{{ old('short_desc', $product->short_desc ?? '') }}</textarea>
     </div>
     <div class="col-md-12 mb-3">
         <label class="form-label">Full Description</label>
-        <textarea name="description" class="form-control" rows="5">{{ old('description', $product->description ?? '') }}</textarea>
+        <textarea name="description" class="form-control" rows="4" placeholder="Detailed product specifications, nutritional facts, usage guidelines, and features">{{ old('description', $product->description ?? '') }}</textarea>
     </div>
     <div class="col-md-4 mb-3">
         <label class="form-label">Meta Title</label>
-        <input type="text" name="seo_title" class="form-control" value="{{ old('seo_title', $product->seo_title ?? '') }}">
+        <input type="text" name="seo_title" class="form-control" value="{{ old('seo_title', $product->seo_title ?? '') }}" placeholder="SEO title for search engines">
     </div>
     <div class="col-md-4 mb-3">
         <label class="form-label">Meta Keywords</label>
-        <input type="text" name="seo_keywords" class="form-control" value="{{ old('seo_keywords', $product->seo_keywords ?? '') }}">
+        <input type="text" name="seo_keywords" class="form-control" value="{{ old('seo_keywords', $product->seo_keywords ?? '') }}" placeholder="e.g. basmati rice, pure desi ghee, organic">
     </div>
     <div class="col-md-12 mb-3">
         <label class="form-label">Meta Description</label>
-        <textarea name="seo_desc" class="form-control" rows="2">{{ old('seo_desc', $product->seo_desc ?? '') }}</textarea>
+        <textarea name="seo_desc" class="form-control" rows="2" placeholder="Search engine snippet description">{{ old('seo_desc', $product->seo_desc ?? '') }}</textarea>
     </div>
 </div>
+
 <script>
+// Configured Attributes Data for dynamic rows
+const configuredAttributesList = @json($attributes ?? []);
+
 document.getElementById('productName')?.addEventListener('input', function () {
     const slug = document.getElementById('productSlug');
-    if (!slug.dataset.edited) {
+    if (slug && !slug.dataset.edited) {
         slug.value = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 });
@@ -182,6 +360,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const priceAfterGstInput = document.getElementById('priceAfterGst');
     const galleryInput = document.getElementById('galleryImages');
     const galleryPreview = document.getElementById('galleryPreview');
+    const productBaseSkuInput = document.getElementById('productBaseSku');
+
+    const variationsTableBody = document.getElementById('variationsTableBody');
+    const noVariationsNotice = document.getElementById('noVariationsNotice');
+    const variationCountBadge = document.getElementById('variationCountBadge');
+    const attrQuickSelect = document.getElementById('attrQuickSelect');
+    const btnAutoGenerate = document.getElementById('btnAutoGenerate');
+    const btnAddVariationRow = document.getElementById('btnAddVariationRow');
+    const btnClearAllVariations = document.getElementById('btnClearAllVariations');
+
+    let currentVarIndex = document.querySelectorAll('.variation-row').length || 0;
 
     function formatAmount(value) {
         return (Number.isFinite(value) ? value : 0).toFixed(2);
@@ -205,24 +394,180 @@ document.addEventListener('DOMContentLoaded', function () {
         input?.addEventListener('change', updateGstCalculation);
     });
 
+    function updateVariationsUI() {
+        const rows = variationsTableBody.querySelectorAll('.variation-row');
+        const count = rows.length;
+        if (variationCountBadge) {
+            variationCountBadge.textContent = `${count} configured`;
+        }
+        if (noVariationsNotice) {
+            if (count > 0) {
+                noVariationsNotice.classList.add('d-none');
+            } else {
+                noVariationsNotice.classList.remove('d-none');
+            }
+        }
+    }
+
+    function buildAttributeSelectOptions(selectedAttrId) {
+        let options = '<option value="">Custom / Direct</option>';
+        configuredAttributesList.forEach(attr => {
+            const isSel = selectedAttrId && parseInt(selectedAttrId) === parseInt(attr.id) ? 'selected' : '';
+            options += `<option value="${attr.id}" ${isSel}>${attr.name}</option>`;
+        });
+        return options;
+    }
+
+    function createVariationRow(data = {}) {
+        const idx = currentVarIndex++;
+        const baseSku = (productBaseSkuInput?.value || 'SKU').trim().toUpperCase();
+        const attrVal = data.attr_val || '';
+        const slugVal = attrVal.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').toUpperCase();
+        const genSku = data.sku || (baseSku && slugVal ? `${baseSku}-${slugVal}` : (baseSku ? `${baseSku}-VAR${idx + 1}` : ''));
+        const regPrice = data.price !== undefined ? data.price : (priceInput?.value || '');
+        const salePrice = data.sale_price !== undefined ? data.sale_price : (salePriceInput?.value || '');
+        const costPrice = data.cost_price !== undefined ? data.cost_price : '';
+        const stockQty = data.stock_qty !== undefined ? data.stock_qty : 10;
+        const weight = data.weight !== undefined ? data.weight : '';
+        const status = data.status || 'active';
+
+        const tr = document.createElement('tr');
+        tr.className = 'variation-row bg-white';
+        tr.dataset.index = idx;
+        tr.innerHTML = `
+            <td>
+                ${data.id ? `<input type="hidden" name="variations[${idx}][id]" value="${data.id}">` : ''}
+                <select name="variations[${idx}][attr_id]" class="form-select form-select-sm var-attr-id">
+                    ${buildAttributeSelectOptions(data.attr_id)}
+                </select>
+            </td>
+            <td>
+                <input type="text" name="variations[${idx}][attr_val]" class="form-control form-control-sm var-attr-val" value="${attrVal}" placeholder="e.g. 500g, 1kg, Large" required>
+            </td>
+            <td>
+                <input type="text" name="variations[${idx}][sku]" class="form-control form-control-sm font-mono var-sku" value="${genSku}" placeholder="e.g. SKU-500G" required>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0" name="variations[${idx}][price]" class="form-control form-control-sm font-bold text-slate-900 var-price" value="${regPrice}" placeholder="0.00" required>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0" name="variations[${idx}][sale_price]" class="form-control form-control-sm text-emerald-600 var-sale-price" value="${salePrice}" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0" name="variations[${idx}][cost_price]" class="form-control form-control-sm var-cost-price" value="${costPrice}" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" min="0" name="variations[${idx}][stock_qty]" class="form-control form-control-sm var-stock" value="${stockQty}" required>
+            </td>
+            <td>
+                <input type="number" step="0.01" min="0" name="variations[${idx}][weight]" class="form-control form-control-sm var-weight" value="${weight}" placeholder="kg">
+            </td>
+            <td>
+                <select name="variations[${idx}][status]" class="form-select form-select-sm var-status">
+                    <option value="active" ${status === 'active' ? 'selected' : ''}>Active</option>
+                    <option value="inactive" ${status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                </select>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger btn-remove-row p-1 px-2" title="Remove Variation">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        `;
+
+        // Row events
+        const valInput = tr.querySelector('.var-attr-val');
+        const skuInput = tr.querySelector('.var-sku');
+        valInput?.addEventListener('input', function() {
+            if (!skuInput.dataset.edited) {
+                const bSku = (productBaseSkuInput?.value || 'SKU').trim().toUpperCase();
+                const sVal = this.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').toUpperCase();
+                if (sVal) {
+                    skuInput.value = `${bSku}-${sVal}`;
+                }
+            }
+        });
+
+        skuInput?.addEventListener('input', function() {
+            this.dataset.edited = '1';
+        });
+
+        tr.querySelector('.btn-remove-row')?.addEventListener('click', function () {
+            tr.remove();
+            updateVariationsUI();
+        });
+
+        variationsTableBody.appendChild(tr);
+        updateVariationsUI();
+    }
+
+    // Attach listener to existing rows remove button
+    document.querySelectorAll('.btn-remove-row').forEach(btn => {
+        btn.addEventListener('click', function () {
+            this.closest('.variation-row')?.remove();
+            updateVariationsUI();
+        });
+    });
+
+    btnAddVariationRow?.addEventListener('click', function () {
+        const selectedAttrOption = attrQuickSelect?.selectedOptions[0];
+        const attrId = selectedAttrOption && selectedAttrOption.value ? selectedAttrOption.value : '';
+        createVariationRow({ attr_id: attrId });
+    });
+
+    btnAutoGenerate?.addEventListener('click', function () {
+        const selectedAttrOption = attrQuickSelect?.selectedOptions[0];
+        if (!selectedAttrOption || !selectedAttrOption.value) {
+            alert('Please select an Attribute from the dropdown first (e.g. Weight or Pack Size).');
+            return;
+        }
+
+        const attrId = selectedAttrOption.value;
+        const attrValuesJson = selectedAttrOption.dataset.values;
+        let values = [];
+        try {
+            values = JSON.parse(attrValuesJson || '[]');
+        } catch (e) {
+            values = [];
+        }
+
+        if (!values.length) {
+            alert('No option values found for this attribute. You can add a manual row or add values at Attributes & Variations menu.');
+            createVariationRow({ attr_id: attrId });
+            return;
+        }
+
+        values.forEach(val => {
+            createVariationRow({
+                attr_id: attrId,
+                attr_val: val
+            });
+        });
+    });
+
+    btnClearAllVariations?.addEventListener('click', function () {
+        if (confirm('Are you sure you want to remove all variation rows?')) {
+            variationsTableBody.innerHTML = '';
+            updateVariationsUI();
+        }
+    });
+
     function renderGalleryPreview(files) {
         if (!galleryPreview) return;
-
         galleryPreview.innerHTML = '';
 
         Array.from(files).slice(0, 10).forEach((file) => {
             const card = document.createElement('div');
             card.className = 'border rounded p-2 bg-white';
-            card.style.width = '120px';
+            card.style.width = '110px';
 
             const img = document.createElement('img');
             img.alt = file.name;
             img.className = 'rounded mb-2';
             img.style.width = '100%';
-            img.style.height = '100px';
+            img.style.height = '90px';
             img.style.objectFit = 'cover';
             img.src = URL.createObjectURL(file);
-
             img.onload = () => URL.revokeObjectURL(img.src);
 
             const name = document.createElement('div');
@@ -244,10 +589,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (galleryPreview) galleryPreview.innerHTML = '';
             return;
         }
-
         renderGalleryPreview(files);
     });
 
     updateGstCalculation();
+    updateVariationsUI();
 });
 </script>
