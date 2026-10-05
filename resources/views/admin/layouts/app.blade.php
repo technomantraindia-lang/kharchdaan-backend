@@ -987,8 +987,6 @@
         }
     </script>
     
-    @include('admin.partials.test_mode')
-    
     @stack('scripts')
 </body>
 </html>
