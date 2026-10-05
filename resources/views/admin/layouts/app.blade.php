@@ -468,10 +468,13 @@
 </head>
 <body class="h-full antialiased text-slate-800 bg-slate-50 flex overflow-hidden">
 
+    <!-- Mobile Backdrop -->
+    <div id="mobileSidebarBackdrop" class="fixed inset-0 bg-stone-950/70 backdrop-blur-xs z-40 hidden lg:hidden transition-opacity duration-300"></div>
+
     <!-- ========================================================================= -->
-    <!-- DESKTOP SIDEBAR -->
+    <!-- SIDEBAR (Responsive Off-Canvas for Mobile & Fixed for Desktop) -->
     <!-- ========================================================================= -->
-    <aside class="w-64 bg-navy-900 border-r border-stone-800 flex-shrink-0 flex flex-col h-screen select-none z-30 transition-all duration-300">
+    <aside id="adminSidebar" class="w-64 bg-navy-900 border-r border-stone-800 flex-shrink-0 flex flex-col h-screen select-none fixed inset-y-0 left-0 z-50 -translate-x-full lg:translate-x-0 lg:static transition-transform duration-300 ease-in-out shadow-2xl lg:shadow-none">
         <!-- Brand Header -->
         <div class="h-16 px-5 flex items-center justify-between border-b border-stone-800/80 bg-navy-950/80">
             <a href="{{ admin_route('dashboard') }}" class="flex items-center gap-3 no-underline group">
@@ -485,6 +488,9 @@
                     </div>
                 </div>
             </a>
+            <button id="mobileSidebarClose" type="button" class="lg:hidden w-8 h-8 rounded-lg bg-stone-800 text-stone-300 hover:text-white flex items-center justify-center transition">
+                <i class="fas fa-times text-sm"></i>
+            </button>
         </div>
 
         <!-- Navigation Links -->
@@ -751,16 +757,20 @@
     <div class="flex-1 flex-col min-w-0 h-screen overflow-hidden flex">
         
         <!-- TOP APP BAR -->
-        <header class="h-16 bg-white/95 backdrop-blur-sm border-b border-slate-200/80 px-6 flex items-center justify-between z-20 flex-shrink-0">
-            <!-- Left: Breadcrumb / Path & Portal Indicator -->
-            <div class="flex items-center gap-4">
+        <header class="h-16 bg-white/95 backdrop-blur-sm border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between z-20 flex-shrink-0">
+            <!-- Left: Mobile Menu Toggle & Portal Indicator -->
+            <div class="flex items-center gap-3">
+                <button id="mobileSidebarToggle" type="button" class="lg:hidden w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 flex items-center justify-center transition shadow-xs">
+                    <i class="fas fa-bars text-sm"></i>
+                </button>
+
                 @if(\App\Helpers\AdminHelper::isSuperAdminPortal())
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
-                        <i class="fas fa-crown text-amber-600"></i> SUPER ADMIN MASTER
+                    <span class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
+                        <i class="fas fa-crown text-amber-600"></i> <span class="hidden sm:inline">SUPER ADMIN MASTER</span><span class="sm:hidden">SUPER ADMIN</span>
                     </span>
                 @else
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-900 border border-purple-300 shadow-2xs">
-                        <i class="fas fa-user-gear text-purple-600"></i> SUB-ADMIN STAFF
+                    <span class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-900 border border-purple-300 shadow-2xs">
+                        <i class="fas fa-user-gear text-purple-600"></i> <span class="hidden sm:inline">SUB-ADMIN STAFF</span><span class="sm:hidden">SUB-ADMIN</span>
                     </span>
                 @endif
 
@@ -977,14 +987,25 @@
             }
         });
 
-        // Real-time server clock
-        const clockEl = document.getElementById('serverClock');
-        if (clockEl) {
-            setInterval(() => {
-                const now = new Date();
-                clockEl.innerText = now.toLocaleTimeString() + ' | ' + now.toLocaleDateString();
-            }, 1000);
+        // Mobile sidebar toggle handler
+        const sidebar = document.getElementById('adminSidebar');
+        const sidebarToggle = document.getElementById('mobileSidebarToggle');
+        const sidebarClose = document.getElementById('mobileSidebarClose');
+        const sidebarBackdrop = document.getElementById('mobileSidebarBackdrop');
+
+        function openMobileSidebar() {
+            if (sidebar) sidebar.classList.remove('-translate-x-full');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('hidden');
         }
+
+        function closeMobileSidebar() {
+            if (sidebar) sidebar.classList.add('-translate-x-full');
+            if (sidebarBackdrop) sidebarBackdrop.classList.add('hidden');
+        }
+
+        if (sidebarToggle) sidebarToggle.addEventListener('click', openMobileSidebar);
+        if (sidebarClose) sidebarClose.addEventListener('click', closeMobileSidebar);
+        if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
     </script>
     
     @stack('scripts')
