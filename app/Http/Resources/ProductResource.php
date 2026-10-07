@@ -12,9 +12,7 @@ class ProductResource extends JsonResource
         $images = [];
 
         // Primary Image
-        if ($this->image) {
-            $images[] = $this->image;
-        } elseif ($this->image_url) {
+        if ($this->image_url) {
             $images[] = $this->image_url;
         }
 
@@ -62,7 +60,7 @@ class ProductResource extends JsonResource
             'display_price' => $price,
             'discount' => "{$discountPct}% OFF",
             'weight' => $this->weight ? ($this->weight . ($this->unit ? ' ' . $this->unit : '')) : ($this->unit ?: '1 Unit'),
-            'image' => $this->image ?: $this->image_url,
+            'image' => $this->image_url,
             'image_url' => $this->image_url,
             'images' => array_values(array_unique($images)),
             'cashbackPercent' => 100,

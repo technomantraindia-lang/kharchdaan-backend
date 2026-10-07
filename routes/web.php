@@ -76,15 +76,31 @@ Route::get('/media/{path}', function (string $path) {
         abort(404);
     }
 
-    $absolutePath = storage_path('app/public/' . $relativePath);
-    $resolvedPath = realpath($absolutePath);
-    $storageRoot = realpath(storage_path('app/public'));
-
-    if (! $resolvedPath || ! $storageRoot || ! str_starts_with($resolvedPath, $storageRoot) || ! is_file($resolvedPath)) {
-        abort(404);
+    // 1. Check storage/app/public/
+    $storagePath = storage_path('app/public/' . $relativePath);
+    if (file_exists($storagePath) && is_file($storagePath)) {
+        return response()->file($storagePath);
     }
 
-    return response()->file($resolvedPath);
+    // 2. Check public/media/
+    $publicMediaPath = public_path('media/' . $relativePath);
+    if (file_exists($publicMediaPath) && is_file($publicMediaPath)) {
+        return response()->file($publicMediaPath);
+    }
+
+    // 3. Check public/images/
+    $publicImagesPath = public_path('images/' . $relativePath);
+    if (file_exists($publicImagesPath) && is_file($publicImagesPath)) {
+        return response()->file($publicImagesPath);
+    }
+
+    // 4. Check direct public/ path
+    $publicPath = public_path($relativePath);
+    if (file_exists($publicPath) && is_file($publicPath)) {
+        return response()->file($publicPath);
+    }
+
+    abort(404);
 })->where('path', '.*')->name('media.file');
 
 /*

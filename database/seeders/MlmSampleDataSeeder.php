@@ -77,6 +77,7 @@ class MlmSampleDataSeeder extends Seeder
                     'sale_price' => 1000.00,
                     'gst_percentage' => 5,
                     'stock_qty' => 500,
+                    'image' => 'images/tata-dal.jpg',
                     'status' => 'active',
                 ]),
                 Product::create([
@@ -87,6 +88,7 @@ class MlmSampleDataSeeder extends Seeder
                     'sale_price' => 1800.00,
                     'gst_percentage' => 5,
                     'stock_qty' => 500,
+                    'image' => 'images/health-wellness-ayurveda.jpg',
                     'status' => 'active',
                 ]),
             ]);

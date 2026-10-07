@@ -465,7 +465,8 @@
 
     <div class="col-md-6 mb-3">
         <label class="form-label font-semibold text-slate-700">Main Product Image</label>
-        <input type="file" name="image" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp">
+        <input type="file" name="image" class="form-control" accept="image/*">
+        <small class="text-muted d-block mt-1">Supports JPG, PNG, WEBP, GIF (up to 20MB).</small>
         @if(isset($product) && $product->image)
             <div class="mt-2.5 p-2 bg-slate-50 border rounded-lg inline-block">
                 <img src="{{ $product->image_url }}" alt="{{ $product->name }}" class="rounded" style="max-height:110px; max-width:160px; object-fit:contain;">
@@ -474,8 +475,8 @@
     </div>
     <div class="col-md-6 mb-3">
         <label class="form-label font-semibold text-slate-700">Gallery Images</label>
-        <input type="file" name="gallery[]" id="galleryImages" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp" multiple>
-        <small class="text-muted d-block mt-1">Select up to 10 additional images.</small>
+        <input type="file" name="gallery[]" id="galleryImages" class="form-control" accept="image/*" multiple>
+        <small class="text-muted d-block mt-1">Select up to 10 additional images (up to 20MB each).</small>
         <div id="galleryPreview" class="d-flex flex-wrap gap-2 mt-3"></div>
         @if(isset($product) && $product->images->count())
             <div class="d-flex flex-wrap gap-2 mt-2">

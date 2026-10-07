@@ -37,9 +37,18 @@ class StoreProductRequest extends FormRequest
             'seo_keywords' => 'nullable|string|max:255',
             'status' => 'required|in:active,inactive',
             'featured' => 'nullable|boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,jfif,bmp,avif|max:20480',
             'gallery' => 'nullable|array|max:10',
-            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'gallery.*' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,jfif,bmp,avif|max:20480',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'image.uploaded' => 'The product image failed to upload. Please ensure your image is under 20MB and is a valid image format.',
+            'image.max' => 'The product image must not be greater than 20MB.',
+            'image.mimes' => 'The product image must be a file of type: jpeg, png, jpg, webp, gif, jfif, bmp, avif.',
         ];
     }
 }
