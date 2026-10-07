@@ -36,6 +36,9 @@ return new class extends Migration
 
         if (Schema::hasIndex('mlm_income_ledgers', 'uk_mlm_income_ledger_line')) {
             Schema::table('mlm_income_ledgers', function (Blueprint $table): void {
+                if (! Schema::hasIndex('mlm_income_ledgers', 'idx_mlm_income_ledger_calc_run')) {
+                    $table->index('calculation_run_id', 'idx_mlm_income_ledger_calc_run');
+                }
                 $table->dropUnique('uk_mlm_income_ledger_line');
             });
         }

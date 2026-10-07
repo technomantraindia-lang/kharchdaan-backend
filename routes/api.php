@@ -40,6 +40,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::post('/register', [CustomerAuthApiController::class, 'register'])->middleware('throttle:login');
     Route::post('/login', [CustomerAuthApiController::class, 'login'])->middleware('throttle:login');
 
+    // Order Placement API
+    Route::post('/orders', [CustomerOrderApiController::class, 'store']);
+
     // Authenticated Customer APIs
     Route::middleware(\App\Http\Middleware\AuthenticateApiToken::class)->group(function () {
         Route::post('/logout', [CustomerAuthApiController::class, 'logout']);

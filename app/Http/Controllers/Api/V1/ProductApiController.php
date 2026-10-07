@@ -12,7 +12,7 @@ class ProductApiController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand', 'variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
+        $query = Product::with(['category', 'subCategory', 'brand', 'variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
             ->where('status', 'active');
 
         // 1. Search Query
@@ -155,13 +155,14 @@ class ProductApiController extends Controller
 
     public function show($slug)
     {
-        $product = Product::with(['category', 'brand', 'variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
+        $product = Product::with(['category', 'subCategory', 'brand', 'variations.attribute', 'variations.multiAttributeValues.attribute', 'variations.multiAttributeValues.attributeValue'])
             ->where('status', 'active')
             ->where(function ($q) use ($slug) {
                 if (is_numeric($slug)) {
                     $q->where('id', $slug);
                 } else {
-                    $q->where('slug', $slug);
+                    $q->where('slug', $slug)
+                      ->orWhere('sku', $slug);
                 }
             })
             ->first();

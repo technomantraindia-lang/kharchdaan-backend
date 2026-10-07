@@ -128,7 +128,7 @@ class MlmSampleDataSeeder extends Seeder
         $positions = ['left', 'middle', 'right'];
 
         // Clean existing members safely to avoid duplicate hash collisions on re-seed
-        DB::statement('PRAGMA foreign_keys = OFF;');
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         MlmPayoutLine::truncate();
         MlmPayoutCycle::truncate();
         MlmIncomeLedger::truncate();
@@ -149,7 +149,7 @@ class MlmSampleDataSeeder extends Seeder
         Order::truncate();
         Member::truncate();
         User::where('email', 'like', 'member%@example.com')->delete();
-        DB::statement('PRAGMA foreign_keys = ON;');
+        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
         $createdMembers = [];
         $totalMembers = 100;
