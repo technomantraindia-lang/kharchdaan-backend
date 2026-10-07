@@ -518,6 +518,28 @@ class FmcgProductsSeeder extends Seeder
                     ['size' => '100g Loose Leaf Tin', 'price' => 290, 'sale_price' => 230],
                 ]
             ],
+            [
+                'id_code' => 'prod-besan',
+                'name' => 'Besan',
+                'brand' => 'KharchDaan',
+                'category' => 'Daily Needs',
+                'sub_category' => 'Flour & Grains',
+                'sku' => 'KD-BESAN-20',
+                'weight' => 0.5,
+                'unit' => 'pcs',
+                'price' => 250.00,
+                'sale_price' => 200.00,
+                'gst_percentage' => 5,
+                'stock_qty' => 150,
+                'image' => '/images/besan.jpg',
+                'featured' => true,
+                'short_desc' => '100% pure premium unadulterated Chana Dal Besan for traditional cooking and sweets.',
+                'description' => 'Made from sorted, cleaned and stone-ground Grade-A Bengal gram pulses. Rich in natural plant protein and dietary fiber.',
+                'variants' => [
+                    ['size' => 'pcs', 'price' => 250, 'sale_price' => 200],
+                    ['size' => '1 Kg Pack', 'price' => 480, 'sale_price' => 380],
+                ]
+            ],
         ];
 
         foreach ($products as $pData) {
