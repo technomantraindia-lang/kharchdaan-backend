@@ -56,6 +56,18 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ admin_route('mlm.tree.move.form', $member) }}"><i class="fas fa-exchange-alt me-2 text-warning"></i> Move Placement</a></li>
                         @endif
+                        @if(auth()->user()->isSuperAdmin())
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form action="{{ admin_route('mlm.members.destroy', $member) }}" method="POST" onsubmit="return confirm('{{ $member->placement_parent_id === null ? "WARNING: This member is the Matrix Root Leader!\n\nDeleting will promote their primary placement child to become the new Root Leader and safely re-anchor all downlines.\n\nAre you sure you want to permanently delete this Root Leader?" : "Are you sure you want to permanently delete this member? All associated ledger lines and KYC records will be safely cleaned." }}')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-trash-alt me-2"></i> Delete Member (Super Admin)
+                                    </button>
+                                </form>
+                            </li>
+                        @endif
                     </ul>
                 </div>
             </div>

@@ -361,6 +361,43 @@ class MlmMemberController extends Controller
             ->with('success', 'Member updated successfully.');
     }
 
+    public function destroy(Request $request, Member $member): RedirectResponse|JsonResponse
+    {
+        /** @var User $admin */
+        $admin = $request->user();
+
+        // Strict Security: Only Super Admin can delete MLM members / root leaders
+        if (! $admin || ! $admin->isSuperAdmin()) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access Denied: Only Super Admin has authority to delete MLM members.',
+                ], 403);
+            }
+
+            abort(403, 'Access Denied: Only Super Admin has authority to delete MLM members.');
+        }
+
+        $deleteUser = $request->boolean('delete_user', false);
+
+        $result = $this->memberService->delete($member, $admin, $deleteUser);
+
+        $msg = "Member {$result['name']} ({$result['code']}) has been successfully deleted.";
+        if ($result['is_root']) {
+            $msg .= " Root Leader removed. Matrix structure safely re-anchored" . ($result['promoted_root'] ? " (New root: {$result['promoted_root']})." : ".");
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => $msg,
+                'data' => $result,
+            ]);
+        }
+
+        return redirect()->to(admin_route('mlm.members.index'))->with('success', $msg);
+    }
+
     public function toggleStatus(Request $request, Member $member): RedirectResponse
     {
         $requestedStatus = $request->input('status');

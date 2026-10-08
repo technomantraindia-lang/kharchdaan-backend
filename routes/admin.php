@@ -173,6 +173,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/{member}', [MlmMemberController::class, 'show'])->middleware('permission:mlm.view')->name('show');
         Route::get('/{member}/edit', [MlmMemberController::class, 'edit'])->middleware('permission:mlm.manage')->name('edit');
         Route::put('/{member}', [MlmMemberController::class, 'update'])->middleware('permission:mlm.manage')->name('update');
+        Route::delete('/{member}', [MlmMemberController::class, 'destroy'])->middleware('permission:mlm.manage')->name('destroy');
         Route::patch('/{member}/toggle-status', [MlmMemberController::class, 'toggleStatus'])->middleware('permission:mlm.manage')->name('toggleStatus');
         Route::get('/{member}/kyc', [MlmMemberController::class, 'kyc'])->middleware('permission:mlm.view')->name('kyc');
         Route::patch('/{member}/kyc', [MlmMemberController::class, 'reviewKyc'])->middleware('permission:mlm.manage')->name('kyc.update');

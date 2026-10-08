@@ -153,6 +153,187 @@ class MlmMemberService
         });
     }
 
+    public function delete(Member $member, User $admin, bool $deleteUser = false): array
+    {
+        return DB::transaction(function () use ($member, $admin, $deleteUser): array {
+            $memberId = $member->id;
+            $member->loadMissing(['user', 'sponsor.user', 'placementParent.user']);
+            $user = $member->user;
+            $customerCode = $member->customer_id ?? "ID#{$memberId}";
+            $memberName = $user?->name ?? 'Unknown Member';
+            $isRootLeader = ($member->placement_parent_id === null);
+
+            // 1. RE-ANCHOR DIRECT SPONSOR RELATIONSHIPS
+            // Any members directly sponsored by this member inherit this member's sponsor
+            $newSponsorId = $member->sponsor_member_id;
+            $newSponsor = $newSponsorId ? Member::with('user')->find($newSponsorId) : null;
+            $newSponsorName = $newSponsor?->user?->name ?? ($isRootLeader ? 'Direct Platform Root' : null);
+
+            DB::table('mlm_members')->where('sponsor_member_id', $memberId)->update([
+                'sponsor_member_id' => $newSponsorId,
+                'sponsor_name_snapshot' => $newSponsorName,
+                'sponsor_relationship_status' => $newSponsorId ? 'active' : null,
+                'sponsor_assigned_at' => now(),
+            ]);
+
+            // 2. RE-ANCHOR 1:3 PLACEMENT MATRIX CHILDREN
+            $directPlacementChildren = Member::where('placement_parent_id', $memberId)
+                ->orderBy('placement_position')
+                ->get();
+
+            $promotedRootCode = null;
+
+            if ($directPlacementChildren->isNotEmpty()) {
+                if ($isRootLeader) {
+                    // Deleted member was the ROOT LEADER!
+                    // Promote the first placement child to become the NEW Matrix Root:
+                    $newRoot = $directPlacementChildren->first();
+                    $newRoot->update([
+                        'placement_parent_id' => null,
+                        'placement_position' => null,
+                    ]);
+                    $promotedRootCode = $newRoot->customer_id ?? "ID#{$newRoot->id}";
+
+                    // Re-parent remaining placement children under free slots of the new root or as secondary roots:
+                    $remainingChildren = $directPlacementChildren->slice(1);
+                    $occupied = Member::where('placement_parent_id', $newRoot->id)
+                        ->pluck('placement_position')
+                        ->all();
+                    $availablePositions = array_values(array_diff(Member::POSITIONS, $occupied));
+
+                    foreach ($remainingChildren as $child) {
+                        if (! empty($availablePositions)) {
+                            $child->update([
+                                'placement_parent_id' => $newRoot->id,
+                                'placement_position' => array_shift($availablePositions),
+                            ]);
+                        } else {
+                            $child->update([
+                                'placement_parent_id' => null,
+                                'placement_position' => null,
+                            ]);
+                        }
+                    }
+                } else {
+                    // Regular member with a placement parent
+                    $oldParentId = $member->placement_parent_id;
+                    $oldPosition = $member->placement_position;
+
+                    // Promote first child to take the vacated slot under old parent
+                    $primaryChild = $directPlacementChildren->first();
+                    $primaryChild->update([
+                        'placement_parent_id' => $oldParentId,
+                        'placement_position' => $oldPosition,
+                    ]);
+
+                    // Place remaining children under primary child if free slots exist
+                    $remainingChildren = $directPlacementChildren->slice(1);
+                    $occupied = Member::where('placement_parent_id', $primaryChild->id)
+                        ->pluck('placement_position')
+                        ->all();
+                    $availablePositions = array_values(array_diff(Member::POSITIONS, $occupied));
+
+                    foreach ($remainingChildren as $child) {
+                        if (! empty($availablePositions)) {
+                            $child->update([
+                                'placement_parent_id' => $primaryChild->id,
+                                'placement_position' => array_shift($availablePositions),
+                            ]);
+                        } else {
+                            $child->update([
+                                'placement_parent_id' => null,
+                                'placement_position' => null,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // 3. CLEAN UP CHILD TABLES WITH RESTRICT-ON-DELETE CONSTRAINTS
+            // A. Placement movements
+            DB::table('mlm_placement_movements')->where('member_id', $memberId)->delete();
+            DB::table('mlm_placement_movements')->where('old_parent_id', $memberId)->update(['old_parent_id' => null]);
+            DB::table('mlm_placement_movements')->where('new_parent_id', $memberId)->update(['new_parent_id' => null]);
+
+            // B. KYC histories and files
+            if ($member->cancelled_cheque_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($member->cancelled_cheque_path)) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($member->cancelled_cheque_path);
+            }
+            if ($member->profile_photo_path && \Illuminate\Support\Facades\Storage::disk('local')->exists($member->profile_photo_path)) {
+                \Illuminate\Support\Facades\Storage::disk('local')->delete($member->profile_photo_path);
+            }
+            DB::table('mlm_kyc_histories')->where('member_id', $memberId)->delete();
+
+            // C. Calculation runs & Income ledgers
+            $calculationRunIds = DB::table('mlm_calculation_runs')
+                ->where('purchasing_member_id', $memberId)
+                ->pluck('id');
+            if ($calculationRunIds->isNotEmpty()) {
+                DB::table('mlm_income_ledgers')->whereIn('calculation_run_id', $calculationRunIds)->delete();
+                DB::table('mlm_calculation_runs')->whereIn('id', $calculationRunIds)->delete();
+            }
+            DB::table('mlm_income_ledgers')
+                ->where('member_id', $memberId)
+                ->orWhere('purchasing_member_id', $memberId)
+                ->delete();
+
+            // D. Payout lines & Cashback items
+            DB::table('mlm_payout_lines')->where('member_id', $memberId)->delete();
+            DB::table('cashback_payout_batch_items')->where('member_id', $memberId)->delete();
+            DB::table('cashback_eligibilities')->where('member_id', $memberId)->delete();
+            DB::table('cashback_adjustments')->where('member_id', $memberId)->delete();
+
+            // E. Activity logs
+            DB::table('activity_logs')
+                ->where('subject_type', Member::class)
+                ->where('subject_id', $memberId)
+                ->delete();
+
+            // 4. DETACH USER RECORD
+            if ($user) {
+                $user->update(['mlm_member_id' => null]);
+                if ($deleteUser) {
+                    $hasOrders = DB::table('orders')->where('user_id', $user->id)->exists();
+                    if (! $hasOrders) {
+                        try {
+                            $user->delete();
+                        } catch (\Throwable) {
+                            // Retain user if constrained by any other table
+                        }
+                    }
+                }
+            }
+
+            // 5. DELETE THE MEMBER RECORD
+            $member->delete();
+
+            // 6. RECORD AUDIT TRAIL
+            ActivityLogService::log(
+                'delete',
+                'mlm_members',
+                "Super Admin {$admin->name} deleted MLM member {$customerCode} ({$memberName})" . ($isRootLeader ? ' [ROOT LEADER REMOVED & MATRIX RE-ANCHORED]' : ''),
+                null,
+                [
+                    'member_id' => $memberId,
+                    'customer_code' => $customerCode,
+                    'name' => $memberName,
+                    'was_root' => $isRootLeader,
+                    'promoted_root' => $promotedRootCode,
+                    'deleted_by' => $admin->id,
+                ],
+                null
+            );
+
+            return [
+                'success' => true,
+                'is_root' => $isRootLeader,
+                'name' => $memberName,
+                'code' => $customerCode,
+                'promoted_root' => $promotedRootCode,
+            ];
+        });
+    }
+
     private function resolveCustomer(?int $userId): ?User
     {
         if (! $userId) {

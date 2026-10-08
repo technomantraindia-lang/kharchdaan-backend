@@ -202,6 +202,14 @@
                                             <i class="fas fa-id-card text-xs"></i>
                                         </a>
                                     @endif
+                                    @if(auth()->user()->isSuperAdmin())
+                                        <button type="button" 
+                                                onclick="confirmDeleteMember({{ $member->id }}, '{{ addslashes($member->user?->name ?? 'Member') }}', '{{ $member->customer_id ?? 'ID#'.$member->id }}', {{ $member->placement_parent_id === null ? 'true' : 'false' }}, '{{ admin_route('mlm.members.destroy', $member) }}', '{{ addslashes($member->user?->email ?? '') }}')"
+                                                class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-600 text-slate-400 flex items-center justify-center transition" 
+                                                title="{{ $member->placement_parent_id === null ? 'Delete Root Leader (Super Admin Only)' : 'Delete Member (Super Admin Only)' }}">
+                                            <i class="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -224,4 +232,92 @@
         @endif
     </div>
 </div>
+
+{{-- Delete Member Confirmation Modal (Super Admin Exclusive) --}}
+@if(auth()->user()->isSuperAdmin())
+<div id="deleteMemberModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+        <div class="p-6">
+            <div class="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xl mb-4">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            
+            <h3 class="text-base font-bold text-slate-900 tracking-tight" id="deleteModalTitle">Delete MLM Member</h3>
+            
+            <div id="rootWarningBanner" class="hidden mt-3 p-3.5 rounded-xl bg-amber-50 border border-amber-200/90 text-xs text-amber-950">
+                <div class="font-bold flex items-center gap-1.5 text-amber-900">
+                    <i class="fas fa-crown text-amber-600"></i> Root Leader Deletion
+                </div>
+                <p class="mt-1 leading-relaxed text-amber-800">
+                    This member is the <strong>Matrix Root Leader</strong>. Deleting them will safely re-anchor the network: their primary placement child will be promoted to the new Root Leader and all downline sponsor paths will be preserved.
+                </p>
+            </div>
+
+            <p class="text-xs text-slate-600 mt-3 leading-relaxed" id="deleteModalMessage">
+                Are you sure you want to delete this member? All associated ledger lines, KYC records, and placement movements will be safely removed.
+            </p>
+
+            <form id="deleteMemberForm" method="POST" action="" class="mt-4 space-y-3">
+                @csrf
+                @method('DELETE')
+
+                <label class="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer text-xs text-slate-700 hover:bg-slate-100/70 transition">
+                    <input type="checkbox" name="delete_user" value="1" class="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                    <div>
+                        <div class="font-semibold text-slate-900">Also delete User account</div>
+                        <div class="text-[11px] text-slate-500" id="deleteUserSubtitle">Permanently delete login credentials if no store orders exist.</div>
+                    </div>
+                </label>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2">
+                    <button type="button" onclick="closeDeleteModal()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition flex items-center gap-1.5">
+                        <i class="fas fa-trash-alt text-xs"></i> Confirm & Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function confirmDeleteMember(memberId, name, code, isRoot, actionUrl, email) {
+        const modal = document.getElementById('deleteMemberModal');
+        const form = document.getElementById('deleteMemberForm');
+        const title = document.getElementById('deleteModalTitle');
+        const msg = document.getElementById('deleteModalMessage');
+        const rootBanner = document.getElementById('rootWarningBanner');
+        const userSubtitle = document.getElementById('deleteUserSubtitle');
+
+        form.action = actionUrl;
+
+        if (isRoot) {
+            title.innerHTML = `Delete Root Leader: <span class="text-rose-600 font-bold">${name}</span> (${code})`;
+            rootBanner.classList.remove('hidden');
+        } else {
+            title.innerHTML = `Delete Member: <span class="text-rose-600 font-bold">${name}</span> (${code})`;
+            rootBanner.classList.add('hidden');
+        }
+
+        msg.textContent = `Are you sure you want to permanently delete ${name} (${code})? This action cannot be reversed.`;
+        if (email) {
+            userSubtitle.textContent = `Permanently delete ${email} login if no ecommerce orders exist.`;
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteMemberModal').classList.add('hidden');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDeleteModal();
+        }
+    });
+</script>
+@endif
 @endsection
