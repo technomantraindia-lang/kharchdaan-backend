@@ -113,8 +113,10 @@ class CustomerOrderApiController extends Controller
             }
 
             $discount = (float) ($request->input('discount', 0));
-            $shippingCharge = (float) ($request->input('shipping_charge', $subtotal >= 499 ? 0 : 49));
-            $total = max(0, $subtotal - $discount + $shippingCharge);
+            $platformFee = (float) ($request->input('platform_fee', count($items) > 0 ? 5 : 0));
+            $shippingCharge = (float) ($request->input('shipping_charge', 0));
+            $effectiveShipCharge = $shippingCharge + $platformFee;
+            $total = max(0, $subtotal - $discount + $effectiveShipCharge);
 
             $rawShipAddr = $request->input('shipping_address', 'Doorstep Delivery');
             $shipAddrStr = is_array($rawShipAddr) ? json_encode($rawShipAddr) : (string) $rawShipAddr;
@@ -127,7 +129,7 @@ class CustomerOrderApiController extends Controller
                 'user_id' => $user ? $user->id : null,
                 'subtotal' => $subtotal,
                 'discount' => $discount,
-                'ship_charge' => $shippingCharge,
+                'ship_charge' => $effectiveShipCharge,
                 'total' => $total,
                 'status' => 'pending',
                 'pay_status' => $request->input('payment_method') === 'cod' ? 'pending' : 'paid',
