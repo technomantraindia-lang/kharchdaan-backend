@@ -11,7 +11,7 @@
             <div>
                 <div class="flex items-center gap-2 mb-2">
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200 shadow-xs">
-                        <i class="fas fa-layer-group text-[10px] text-orange-600"></i> BachatGanga Direct Selling Engine
+                        <i class="fas fa-layer-group text-[10px] text-orange-600"></i> KharchDaan Direct Selling Engine
                     </span>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> v2.0 Active
@@ -19,25 +19,108 @@
                 </div>
                 <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">Direct Selling & Up to 100% Cashback Platform</h1>
                 <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                    <span class="font-bold text-orange-600">"तेरा तुझको अर्पण"</span> &mdash; 1:3 physical placement matrix, 20-level PV distribution engine, weekly settlements, and company profit cashback.
+                    <span class="font-bold text-orange-600">"खरीदारी भी, कमाई भी"</span> &mdash; 1:3 placement matrix, 20-level grocery PV commissions, wallet settlements & cashback pool.
                 </p>
             </div>
             <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 flex-shrink-0">
-                <a href="{{ admin_route('mlm.sponsor-network') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
-                    <i class="fas fa-user-friends text-orange-500 text-xs"></i>
-                    <span>Sponsor Network</span>
-                </a>
                 <a href="{{ admin_route('mlm.tree.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-xl shadow-xs transition hover:shadow group">
                     <i class="fas fa-sitemap text-xs"></i>
-                    <span>Placement Tree</span>
+                    <span>1:3 Placement Tree</span>
                 </a>
-                <a href="{{ admin_route('mlm.calculations.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
-                    <i class="fas fa-calculator text-emerald-500 text-xs"></i>
-                    <span>Calculations</span>
+                <a href="{{ admin_route('mlm.members.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
+                    <i class="fas fa-users text-orange-500 text-xs"></i>
+                    <span>Members Directory</span>
                 </a>
                 <a href="{{ admin_route('mlm.payouts.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-amber-600 hover:border-amber-300 shadow-xs">
                     <i class="fas fa-wallet text-amber-500 text-xs"></i>
                     <span>Weekly Payouts</span>
+                </a>
+                <a href="{{ admin_route('mlm.calculations.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
+                    <i class="fas fa-calculator text-emerald-500 text-xs"></i>
+                    <span>PV Calculations</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Quick Guide: How KharchDaan MLM Operates -->
+    <div class="bg-gradient-to-r from-orange-50/70 via-amber-50/50 to-white rounded-2xl border border-orange-200/80 p-5 shadow-xs">
+        <div class="flex items-center justify-between pb-3 border-b border-orange-200/60 mb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-orange-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-extrabold text-slate-900">How the System Works in 4 Simple Steps</h2>
+                    <p class="text-[11px] text-slate-500">Quick reference for managing members, 1:3 team trees, PV commissions, and weekly bank settlements.</p>
+                </div>
+            </div>
+            <span class="text-[10px] font-bold text-orange-700 uppercase tracking-wider bg-orange-100 px-2.5 py-1 rounded-full border border-orange-200">
+                Admin Flow Guide
+            </span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <!-- Step 1 -->
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
+                <div>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <span class="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] flex items-center justify-center font-black">1</span>
+                        <span class="font-bold text-slate-800">Member KYC & ID</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Customers register 100% free. Review their submitted Aadhaar/PAN under <strong>Pending KYC</strong> to activate wallet payouts.
+                    </p>
+                </div>
+                <a href="{{ admin_route('mlm.members.index') }}" class="text-[11px] font-bold text-orange-600 hover:text-orange-700 mt-2.5 flex items-center gap-1">
+                    <span>Manage Members</span> &rarr;
+                </a>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
+                <div>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <span class="w-5 h-5 rounded-full bg-orange-600 text-white text-[10px] flex items-center justify-center font-black">2</span>
+                        <span class="font-bold text-slate-800">1:3 Tree & Spillover</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Each member has 3 frontline spots (Left, Mid, Right). Any 4th+ member automatically spills down into the team's open slots!
+                    </p>
+                </div>
+                <a href="{{ admin_route('mlm.tree.index') }}" class="text-[11px] font-bold text-orange-600 hover:text-orange-700 mt-2.5 flex items-center gap-1">
+                    <span>Open Placement Tree</span> &rarr;
+                </a>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
+                <div>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <span class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-black">3</span>
+                        <span class="font-bold text-slate-800">Grocery PV Commissions</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        When grocery orders deliver, PV points generate automatically across 20 levels (High 13.5 PV for L0-7, 0.75 PV for L8-19).
+                    </p>
+                </div>
+                <a href="{{ admin_route('mlm.levels') }}" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 mt-2.5 flex items-center gap-1">
+                    <span>View Matrix Rules</span> &rarr;
+                </a>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
+                <div>
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <span class="w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] flex items-center justify-center font-black">4</span>
+                        <span class="font-bold text-slate-800">Weekly Settlements</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 leading-relaxed">
+                        Review the current weekly cycle. Click <strong>Approve</strong> and <strong>Mark as Paid</strong> to disburse funds to members' UPI/Bank.
+                    </p>
+                </div>
+                <a href="{{ admin_route('mlm.payouts.index') }}" class="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 mt-2.5 flex items-center gap-1">
+                    <span>Weekly Settlements</span> &rarr;
                 </a>
             </div>
         </div>
@@ -48,7 +131,10 @@
         <!-- Total Members -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs hover:shadow-sm transition">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Members</span>
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Members</span>
+                    <div class="text-[10.5px] text-slate-400">Distributors & Shoppers</div>
+                </div>
                 <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold">
                     <i class="fas fa-users"></i>
                 </div>
@@ -66,7 +152,10 @@
         <!-- KYC Approved -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs hover:shadow-sm transition">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">KYC Verification</span>
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">KYC Verification</span>
+                    <div class="text-[10.5px] text-slate-400">ID & Bank Approval</div>
+                </div>
                 <div class="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-bold">
                     <i class="fas fa-id-card"></i>
                 </div>
@@ -84,28 +173,34 @@
         <!-- Total Network PV -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs hover:shadow-sm transition">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Network PV</span>
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Network PV</span>
+                    <div class="text-[10.5px] text-slate-400">Point Volume from Orders</div>
+                </div>
                 <div class="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-sm font-bold">
                     <i class="fas fa-chart-column"></i>
                 </div>
             </div>
             <div class="mt-3">
                 <div class="text-2xl font-extrabold font-mono text-indigo-600 tracking-tight">{{ number_format($stats['total_network_pv'], 2) }} <span class="text-xs font-normal text-slate-500 font-sans">PV</span></div>
-                <div class="text-xs text-slate-500 mt-1">Levels 0&ndash;19 cumulative point volume</div>
+                <div class="text-xs text-slate-500 mt-1">Levels 0&ndash;19 cumulative points</div>
             </div>
         </div>
 
         <!-- Direct Selling Income -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs hover:shadow-sm transition">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Direct Selling Income</span>
+                <div>
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Direct Selling Income</span>
+                    <div class="text-[10.5px] text-slate-400">Total Member Commissions</div>
+                </div>
                 <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm font-bold">
                     <i class="fas fa-coins"></i>
                 </div>
             </div>
             <div class="mt-3">
                 <div class="text-2xl font-extrabold text-emerald-600 tracking-tight">₹{{ number_format(round($stats['total_direct_selling_income'])) }}</div>
-                <div class="text-xs text-slate-500 mt-1">₹{{ number_format(round($stats['paid_payout'])) }} settled to distributors</div>
+                <div class="text-xs text-slate-500 mt-1">₹{{ number_format(round($stats['paid_payout'])) }} paid to distributors</div>
             </div>
         </div>
     </div>
@@ -116,7 +211,7 @@
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Payouts</span>
             <div class="text-xl font-bold text-amber-600 mt-2">₹{{ number_format(round($stats['pending_payout'])) }}</div>
-            <div class="text-xs text-slate-400 mt-0.5">Awaiting calculation / approval</div>
+            <div class="text-xs text-slate-400 mt-0.5">Awaiting admin one-click approval</div>
         </div>
 
         <!-- Settled Payouts -->

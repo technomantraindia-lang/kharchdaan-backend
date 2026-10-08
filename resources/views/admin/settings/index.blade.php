@@ -32,11 +32,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Website / Company Name</label>
-                        <input type="text" name="company_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['company_name'] ?? 'BachatGanga.Org' }}">
+                        <input type="text" name="company_name" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['company_name'] ?? 'KharchDaan.Com' }}">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Contact Email</label>
-                        <input type="email" name="company_email" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['company_email'] ?? 'support@bachatganga.org' }}">
+                        <input type="email" name="company_email" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['company_email'] ?? 'support@kharchdaan.com' }}">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Contact Phone</label>
@@ -52,7 +52,7 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Order Number Prefix</label>
-                        <input type="text" name="order_prefix" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition font-mono" value="{{ $settings['order_prefix'] ?? 'BG' }}">
+                        <input type="text" name="order_prefix" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition font-mono" value="{{ $settings['order_prefix'] ?? 'KD' }}">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Platform & Convenience Fee (₹)</label>
@@ -84,15 +84,15 @@
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Facebook Page URL</label>
-                        <input type="url" name="facebook_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['facebook_url'] ?? '' }}" placeholder="https://facebook.com/bachatganga">
+                        <input type="url" name="facebook_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['facebook_url'] ?? '' }}" placeholder="https://facebook.com/kharchdaan">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Instagram Profile URL</label>
-                        <input type="url" name="instagram_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['instagram_url'] ?? '' }}" placeholder="https://instagram.com/bachatganga">
+                        <input type="url" name="instagram_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['instagram_url'] ?? '' }}" placeholder="https://instagram.com/kharchdaan">
                     </div>
                     <div>
                         <label class="block font-semibold text-slate-700 mb-1.5">Twitter / X Handle URL</label>
-                        <input type="url" name="twitter_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['twitter_url'] ?? '' }}" placeholder="https://x.com/bachatganga">
+                        <input type="url" name="twitter_url" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition" value="{{ $settings['twitter_url'] ?? '' }}" placeholder="https://x.com/kharchdaan">
                     </div>
                 </div>
             </div>

@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-xl font-bold text-slate-900 tracking-tight">Platform Reports & Analytics</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Financial metrics, direct selling performance, and platform analytics for BachatGanga.Org</p>
+            <p class="text-xs text-slate-500 mt-0.5">Financial metrics, direct selling performance, and platform analytics for KharchDaan.Com</p>
         </div>
         <div>
             <a href="{{ admin_route('reports.export', ['module' => 'sales', 'date_preset' => $range['preset'], 'date_from' => $range['date_from'], 'date_to' => $range['date_to']]) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">

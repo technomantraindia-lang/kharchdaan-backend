@@ -527,7 +527,7 @@
                     </h2>
 
                     <p class="text-slate-600 text-sm sm:text-base leading-relaxed">
-                        At BachatGanga.Org, we believe platform value belongs to the community. Through our <strong>"तेरा तुझको अर्पण"</strong> philosophy, qualifying member transactions are placed into transparent company profit pool batches.
+                        At KharchDaan.Com, we believe platform value belongs to the community. Through our <strong>"खरीदारी भी, कमाई भी"</strong> philosophy, qualifying member transactions are placed into transparent company profit pool batches.
                     </p>
 
                     <!-- Feature List -->
@@ -651,7 +651,7 @@
         <div class="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 shadow-xs">
             <div class="text-center max-w-2xl mx-auto mb-10">
                 <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                    How to Get Started with BachatGanga.Org
+                    How to Get Started with KharchDaan.Com
                 </h2>
                 <p class="text-xs sm:text-sm text-slate-500 mt-1">
                     Start your direct selling career in 4 simple and transparent steps.

@@ -10,7 +10,7 @@
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
                 <i class="fas fa-user-plus text-blue-600"></i> Add Direct Selling Member
             </h1>
-            <p class="text-sm text-slate-500 mt-1">Register a new distributor into the BachatGanga.Org Direct Selling network.</p>
+            <p class="text-sm text-slate-500 mt-1">Register a new distributor into the KharchDaan.Com Direct Selling network.</p>
         </div>
         <div>
             <a href="{{ admin_route('mlm.members.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
