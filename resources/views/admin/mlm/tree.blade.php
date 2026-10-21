@@ -445,195 +445,94 @@
     <!-- Tree Notification Message -->
     <div id="treeMessage" class="hidden p-4 rounded-xl text-xs font-semibold"></div>
 
-    <!-- Tree Canvas & Dual-View Card -->
+    <!-- Tree Canvas & Toolbar Card -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <!-- Top Tab Bar: Simple 1:3 Matrix View vs Full Multi-Tier Org Tree -->
-        <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50/90 px-4 pt-3 pb-0">
+        <!-- Breadcrumb & Subtree Focus Bar (Shown when drilled down into a downline) -->
+        <div id="focusBreadcrumbsBar" class="hidden px-5 py-2.5 bg-blue-50 border-b border-blue-100 text-xs flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-blue-950 flex items-center gap-1"><i class="fas fa-crosshairs text-blue-600"></i> Focused Path:</span>
+                <div id="focusBreadcrumbs" class="inline-flex items-center gap-1 flex-wrap font-medium text-slate-700"></div>
+            </div>
+            <button type="button" id="btnResetFocus" class="px-2.5 py-1 text-xs font-semibold bg-white text-blue-700 hover:bg-blue-100 border border-blue-200 rounded shadow-xs transition">
+                <i class="fas fa-rotate-left text-[10px]"></i> Back to Top Root
+            </button>
+        </div>
+
+        <!-- Interactive Toolbar: Density Modes, Zoom, Depth & Legend -->
+        <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3">
+            <!-- Left: View Density Switcher (Cards / Compact / Circles) -->
             <div class="flex items-center gap-2">
-                <button type="button" id="tabSimpleMatrix" class="px-4 py-2.5 text-xs font-bold border-b-2 border-orange-600 text-orange-700 bg-white rounded-t-lg transition flex items-center gap-2 shadow-2xs">
-                    <i class="fas fa-cubes text-orange-600"></i>
-                    <span>Simple 1:3 Matrix View (1 Parent &rarr; 3 Cards Only)</span>
-                    <span class="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-orange-100 text-orange-800">Default &bull; Easy</span>
+                <span class="text-xs font-bold text-slate-600 uppercase tracking-wider hidden sm:inline">View Mode:</span>
+                <div class="inline-flex rounded-lg bg-slate-200/70 p-0.5" id="densityGroup">
+                    <button type="button" class="px-2.5 py-1 text-xs font-bold rounded-md bg-white text-blue-600 shadow-xs transition density-btn" data-density="detailed" title="Detailed Cards with complete info">
+                        <i class="fas fa-id-card text-[11px] mr-1"></i> Cards
+                    </button>
+                    <button type="button" class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition density-btn" data-density="compact" title="Compact Cards for wider views">
+                        <i class="fas fa-table-cells text-[11px] mr-1"></i> Compact
+                    </button>
+                    <button type="button" class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition density-btn" data-density="circle" title="Circle Nodes for dense tree overview">
+                        <i class="fas fa-circle-nodes text-[11px] mr-1"></i> Circles
+                    </button>
+                </div>
+
+                <span class="h-4 w-px bg-slate-300 mx-1"></span>
+
+                <!-- Quick Depth Expanders -->
+                <button type="button" id="btnExpandLevel1" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Show Level 1">
+                    L1
                 </button>
-                <button type="button" id="tabOrgTree" class="px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 rounded-t-lg transition flex items-center gap-2">
-                    <i class="fas fa-sitemap text-slate-400"></i>
-                    <span>Full Multi-Tier Tree (Pan & Zoom)</span>
+                <button type="button" id="btnExpandLevel2" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Show Level 1 & 2">
+                    L2
+                </button>
+                <button type="button" id="btnExpandLevel3" class="px-2.5 py-1 text-[11px] font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded border border-orange-300 transition" title="Show Real Distributors (Levels 1 to 3)">
+                    <i class="fas fa-users text-[10px] mr-0.5"></i> L3 (Distributors)
+                </button>
+                <button type="button" id="btnExpandAll" class="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition">
+                    <i class="fas fa-folder-open text-[10px]"></i> Expand All
+                </button>
+                <button type="button" id="btnCollapseAll" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition">
+                    <i class="fas fa-folder text-[10px]"></i> Collapse
                 </button>
             </div>
-            <div class="hidden md:flex items-center gap-2 text-[11px] text-slate-500 pb-2">
-                <span class="inline-flex items-center gap-1 font-bold text-slate-700">
-                    <i class="fas fa-layer-group text-orange-500"></i> Strict 1:3 Matrix:
-                </span>
-                <span class="text-slate-500">Every card has at most 3 direct child cards (Left, Middle, Right)</span>
+
+            <!-- Center: Legend -->
+            <div class="hidden xl:flex items-center gap-2 text-[11px]">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold"><span class="w-2 h-2 rounded-full bg-blue-600"></span> Root</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-semibold"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Left</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-semibold"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Middle</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"><span class="w-2 h-2 rounded-full bg-emerald-600"></span> Right</span>
+            </div>
+
+            <!-- Right: Zoom & Navigation Controls -->
+            <div class="flex items-center gap-1.5">
+                <button type="button" id="btnZoomOut" class="w-7 h-7 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs transition" title="Zoom Out">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <span id="zoomLevel" class="text-[11px] font-mono font-bold text-slate-600 px-1.5 min-w-[42px] text-center">100%</span>
+                <button type="button" id="btnZoomIn" class="w-7 h-7 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs transition" title="Zoom In">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button type="button" id="btnZoomFit" class="px-2 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition" title="Auto Fit Entire Tree on Screen">
+                    <i class="fas fa-compress text-[10px]"></i> Fit View
+                </button>
+                <button type="button" id="btnZoomReset" class="px-2 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Reset Zoom">
+                    100%
+                </button>
+                <button type="button" id="btnCenterTree" class="w-7 h-7 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs transition" title="Center Tree">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
             </div>
         </div>
 
-        <!-- ========================================================
-             VIEW 1: SIMPLE 1:3 MATRIX VIEW (1 CARD -> 3 CARDS ONLY)
-             ======================================================== -->
-        <div id="simpleMatrixView" class="block">
-            <!-- Navigation & Breadcrumb Trail -->
-            <div class="bg-gradient-to-r from-orange-50/80 via-amber-50/30 to-orange-50/20 border-b border-orange-100 px-5 py-3 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2 flex-wrap text-xs">
-                    <button type="button" id="btnMatrixUpOneLevel" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-orange-200 font-bold text-orange-700 hover:bg-orange-100 shadow-2xs transition disabled:opacity-40 disabled:cursor-not-allowed" disabled title="Go up to upline parent">
-                        <i class="fas fa-arrow-up text-xs"></i> Go Up 1 Level
-                    </button>
-                    <button type="button" id="btnMatrixResetTop" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white border border-slate-200 font-semibold text-slate-700 hover:bg-slate-100 shadow-2xs transition" title="Reset view to top root">
-                        <i class="fas fa-crown text-amber-500"></i> Top Root (M1)
-                    </button>
-                    <span class="h-4 w-px bg-orange-200 mx-1"></span>
-                    <span class="text-slate-500 font-semibold text-[11px]">Drill Path:</span>
-                    <div id="matrixBreadcrumbTrail" class="inline-flex items-center gap-1.5 flex-wrap font-medium text-xs">
-                        <!-- Populated by JS -->
+        <!-- Scrollable & Grabbable Viewport -->
+        <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}">
+            <div id="treePanContainer" class="tree-pan-container">
+                @if(!$initialRoot)
+                    <div class="text-center text-slate-400 py-16">
+                        <i class="fas fa-sitemap text-4xl mb-3 text-slate-300 block"></i>
+                        No root member is available for the placement tree.
                     </div>
-                </div>
-                <div class="text-[11px] font-bold text-orange-800 bg-white/90 border border-orange-200/90 px-3 py-1 rounded-full shadow-2xs flex items-center gap-1.5">
-                    <i class="fas fa-check-circle text-emerald-600"></i>
-                    <span>Clean 1:3 View: Under this card there are 3 cards only</span>
-                </div>
-            </div>
-
-            <!-- Matrix Canvas Board -->
-            <div class="p-6 sm:p-8 bg-slate-50/60 min-h-[520px] flex flex-col items-center">
-                <!-- 1. Top Single Parent Card Container -->
-                <div class="w-full max-w-md flex flex-col items-center">
-                    <div class="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2.5 flex items-center gap-1.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block ring-2 ring-orange-200"></span>
-                        <span>Active Parent Member (1 Card)</span>
-                    </div>
-                    <div id="matrixParentCardContainer" class="w-full">
-                        <!-- Rendered by JS -->
-                    </div>
-                </div>
-
-                <!-- 2. Visual Branch Connector Line -->
-                <div class="relative w-full max-w-4xl flex flex-col items-center my-4">
-                    <!-- Vertical line down from parent -->
-                    <div class="w-0.5 h-6 bg-slate-400"></div>
-                    <!-- Badge in center -->
-                    <div class="z-10 bg-white px-4 py-1 rounded-full border border-slate-300 shadow-xs text-[11px] font-black text-slate-800 flex items-center gap-2">
-                        <i class="fas fa-arrow-down text-orange-500 text-xs"></i>
-                        <span>EXACTLY 3 DIRECT DOWNLINES BELOW (1:3 MATRIX)</span>
-                        <i class="fas fa-arrow-down text-orange-500 text-xs"></i>
-                    </div>
-                    <!-- Horizontal branch bar with 3 drop lines -->
-                    <div class="w-full grid grid-cols-3 relative mt-2.5">
-                        <!-- Left Drop -->
-                        <div class="flex flex-col items-center relative">
-                            <div class="w-1/2 ml-auto h-0.5 bg-slate-400 rounded-tl"></div>
-                            <div class="w-0.5 h-6 bg-slate-400"></div>
-                        </div>
-                        <!-- Middle Drop -->
-                        <div class="flex flex-col items-center relative">
-                            <div class="w-full h-0.5 bg-slate-400"></div>
-                            <div class="w-0.5 h-6 bg-slate-400"></div>
-                        </div>
-                        <!-- Right Drop -->
-                        <div class="flex flex-col items-center relative">
-                            <div class="w-1/2 mr-auto h-0.5 bg-slate-400 rounded-tr"></div>
-                            <div class="w-0.5 h-6 bg-slate-400"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3. Exactly 3 Child Cards Grid -->
-                <div id="matrixChildrenGrid" class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Rendered by JS: Slot 1 (Left), Slot 2 (Middle), Slot 3 (Right) -->
-                </div>
-            </div>
-        </div>
-
-        <!-- ========================================================
-             VIEW 2: FULL MULTI-TIER ORG TREE (PAN & ZOOM) [SECONDARY]
-             ======================================================== -->
-        <div id="orgTreeView" class="hidden">
-            <!-- Breadcrumb & Subtree Focus Bar (Shown when drilled down into a downline) -->
-            <div id="focusBreadcrumbsBar" class="hidden px-5 py-2.5 bg-blue-50 border-b border-blue-100 text-xs flex flex-wrap items-center justify-between gap-2">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="font-bold text-blue-950 flex items-center gap-1"><i class="fas fa-crosshairs text-blue-600"></i> Focused Path:</span>
-                    <div id="focusBreadcrumbs" class="inline-flex items-center gap-1 flex-wrap font-medium text-slate-700"></div>
-                </div>
-                <button type="button" id="btnResetFocus" class="px-2.5 py-1 text-xs font-semibold bg-white text-blue-700 hover:bg-blue-100 border border-blue-200 rounded shadow-xs transition">
-                    <i class="fas fa-rotate-left text-[10px]"></i> Back to Top Root
-                </button>
-            </div>
-
-            <!-- Interactive Toolbar: Density Modes, Zoom, Depth & Legend -->
-            <div class="px-5 py-3 border-b border-slate-100 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3">
-                <!-- Left: View Density Switcher (Cards / Compact / Circles) -->
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-600 uppercase tracking-wider hidden sm:inline">View Mode:</span>
-                    <div class="inline-flex rounded-lg bg-slate-200/70 p-0.5" id="densityGroup">
-                        <button type="button" class="px-2.5 py-1 text-xs font-bold rounded-md bg-white text-blue-600 shadow-xs transition density-btn" data-density="detailed" title="Detailed Cards with complete info">
-                            <i class="fas fa-id-card text-[11px] mr-1"></i> Cards
-                        </button>
-                        <button type="button" class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition density-btn" data-density="compact" title="Compact Cards for wider views">
-                            <i class="fas fa-table-cells text-[11px] mr-1"></i> Compact
-                        </button>
-                        <button type="button" class="px-2.5 py-1 text-xs font-medium rounded-md text-slate-600 hover:text-slate-900 transition density-btn" data-density="circle" title="Circle Nodes for dense tree overview">
-                            <i class="fas fa-circle-nodes text-[11px] mr-1"></i> Circles
-                        </button>
-                    </div>
-
-                    <span class="h-4 w-px bg-slate-300 mx-1"></span>
-
-                    <!-- Quick Depth Expanders -->
-                    <button type="button" id="btnExpandLevel1" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Show Level 1">
-                        L1
-                    </button>
-                    <button type="button" id="btnExpandLevel2" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Show Level 1 & 2">
-                        L2
-                    </button>
-                    <button type="button" id="btnExpandLevel3" class="px-2.5 py-1 text-[11px] font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded border border-orange-300 transition" title="Show Real Distributors (Levels 1 to 3)">
-                        <i class="fas fa-users text-[10px] mr-0.5"></i> L3 (Distributors)
-                    </button>
-                    <button type="button" id="btnExpandAll" class="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition">
-                        <i class="fas fa-folder-open text-[10px]"></i> Expand All
-                    </button>
-                    <button type="button" id="btnCollapseAll" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition">
-                        <i class="fas fa-folder text-[10px]"></i> Collapse
-                    </button>
-                </div>
-
-                <!-- Center: Legend -->
-                <div class="hidden xl:flex items-center gap-2 text-[11px]">
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold"><span class="w-2 h-2 rounded-full bg-blue-600"></span> Root</span>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-semibold"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Left</span>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-semibold"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Middle</span>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold"><span class="w-2 h-2 rounded-full bg-emerald-600"></span> Right</span>
-                </div>
-
-                <!-- Right: Zoom & Navigation Controls -->
-                <div class="flex items-center gap-1.5">
-                    <button type="button" id="btnZoomOut" class="w-7 h-7 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs transition" title="Zoom Out">
-                        <i class="fas fa-minus"></i>
-                    </button>
-                    <span id="zoomLevel" class="text-[11px] font-mono font-bold text-slate-600 px-1.5 min-w-[42px] text-center">100%</span>
-                    <button type="button" id="btnZoomIn" class="w-7 h-7 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs transition" title="Zoom In">
-                        <i class="fas fa-plus"></i>
-                    </button>
-                    <button type="button" id="btnZoomFit" class="px-2 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition" title="Auto Fit Entire Tree on Screen">
-                        <i class="fas fa-compress text-[10px]"></i> Fit View
-                    </button>
-                    <button type="button" id="btnZoomReset" class="px-2 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Reset Zoom">
-                        100%
-                    </button>
-                    <button type="button" id="btnCenterTree" class="w-7 h-7 rounded bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center text-xs transition" title="Center Tree">
-                        <i class="fas fa-crosshairs"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Scrollable & Grabbable Viewport -->
-            <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}">
-                <div id="treePanContainer" class="tree-pan-container">
-                    @if(!$initialRoot)
-                        <div class="text-center text-slate-400 py-16">
-                            <i class="fas fa-sitemap text-4xl mb-3 text-slate-300 block"></i>
-                            No root member is available for the placement tree.
-                        </div>
-                    @endif
-                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -704,23 +603,8 @@
     const initialRoot = @json($initialRoot);
     const canManage = @json(auth()->user()->hasPermission('mlm.manage'));
     
-    // Tab and Simple Matrix DOM Elements
-    const tabSimpleMatrix = document.getElementById('tabSimpleMatrix');
-    const tabOrgTree = document.getElementById('tabOrgTree');
-    const simpleMatrixView = document.getElementById('simpleMatrixView');
-    const orgTreeView = document.getElementById('orgTreeView');
-    const matrixParentCardContainer = document.getElementById('matrixParentCardContainer');
-    const matrixChildrenGrid = document.getElementById('matrixChildrenGrid');
-    const matrixBreadcrumbTrail = document.getElementById('matrixBreadcrumbTrail');
-    const btnMatrixUpOneLevel = document.getElementById('btnMatrixUpOneLevel');
-    const btnMatrixResetTop = document.getElementById('btnMatrixResetTop');
-
     let activeTopRoot = initialRoot;
     let focusHistory = []; // Stack of { id, name, customer_id }
-    let matrixParentMember = null;
-    let matrixSlots = [];
-    let matrixHistory = []; // Stack of { member, slots }
-    let currentTab = 'simpleMatrix';
     let searchCache = [];
     let zoomScale = 1.0;
     let currentDrawerMember = null;
@@ -762,353 +646,6 @@
         message.className = 'hidden';
         message.textContent = '';
     };
-
-    // View Switcher (Simple 1:3 Matrix View vs Full Multi-Tier Org Tree)
-    const switchTab = (tab) => {
-        currentTab = tab;
-        if (tab === 'simpleMatrix') {
-            tabSimpleMatrix.className = 'px-4 py-2.5 text-xs font-bold border-b-2 border-orange-600 text-orange-700 bg-white rounded-t-lg transition flex items-center gap-2 shadow-2xs';
-            tabOrgTree.className = 'px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 rounded-t-lg transition flex items-center gap-2';
-            simpleMatrixView.classList.remove('hidden');
-            orgTreeView.classList.add('hidden');
-        } else {
-            tabOrgTree.className = 'px-4 py-2.5 text-xs font-bold border-b-2 border-blue-600 text-blue-700 bg-white rounded-t-lg transition flex items-center gap-2 shadow-2xs';
-            tabSimpleMatrix.className = 'px-4 py-2.5 text-xs font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 rounded-t-lg transition flex items-center gap-2';
-            orgTreeView.classList.remove('hidden');
-            simpleMatrixView.classList.add('hidden');
-            setTimeout(centerTree, 60);
-        }
-    };
-
-    tabSimpleMatrix?.addEventListener('click', () => switchTab('simpleMatrix'));
-    tabOrgTree?.addEventListener('click', () => switchTab('orgTree'));
-
-    // ========================================================
-    // SIMPLE 1:3 MATRIX VIEW: RENDERERS & EVENT HANDLERS
-    // ========================================================
-
-    // Render Parent Card for Simple 1:3 Matrix View
-    const renderMatrixParentCardHtml = (member) => {
-        if (!member) return '';
-        const isCompanyRoot = member.customer_id === 'C25070003';
-        const isCompanyNode = Boolean(member.is_company_node);
-        const initials = isCompanyRoot 
-            ? '👑' 
-            : (isCompanyNode ? '🏢' : ((member.name || 'M').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()));
-        const incomeFormatted = member.total_income_formatted || '₹0';
-        const dlCount = Number(member.downline_count ?? 0);
-
-        const companyBadge = member.company_label 
-            ? `<div class="mt-1 px-2.5 py-0.5 rounded-lg bg-amber-50 border border-amber-200/80 text-amber-800 text-[10px] font-bold inline-flex items-center gap-1.5">
-                 <i class="fas fa-crown text-[9px] text-amber-600"></i> <span>${escapeHtml(member.company_label)}</span>
-               </div>`
-            : '';
-
-        const phoneHtml = member.phone 
-            ? `<div class="flex items-center gap-1.5 text-xs text-slate-700 mt-1">
-                 <i class="fas fa-phone-alt text-[10px] text-slate-400"></i>
-                 <span class="font-mono font-bold">${escapeHtml(member.phone)}</span>
-               </div>`
-            : '';
-
-        const sponsorText = member.sponsor 
-            ? `${escapeHtml(member.sponsor.name)} (${escapeHtml(member.sponsor.customer_id)})`
-            : 'Company Master Root';
-
-        return `
-            <div class="bg-white rounded-2xl border-2 border-orange-500 shadow-xl p-5 relative transition">
-                <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white font-black text-base flex items-center justify-center shadow-md shadow-orange-500/25 ring-2 ring-orange-200 flex-shrink-0">
-                            ${initials}
-                        </div>
-                        <div>
-                            <div class="text-[10px] font-black uppercase tracking-wider text-orange-600 flex items-center gap-1">
-                                <i class="fas fa-crown"></i> Active Parent Card
-                            </div>
-                            <h2 class="text-base font-black text-slate-900 leading-tight tracking-tight">${escapeHtml(member.name)}</h2>
-                            <div class="font-mono text-xs font-bold text-blue-600">${escapeHtml(member.customer_id)}</div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end gap-1">
-                        ${statusBadge(member.status)}
-                        <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">Level ${escapeHtml(member.level_label)}</span>
-                    </div>
-                </div>
-
-                ${companyBadge ? `<div class="pt-2">${companyBadge}</div>` : ''}
-
-                <div class="grid grid-cols-2 gap-2 mt-3 text-xs">
-                    <div class="p-2.5 rounded-xl bg-orange-50/90 border border-orange-200">
-                        <div class="text-[10px] text-orange-800 font-extrabold uppercase tracking-wider">Total Downlines</div>
-                        <div class="text-base font-black text-orange-700 font-mono mt-0.5 flex items-center gap-1">
-                            <i class="fas fa-users text-xs"></i> ${dlCount} Members
-                        </div>
-                    </div>
-                    <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200">
-                        <div class="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider">Commission Income</div>
-                        <div class="text-base font-black text-emerald-700 font-mono mt-0.5">${escapeHtml(incomeFormatted)}</div>
-                    </div>
-                </div>
-
-                <div class="mt-3 pt-3 border-t border-slate-100 text-[11px] text-slate-600 space-y-1">
-                    ${phoneHtml}
-                    <div class="flex items-center gap-1.5 truncate">
-                        <i class="fas fa-user-tag text-[10px] text-slate-400"></i>
-                        <span class="text-slate-400">Direct Sponsor:</span>
-                        <span class="font-bold text-slate-800 truncate">${sponsorText}</span>
-                    </div>
-                    ${member.city ? `
-                    <div class="flex items-center gap-1.5 truncate text-slate-500">
-                        <i class="fas fa-map-marker-alt text-[10px] text-slate-400"></i>
-                        <span>${escapeHtml(member.city)}, ${escapeHtml(member.state || 'Gujarat')}</span>
-                    </div>` : ''}
-                </div>
-
-                <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <button type="button" class="btn-matrix-parent-drawer flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-2xs">
-                        <i class="fas fa-id-card text-slate-500"></i> Quick Profile Drawer
-                    </button>
-                    <a href="${escapeHtml(member.details_url || '#')}" class="py-2 px-3 bg-white hover:bg-orange-50 text-orange-600 font-bold border border-orange-200 rounded-xl text-xs transition flex items-center gap-1 shadow-2xs">
-                        <span>Full Page</span> <i class="fas fa-external-link-alt text-[10px]"></i>
-                    </a>
-                </div>
-            </div>
-        `;
-    };
-
-    // Render Exactly 3 Child Cards for Simple 1:3 Matrix View
-    const renderChildrenMatrixGridHtml = (slots) => {
-        const slotConfigs = [
-            { key: 'left', label: 'SLOT 1 OF 3: LEFT', border: 'border-sky-400', headerBg: 'bg-gradient-to-r from-sky-600 to-sky-500', badgeBg: 'bg-sky-50 text-sky-800 border-sky-200' },
-            { key: 'middle', label: 'SLOT 2 OF 3: MIDDLE', border: 'border-amber-400', headerBg: 'bg-gradient-to-r from-amber-600 to-orange-500', badgeBg: 'bg-amber-50 text-amber-800 border-amber-200' },
-            { key: 'right', label: 'SLOT 3 OF 3: RIGHT', border: 'border-emerald-400', headerBg: 'bg-gradient-to-r from-emerald-600 to-teal-600', badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
-        ];
-
-        return slotConfigs.map((cfg, index) => {
-            const slotData = (slots || []).find(s => (s.position || '').toLowerCase() === cfg.key) 
-                || (slots && slots[index] ? slots[index] : null);
-
-            const member = slotData ? slotData.member : null;
-
-            if (!member) {
-                // Empty Slot Card
-                return `
-                    <div class="flex flex-col bg-white rounded-2xl border-2 border-dashed border-slate-300 p-6 items-center justify-center text-center shadow-xs transition hover:border-slate-400 min-h-[360px]">
-                        <div class="w-full pb-3 border-b border-slate-100 mb-6">
-                            <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${cfg.badgeBg}">
-                                ${cfg.label}
-                            </span>
-                        </div>
-                        <div class="w-14 h-14 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xl mb-3 border border-slate-200">
-                            <i class="fas fa-plus"></i>
-                        </div>
-                        <div class="font-black text-slate-700 text-sm">Available Slot</div>
-                        <div class="text-xs text-slate-400 mt-1 max-w-[200px]">No member is placed in this direct slot yet.</div>
-                        <div class="mt-6 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-500">
-                            1 of 3 Matrix Placement
-                        </div>
-                    </div>
-                `;
-            }
-
-            // Occupied Slot Card
-            const initials = (member.name || 'M').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-            const incomeFormatted = member.total_income_formatted || '₹0';
-            const dlCount = Number(member.downline_count ?? 0);
-            const sponsorText = member.sponsor 
-                ? `${escapeHtml(member.sponsor.name)}`
-                : 'Master Root';
-
-            return `
-                <div class="flex flex-col bg-white rounded-2xl border-2 ${cfg.border} shadow-md hover:shadow-xl transition overflow-hidden min-h-[360px]">
-                    <!-- Slot Header Bar -->
-                    <div class="${cfg.headerBg} text-white px-4 py-2.5 flex items-center justify-between text-xs font-black shadow-xs">
-                        <span class="flex items-center gap-1.5 tracking-wide">
-                            <i class="fas fa-sitemap text-[11px]"></i> ${cfg.label}
-                        </span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/20 backdrop-blur-xs text-white">
-                            Level ${escapeHtml(member.level_label)}
-                        </span>
-                    </div>
-
-                    <!-- Card Content -->
-                    <div class="p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-start justify-between gap-2 mb-3">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-100 to-slate-200 text-slate-800 font-extrabold text-sm flex items-center justify-center border border-slate-300 flex-shrink-0">
-                                        ${initials}
-                                    </div>
-                                    <div class="min-w-0">
-                                        <h3 class="font-black text-slate-900 text-sm truncate leading-tight" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</h3>
-                                        <div class="font-mono text-xs font-bold text-blue-600 truncate">${escapeHtml(member.customer_id)}</div>
-                                    </div>
-                                </div>
-                                ${statusBadge(member.status)}
-                            </div>
-
-                            ${member.company_label ? `
-                            <div class="mb-2.5 px-2 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[10px] font-bold truncate">
-                                <i class="fas fa-crown text-[9px] text-amber-600"></i> ${escapeHtml(member.company_label)}
-                            </div>` : ''}
-
-                            <!-- Stats Box -->
-                            <div class="grid grid-cols-2 gap-2 my-3 text-center">
-                                <div class="p-2 rounded-xl bg-indigo-50/90 border border-indigo-100">
-                                    <div class="text-[9px] text-indigo-700 font-extrabold uppercase tracking-wider">Team Size</div>
-                                    <div class="text-sm font-black text-indigo-900 font-mono mt-0.5">${dlCount} DL</div>
-                                </div>
-                                <div class="p-2 rounded-xl bg-emerald-50/90 border border-emerald-100">
-                                    <div class="text-[9px] text-emerald-700 font-extrabold uppercase tracking-wider">Income</div>
-                                    <div class="text-sm font-black text-emerald-800 font-mono mt-0.5">${escapeHtml(incomeFormatted)}</div>
-                                </div>
-                            </div>
-
-                            <!-- Details Strip -->
-                            <div class="space-y-1 text-[11px] text-slate-600 pt-2 border-t border-slate-100">
-                                ${member.phone ? `
-                                <div class="flex items-center gap-1.5 truncate">
-                                    <i class="fas fa-phone-alt text-[9px] text-slate-400"></i>
-                                    <span class="font-mono font-medium text-slate-700">${escapeHtml(member.phone)}</span>
-                                </div>` : ''}
-                                <div class="flex items-center justify-between text-[11px] pt-0.5 truncate">
-                                    <span class="text-slate-400">Sponsor:</span>
-                                    <span class="font-bold text-slate-700 truncate max-w-[140px]">${sponsorText}</span>
-                                </div>
-                                ${member.city ? `
-                                <div class="flex items-center gap-1.5 text-slate-400 text-[10px] truncate">
-                                    <i class="fas fa-map-marker-alt text-[9px]"></i>
-                                    <span>${escapeHtml(member.city)}</span>
-                                </div>` : ''}
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="mt-4 pt-3 border-t border-slate-100 space-y-2">
-                            <button type="button" class="btn-matrix-step-down w-full py-2.5 px-3 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white font-extrabold rounded-xl text-xs shadow-md shadow-orange-500/20 active:scale-98 transition flex items-center justify-center gap-2" data-child-id="${member.id}">
-                                <span>View 3 Downlines</span>
-                                <i class="fas fa-arrow-right text-[11px]"></i>
-                            </button>
-                            <button type="button" class="btn-matrix-child-drawer w-full py-1.5 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 font-bold rounded-lg text-[11px] border border-slate-200 transition flex items-center justify-center gap-1" data-child-id="${member.id}">
-                                <i class="fas fa-eye text-[10px] text-slate-400"></i> Quick Info
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    };
-
-    // Render Breadcrumbs for Simple Matrix View
-    const renderMatrixBreadcrumbs = () => {
-        const upBtn = document.getElementById('btnMatrixUpOneLevel');
-        const trail = document.getElementById('matrixBreadcrumbTrail');
-        if (!trail) return;
-
-        if (upBtn) {
-            upBtn.disabled = (matrixHistory.length === 0);
-        }
-
-        if (!matrixHistory.length) {
-            trail.innerHTML = `<span class="font-bold text-orange-900 bg-orange-100/90 px-2.5 py-0.5 rounded-full border border-orange-200">${escapeHtml(matrixParentMember?.name || 'Root')} (${escapeHtml(matrixParentMember?.customer_id || '')})</span>`;
-            return;
-        }
-
-        trail.innerHTML = matrixHistory.map((item, index) => {
-            return `<button type="button" class="text-orange-700 hover:text-orange-900 font-semibold underline underline-offset-2 hover:bg-orange-100/50 px-1.5 py-0.5 rounded transition" data-matrix-crumb-idx="${index}">${escapeHtml(item.member.name)}</button> <i class="fas fa-chevron-right text-[9px] text-orange-300"></i>`;
-        }).join(' ') + ` <span class="font-bold text-orange-950 bg-orange-100 px-2 py-0.5 rounded-full border border-orange-300">${escapeHtml(matrixParentMember?.name || '')}</span>`;
-    };
-
-    // Main Simple Matrix View Entrypoint
-    const renderSimpleMatrixView = (payload) => {
-        if (!payload) return;
-        matrixParentMember = payload.member || payload;
-        matrixSlots = payload.slots || [];
-
-        if (matrixParentCardContainer) {
-            matrixParentCardContainer.innerHTML = renderMatrixParentCardHtml(matrixParentMember);
-        }
-
-        if (matrixChildrenGrid) {
-            matrixChildrenGrid.innerHTML = renderChildrenMatrixGridHtml(matrixSlots);
-        }
-
-        renderMatrixBreadcrumbs();
-    };
-
-    // Simple Matrix Click Events: Step Down (drill into child) and Child Drawer
-    matrixChildrenGrid?.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.btn-matrix-step-down');
-        if (btn) {
-            const childId = Number(btn.dataset.childId);
-            if (!childId) return;
-
-            // Push current parent state to history stack
-            matrixHistory.push({ member: matrixParentMember, slots: matrixSlots });
-
-            try {
-                const url = viewport.dataset.childrenUrl.replace('__MEMBER__', childId);
-                const response = await fetch(url, { headers: { Accept: 'application/json' } });
-                if (!response.ok) throw new Error('Failed to load downlines for this member.');
-                const payload = await response.json();
-
-                renderSimpleMatrixView({ member: payload.parent, slots: payload.slots });
-                mountTree({ member: payload.parent, slots: payload.slots }, true);
-
-                // Smooth scroll up to top of matrix view
-                simpleMatrixView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            } catch (err) {
-                showMessage(err.message || 'Error loading member.');
-            }
-            return;
-        }
-
-        const drawerBtn = e.target.closest('.btn-matrix-child-drawer');
-        if (drawerBtn) {
-            const childId = Number(drawerBtn.dataset.childId);
-            const slot = matrixSlots.find(s => s.member && s.member.id === childId);
-            if (slot && slot.member) {
-                openDrawer(slot.member);
-            }
-        }
-    });
-
-    // Parent Card Drawer Button
-    matrixParentCardContainer?.addEventListener('click', (e) => {
-        if (e.target.closest('.btn-matrix-parent-drawer')) {
-            if (matrixParentMember) openDrawer(matrixParentMember);
-        }
-    });
-
-    // Up 1 Level Button
-    btnMatrixUpOneLevel?.addEventListener('click', () => {
-        if (!matrixHistory.length) return;
-        const previous = matrixHistory.pop();
-        renderSimpleMatrixView(previous);
-        mountTree(previous, matrixHistory.length > 0);
-        simpleMatrixView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-
-    // Reset to Top Root Button
-    btnMatrixResetTop?.addEventListener('click', () => {
-        matrixHistory = [];
-        renderSimpleMatrixView(activeTopRoot);
-        mountTree(activeTopRoot, false);
-        simpleMatrixView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-
-    // Breadcrumbs Navigation Click
-    matrixBreadcrumbTrail?.addEventListener('click', (e) => {
-        const btn = e.target.closest('[data-matrix-crumb-idx]');
-        if (!btn) return;
-        const idx = Number(btn.dataset.matrixCrumbIdx);
-        const target = matrixHistory[idx];
-        matrixHistory = matrixHistory.slice(0, idx);
-        renderSimpleMatrixView(target);
-        mountTree(target, matrixHistory.length > 0);
-        simpleMatrixView?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
 
     // Render an interactive Org Chart Node Card
     const renderNodeCard = (member, position = 'root') => {
@@ -1582,11 +1119,9 @@
             
             if (!isSubtreeFocus) {
                 focusHistory = [];
-                matrixHistory = [];
                 activeTopRoot = { member: payload.parent, slots: payload.slots };
             }
             mountTree({ member: payload.parent, slots: payload.slots }, isSubtreeFocus);
-            renderSimpleMatrixView({ member: payload.parent, slots: payload.slots });
             
             if (rootSelect) {
                 rootSelect.value = String(memberId);
@@ -1874,7 +1409,6 @@
 
     // Initial Mount
     if (initialRoot) {
-        renderSimpleMatrixView(initialRoot);
         mountTree(initialRoot);
     }
 })();
