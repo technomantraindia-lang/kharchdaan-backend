@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aaradhya Gruh Udyog - MLM Backend Administration Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 14mm 14mm 16mm 14mm;
+            @bottom-right {
+                content: counter(page);
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: 9pt;
+                color: #64748b;
+            }
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background: #ffffff;
+            font-size: 10pt;
+            line-height: 1.55;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* Cover Page */
+        .cover {
+            height: 100vh;
+            min-height: 260mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 30mm 20mm 20mm 20mm;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f766e 100%);
+            color: #ffffff;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 16px;
+            border-radius: 30px;
+            font-size: 9pt;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #fcd34d;
+            width: fit-content;
+        }
+
+        .cover-title {
+            font-size: 28pt;
+            font-weight: 800;
+            line-height: 1.18;
+            margin: 20px 0 12px 0;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .cover-subtitle {
+            font-size: 13pt;
+            font-weight: 500;
+            color: #cbd5e1;
+            line-height: 1.45;
+            max-width: 540px;
+        }
+
+        .cover-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 30px;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+        }
+
+        .cover-stat-val {
+            font-size: 14pt;
+            font-weight: 800;
+            color: #f59e0b;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .cover-stat-lbl {
+            font-size: 8pt;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .cover-footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            padding-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8.5pt;
+            color: #94a3b8;
+        }
+
+        /* Header & Section Styles */
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 18px;
+        }
+
+        .doc-header-logo {
+            font-weight: 800;
+            font-size: 11pt;
+            color: #0f172a;
+            letter-spacing: -0.3px;
+        }
+
+        .doc-header-tag {
+            font-size: 8pt;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 3px 10px;
+            border-radius: 12px;
+        }
+
+        h1 {
+            font-size: 18pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 10px;
+            letter-spacing: -0.4px;
+        }
+
+        h2 {
+            font-size: 13pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 18px 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #ea580c;
+            padding-left: 10px;
+        }
+
+        h3 {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 14px 0 6px 0;
+        }
+
+        p {
+            margin-bottom: 8px;
+            color: #334155;
+        }
+
+        strong {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        /* Cards & Blocks */
+        .card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        .callout {
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 10px 0;
+            font-size: 9.5pt;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .callout-info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+        .callout-success {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+        }
+
+        .callout-warning {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        .callout-icon {
+            font-size: 14pt;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        /* Step by Step Numbered Flow */
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ea580c;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 10pt;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 10pt;
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            font-size: 9.5pt;
+            color: #475569;
+            line-height: 1.45;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0 14px 0;
+            font-size: 9pt;
+        }
+
+        th, td {
+            padding: 8px 10px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f1f5f9;
+            color: #0f172a;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 8pt;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        /* Code/Pill Snippets */
+        code, .code-pill {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 8.5pt;
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 7.5pt;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-left { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-middle { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .badge-right { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-root { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+        /* UI Representation */
+        .ui-mockup {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #f8fafc;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8.5pt;
+            margin: 10px 0;
+            line-height: 1.45;
+        }
+
+        .tree-diagram {
+            display: flex;
+            justify-content: center;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .tree-node-box {
+            background: #ffffff;
+            border: 1.5px solid #0284c7;
+            border-radius: 6px;
+            padding: 6px 12px;
+            text-align: center;
+            font-size: 8.5pt;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== COVER PAGE ==================== -->
+    <div class="cover page-break">
+        <div>
+            <div class="cover-badge">★ Official Administrator Manual</div>
+            <h1 class="cover-title">Aaradhya Gruh Udyog<br>MLM System Admin Guide</h1>
+            <p class="cover-subtitle">Complete step-by-step user manual for managing the 1:3 placement matrix, moving members, assigning roles, verifying KYC, and executing commission payouts.</p>
+            
+            <div class="cover-grid">
+                <div>
+                    <div class="cover-stat-val">1:3 Matrix</div>
+                    <div class="cover-stat-lbl">Strict ternary hierarchy</div>
+                </div>
+                <div>
+                    <div class="cover-stat-val">753 Active</div>
+                    <div class="cover-stat-lbl">Distributor accounts</div>
+                </div>
+                <div>
+                    <div class="cover-stat-val">20 Levels</div>
+                    <div class="cover-stat-lbl">Direct selling PV formula</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="cover-footer">
+            <div>
+                <strong>Client:</strong> Aaradhya Gruh Udyog & Kharchdaan.com<br>
+                <strong>System:</strong> Laravel MLM Enterprise Core v2.0
+            </div>
+            <div style="text-align: right;">
+                <strong>Top ID Root:</strong> C22020008 (Nimesh Jagirdar)<br>
+                <strong>Prepared:</strong> October 2026
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TABLE OF CONTENTS & QUICK START ==================== -->
+    <div>
+        <div class="doc-header">
+            <span class="doc-header-logo">Aaradhya Gruh Udyog — Backend Manual</span>
+            <span class="doc-header-tag">Section 1: Architecture</span>
+        </div>
+
+        <h1>1. System Architecture & Fundamental Rules</h1>
+        
+        <p>This manual enables your administrative team to manage all MLM operations directly from the web backend dashboard without technical programming knowledge.</p>
+
+        <div class="callout callout-info avoid-break">
+            <div class="callout-icon">💡</div>
+            <div>
+                <strong>Key Concept: Placement Tree vs. Sponsor Network</strong><br>
+                In this enterprise direct-selling system, there are two distinct networks:
+                <ul style="margin: 4px 0 0 16px;">
+                    <li><strong>Placement Tree (1:3 Matrix):</strong> Determines physical hierarchy on the visual chart. Every single member card can have <strong>strictly at most 3 direct children</strong> (<span class="badge badge-left">Left</span>, <span class="badge badge-middle">Middle</span>, <span class="badge badge-right">Right</span>).</li>
+                    <li><strong>Sponsor Network (Direct Referrals):</strong> Tracks who brought in whom. A distributor can personally refer <strong>unlimited</strong> people. If their 3 placement slots are full, new referrals spill over downline into open slots.</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Network Top Leader Structure</h2>
+        <p>The network is anchored under <strong>Top ID C22020008 (Nimesh Jagirdar)</strong>, with 3 primary Leader Pillars directly underneath:</p>
+
+        <table class="avoid-break">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Customer ID</th>
+                    <th>Distributor Leader</th>
+                    <th>Role Snapshot</th>
+                    <th>Team Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge badge-root">Top ID (Root)</span></td>
+                    <td><code>C22020008</code></td>
+                    <td><strong>Nimesh Jagirdar</strong></td>
+                    <td>Company Founder & Master Root Leader</td>
+                    <td>752 Downlines (100%)</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-left">Left Slot</span></td>
+                    <td><code>C22010003</code></td>
+                    <td><strong>Janakben Bihola</strong></td>
+                    <td>Left Pillar Leader</td>
+                    <td>291 Downlines</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-middle">Middle Slot</span></td>
+                    <td><code>C22020001</code></td>
+                    <td><strong>Niruben Zala</strong></td>
+                    <td>Middle Pillar Leader</td>
+                    <td>252 Downlines</td>
+                </tr>
+                <tr>
+                    <td><span class="badge badge-right">Right Slot</span></td>
+                    <td><code>C22030018</code></td>
+                    <td><strong>Gaurav Agarwal</strong></td>
+                    <td>Right Pillar Leader</td>
+                    <td>206 Downlines</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-success avoid-break">
+            <div class="callout-icon">🛡️</div>
+            <div>
+                <strong>Zero Dummy Codes Guarantee:</strong><br>
+                All company placeholder codes (<code>M1</code> through <code>M13</code>) have been permanently deactivated. Every card displayed in your tree represents a real human customer/distributor with their actual name, customer code, phone number, and verified KYC status.
+            </div>
+        </div>
+
+        <h2>Admin Navigation Quick Links</h2>
+        <table class="avoid-break">
+            <thead>
+                <tr>
+                    <th>Module</th>
+                    <th>URL Path</th>
+                    <th>Main Function</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Placement Tree (1:3)</strong></td>
+                    <td><code>/admin/mlm/tree</code></td>
+                    <td>Visual org chart, level expanders, downline counts, node focus</td>
+                </tr>
+                <tr>
+                    <td><strong>Move Member Tool</strong></td>
+                    <td><code>/admin/mlm/tree/move/{id}</code></td>
+                    <td>Reposition any distributor or entire team to new parent/slot</td>
+                </tr>
+                <tr>
+                    <td><strong>Distributor Members</strong></td>
+                    <td><code>/admin/mlm/members</code></td>
+                    <td>List all distributors, KYC review, profile edit, status toggle</td>
+                </tr>
+                <tr>
+                    <td><strong>Sponsor Network</strong></td>
+                    <td><code>/admin/mlm/sponsor-network</code></td>
+                    <td>View referral hierarchy (who referred whom for commissions)</td>
+                </tr>
+                <tr>
+                    <td><strong>Genealogy Grid</strong></td>
+                    <td><code>/admin/mlm/genealogy</code></td>
+                    <td>Table view of all downlines with export to CSV/Excel</td>
+                </tr>
+                <tr>
+                    <td><strong>Commission Rules</strong></td>
+                    <td><code>/admin/mlm/calculations</code></td>
+                    <td>Edit PV rates, high/low level brackets, commission previews</td>
+                </tr>
+                <tr>
+                    <td><strong>Payout Cycles</strong></td>
+                    <td><code>/admin/mlm/payouts</code></td>
+                    <td>Generate weekly/monthly payouts, upload bank proof, mark paid</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECTION 2: PLACEMENT TREE GUIDE ==================== -->
+    <div>
+        <div class="doc-header">
+            <span class="doc-header-logo">Aaradhya Gruh Udyog — Backend Manual</span>
+            <span class="doc-header-tag">Section 2: Visual Placement Tree</span>
+        </div>
+
+        <h1>2. Step-by-Step: Using the Visual Placement Tree</h1>
+        <p>The interactive tree canvas allows you to explore, inspect, and drill down into any distributor's 1:3 ternary network across all 20 levels.</p>
+
+        <div class="step-container">
+            <div class="step-item avoid-break">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Access the Placement Tree</div>
+                    <div class="step-desc">From your left admin sidebar, click <strong>MLM Management &gt; Placement Tree</strong> or open <code>/admin/mlm/tree</code>. The page automatically mounts with Top ID <strong>Nimesh Jagirdar</strong> and opens Level 1 and Level 2 automatically.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Use View Mode Toggles (Cards / Compact / Circles)</div>
+                    <div class="step-desc">In the upper-left toolbar, switch between display modes:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li><strong>Cards:</strong> Shows full details (Name, Customer ID, Phone, Level, Sponsor, Total Income).</li>
+                            <li><strong>Compact:</strong> Narrower cards allowing 3x more nodes on screen at once.</li>
+                            <li><strong>Circles:</strong> Circular nodes for high-density bird's-eye views.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Instantly Jump to Any Member Using Search</div>
+                    <div class="step-desc">Type any Customer ID (e.g., <code>C22030018</code>), Name (e.g., <code>Gaurav</code>), or Mobile Number into the <strong>Search &amp; Jump</strong> input box. Click <strong>Find</strong>, then click on the search result to automatically scroll and zoom directly to that member card.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Quick Leader Network Toolbar</div>
+                    <div class="step-desc">Above the tree canvas, click any orange leader pill (e.g. <strong>Janakben Bihola</strong>, <strong>Niruben Zala</strong>, <strong>Gaurav Agarwal</strong>, or <strong>Devang Raval</strong>) to instantly jump directly to their organization branch.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Expand / Collapse Branches Dynamically</div>
+                    <div class="step-desc">Click the circular <strong><code style="color:#ea580c;">+</code> / <code style="color:#ea580c;">-</code></strong> button at the bottom of any card to load or hide their 3 placement children. You can also click toolbar buttons:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li><strong>L1:</strong> Shows Level 1 leaders.</li>
+                            <li><strong>L2:</strong> Shows Levels 1 and 2.</li>
+                            <li><strong>L3:</strong> Shows all teams down to Level 3.</li>
+                            <li><strong>Expand All:</strong> Expands the entire visible canvas.</li>
+                            <li><strong>Collapse:</strong> Collapses back to the root card.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <div class="step-title">Inspect Complete Member Profile Drawer</div>
+                    <div class="step-desc">Click the blue <strong>Info</strong> button on any card. A side drawer slides out from the right displaying:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li>Total Commission Income calculated from all store orders.</li>
+                            <li>Direct Sponsor name and phone number.</li>
+                            <li>Placement Parent name and slot.</li>
+                            <li>KYC Status (Approved/Pending) and full shipping address.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">7</div>
+                <div class="step-content">
+                    <div class="step-title">Subtree Focus Drill-Down</div>
+                    <div class="step-desc">Click the orange <strong>Focus</strong> button on any card to isolate that distributor as the temporary root. A breadcrumb bar appears at the top (e.g., <code>Top Root &gt; Gaurav Agarwal &gt; Devang Raval</code>). Click <strong>Back to Top Root</strong> anytime to return to Nimesh Jagirdar.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="callout callout-warning avoid-break">
+            <div class="callout-icon">🔍</div>
+            <div>
+                <strong>Zoom &amp; Canvas Navigation Tips:</strong><br>
+                - Click and drag anywhere on the dotted canvas to pan smoothly in any direction.<br>
+                - Hold <kbd>Ctrl</kbd> and scroll your mouse wheel to zoom in or zoom out.<br>
+                - Click <strong>Fit View</strong> in the toolbar to automatically scale and center the entire tree onto your screen.
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECTION 3: MOVE MEMBER GUIDE ==================== -->
+    <div>
+        <div class="doc-header">
+            <span class="doc-header-logo">Aaradhya Gruh Udyog — Backend Manual</span>
+            <span class="doc-header-tag">Section 3: Tree Modifications & Moves</span>
+        </div>
+
+        <h1>3. Step-by-Step: Moving a Member to a New Position</h1>
+        <p>When the client or management wants to reorganize branches, change who sits under whom, or move a distributor to another leg, use the built-in <strong>Move Member</strong> tool.</p>
+
+        <div class="callout callout-info avoid-break">
+            <div class="callout-icon">ℹ️</div>
+            <div>
+                <strong>What happens when you move a member?</strong><br>
+                When a member is moved to a new parent and slot:
+                <ul style="margin: 4px 0 0 16px;">
+                    <li><strong>Entire Downline Travels Together:</strong> All children, grandchildren, and teams under the moved member remain intact and move with them automatically.</li>
+                    <li><strong>Sponsor Tree Unaffected:</strong> Direct referral commissions and sponsor relationships do NOT change unless you explicitly choose to change the sponsor.</li>
+                    <li><strong>Automatic Loop Prevention:</strong> The system strictly blocks circular movements (e.g. you cannot place a parent under their own downline child).</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Detailed Step-by-Step Move Procedure:</h2>
+
+        <div class="step-container">
+            <div class="step-item avoid-break">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Open the Move Tool</div>
+                    <div class="step-desc">Two easy ways to open the move form:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li><strong>From Tree View:</strong> Open the Info drawer for the member you wish to move, and click the <strong>Move Member</strong> action button.</li>
+                            <li><strong>From Member List:</strong> Go to <code>/admin/mlm/members</code>, find the member, click the <strong>Actions</strong> dropdown, and select <strong>Move Position</strong>.</li>
+                            <li><strong>Direct URL:</strong> Navigate to <code>/admin/mlm/tree/move/{MEMBER_ID}</code>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Review Current Position Snapshot</div>
+                    <div class="step-desc">The top card displays the member's current state: Customer ID, Name, Current Placement Parent, Current Position (Left, Middle, Right), and total downlines being moved.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Select the New Placement Parent</div>
+                    <div class="step-desc">In the <strong>New Placement Parent</strong> search box:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li>Type the Customer ID or Name of the distributor under whom you want to place this member.</li>
+                            <li>Select the distributor from the dropdown search results.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Select an Available Placement Slot</div>
+                    <div class="step-desc">The form will check the new parent's current children and show the 3 slots:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li><span class="badge badge-left">Left Slot</span></li>
+                            <li><span class="badge badge-middle">Middle Slot</span></li>
+                            <li><span class="badge badge-right">Right Slot</span></li>
+                        </ul>
+                        Choose an available (open) slot. If a slot is already taken, the system will prevent duplicate assignment.
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <div class="step-title">Click "Preview Movement"</div>
+                    <div class="step-desc">Always click <strong>Preview Movement</strong> before saving. The system performs automatic sanity checks:
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li>Verifies that the new slot is not occupied.</li>
+                            <li>Verifies there is no circular loop.</li>
+                            <li>Calculates new matrix levels and downline totals.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">6</div>
+                <div class="step-content">
+                    <div class="step-title">Confirm and Apply Movement</div>
+                    <div class="step-desc">Click <strong>Confirm &amp; Apply Move</strong>. The database updates atomically inside a transaction, the visual placement tree re-indexes, and you will be redirected back to the tree view with the member successfully in their new position.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECTION 4: MEMBERS & KYC ==================== -->
+    <div>
+        <div class="doc-header">
+            <span class="doc-header-logo">Aaradhya Gruh Udyog — Backend Manual</span>
+            <span class="doc-header-tag">Section 4: Member Profiles & KYC</span>
+        </div>
+
+        <h1>4. Step-by-Step: Member Management &amp; KYC Verification</h1>
+        <p>How to register new distributors, update personal information, review legal compliance documents, and manage status.</p>
+
+        <h2>Adding a New Distributor Manually</h2>
+        <div class="step-container">
+            <div class="step-item avoid-break">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Navigate to Add Member</div>
+                    <div class="step-desc">Click <strong>MLM Management &gt; Members</strong>, then click the blue <strong>+ Add New Member</strong> button (or visit <code>/admin/mlm/members/create</code>).</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Fill Personal &amp; Contact Details</div>
+                    <div class="step-desc">Enter Full Name, Mobile Number, Email Address, Password, and Full Residential Address (City, Pincode, State).</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Assign Sponsor &amp; Placement Position</div>
+                    <div class="step-desc">
+                        <ul style="margin: 4px 0 0 16px;">
+                            <li><strong>Direct Sponsor ID:</strong> Enter the Customer Code of the distributor who introduced them (e.g. <code>C22020008</code>).</li>
+                            <li><strong>Placement Parent ID:</strong> Enter the Customer Code of the node directly above them in the 1:3 tree.</li>
+                            <li><strong>Placement Position:</strong> Select <code>Left</code>, <code>Middle</code>, or <code>Right</code>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Save &amp; Generate Customer Code</div>
+                    <div class="step-desc">Click <strong>Save Member</strong>. The system automatically creates their user account, assigns the Customer/Distributor role, generates their unique customer code, and adds them to the tree.</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Reviewing and Approving KYC Documents</h2>
+        <p>Before commissions can be paid out, distributors must submit verified KYC data:</p>
+
+        <table class="avoid-break">
+            <thead>
+                <tr>
+                    <th>Requirement</th>
+                    <th>What to Check</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>PAN Card</strong></td>
+                    <td>10-digit alphanumeric PAN format (e.g. ABCDE1234F). Matches member legal name.</td>
+                    <td>Encrypted in database; verified for TDS compliance.</td>
+                </tr>
+                <tr>
+                    <td><strong>Aadhaar Number</strong></td>
+                    <td>12-digit UID reference or front/back identity photo.</td>
+                    <td>Stored securely with hash verification.</td>
+                </tr>
+                <tr>
+                    <td><strong>Bank Account</strong></td>
+                    <td>Account Number, Account Holder Name, IFSC Code, Bank Name and Branch.</td>
+                    <td>Must match name on PAN card for payout NEFT/IMPS.</td>
+                </tr>
+                <tr>
+                    <td><strong>Cancelled Cheque</strong></td>
+                    <td>Image proof of cheque or bank passbook showing printed name and IFSC.</td>
+                    <td>Click <strong>View Cheque Image</strong> in admin to verify.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="callout callout-success avoid-break">
+            <div class="callout-icon">✅</div>
+            <div>
+                <strong>How to Approve or Reject KYC:</strong><br>
+                1. Go to <code>/admin/mlm/members/{id}/kyc</code>.<br>
+                2. Review the submitted documents and bank details.<br>
+                3. Click <strong>Approve KYC</strong> to enable payouts, or click <strong>Reject KYC</strong> and enter a reason (e.g. "IFSC code mismatch") so the distributor can re-upload.
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECTION 5: COMMISSIONS & PAYOUTS ==================== -->
+    <div>
+        <div class="doc-header">
+            <span class="doc-header-logo">Aaradhya Gruh Udyog — Backend Manual</span>
+            <span class="doc-header-tag">Section 5: Commissions & Payouts</span>
+        </div>
+
+        <h1>5. Step-by-Step: MLM Calculation Rules &amp; Payout Cycles</h1>
+        <p>How commission formulas calculate income from customer purchases and how payouts are processed.</p>
+
+        <h2>Direct Selling Commission Calculation Formula</h2>
+        <div class="card avoid-break">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 6px;">Active Calculation Rule: Direct Selling PV Formula v1</div>
+            <p style="font-size: 9pt; color: #475569;">When an order is completed, commission income is distributed across 20 upline levels based on the product purchase amount:</p>
+            
+            <div class="ui-mockup">
+                Commission = (Order Total / PV Divisor) × Level PV Rate × Income Rate<br>
+                - PV Divisor: 3,000<br>
+                - High Level Rate (Levels 0 to 7): 13.5 PV<br>
+                - Low Level Rate (Levels 8 to 19): 0.75 PV<br>
+                - Income Rate: 0.20 (20%)
+            </div>
+        </div>
+
+        <h2>Modifying Calculation Rules (If Policy Changes)</h2>
+        <div class="step-container">
+            <div class="step-item avoid-break">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Open Calculation Rules Module</div>
+                    <div class="step-desc">Go to <strong>MLM Management &gt; Calculation Rules</strong> (<code>/admin/mlm/calculations</code>).</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Use the Commission Preview Simulator</div>
+                    <div class="step-desc">Before making changes, enter a test order amount (e.g. <code>₹1,000</code> or <code>₹3,000</code>) in the Simulator box. The table shows the exact rupee commission paid to each level from Level 0 to Level 19.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Create or Update Rule Version</div>
+                    <div class="step-desc">To change percentages, click <strong>Create New Calculation Rule</strong>. Enter the new rates, set the effective date, and mark it active. Old rules are preserved for historical audit trails.</div>
+                </div>
+            </div>
+        </div>
+
+        <h2>Running Payout Cycles &amp; Processing Bank Transfers</h2>
+        <div class="step-container">
+            <div class="step-item avoid-break">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Open Payout Cycles</div>
+                    <div class="step-desc">Navigate to <strong>MLM Management &gt; Payouts</strong> (<code>/admin/mlm/payouts</code>).</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Generate New Payout Cycle</div>
+                    <div class="step-desc">Click <strong>+ Generate Payout Cycle</strong>. Select the period (e.g. Weekly: 1st to 7th, or Monthly: 1st to 30th). The system scans all eligible orders, computes net earnings minus TDS and admin fees, and generates the line items for all KYC-approved distributors.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Review, Approve &amp; Export Bank NEFT Sheet</div>
+                    <div class="step-desc">Review total payable amount. Click <strong>Export Excel / CSV</strong> to get the bank transfer sheet with Account Numbers, Beneficiary Names, and IFSC codes for bulk NEFT upload in your corporate bank portal.</div>
+                </div>
+            </div>
+
+            <div class="step-item avoid-break">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Upload Proof &amp; Mark Paid</div>
+                    <div class="step-desc">After bank execution, upload the bank transaction UTR receipt / payment proof and click <strong>Mark as Paid</strong>. SMS/Email notifications are sent to distributors and wallet balances update automatically.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECTION 6: FAQ & TROUBLESHOOTING ==================== -->
+    <div>
+        <div class="doc-header">
+            <span class="doc-header-logo">Aaradhya Gruh Udyog — Backend Manual</span>
+            <span class="doc-header-tag">Section 6: FAQ & Troubleshooting</span>
+        </div>
+
+        <h1>6. Frequently Asked Questions &amp; Support</h1>
+
+        <div class="card avoid-break">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Q1: Can a distributor have 4 or more children directly under their card?</div>
+            <p style="font-size: 9.5pt; color: #475569;"><strong>Answer:</strong> No. In accordance with the company's 1:3 placement matrix policy and database integrity constraints, every card has strictly up to 3 slots: <code>Left</code>, <code>Middle</code>, and <code>Right</code>. Any additional referrals sponsored by that leader must be placed downline under their team members as spillover.</p>
+        </div>
+
+        <div class="card avoid-break">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Q2: What happens if a distributor wants to move their position?</div>
+            <p style="font-size: 9.5pt; color: #475569;"><strong>Answer:</strong> An admin can use the <strong>Move Member</strong> tool (<code>/admin/mlm/tree/move/{id}</code>). Select an open slot under the desired parent and click <strong>Confirm &amp; Apply Move</strong>. All downline members under that person will move with them automatically without breaking any team connections.</p>
+        </div>
+
+        <div class="card avoid-break">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Q3: How do I change an admin or distributor password?</div>
+            <p style="font-size: 9.5pt; color: #475569;"><strong>Answer:</strong> Go to <strong>MLM Management &gt; Members</strong>, find the distributor, click <strong>Edit</strong>, enter the new password in the password field, and click <strong>Update Member</strong>.</p>
+        </div>
+
+        <div class="card avoid-break">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Q4: Why was a member's payout placed on hold?</div>
+            <p style="font-size: 9.5pt; color: #475569;"><strong>Answer:</strong> Payouts are automatically held if the distributor's KYC status is <code>Pending</code> or <code>Rejected</code>, or if their bank IFSC code is invalid. Once you approve their KYC in <code>/admin/mlm/members/{id}/kyc</code>, their held balance automatically rolls over into the next payout cycle.</p>
+        </div>
+
+        <div class="card avoid-break">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Q5: How can we re-import the master Excel sheet if a new batch arrives?</div>
+            <p style="font-size: 9.5pt; color: #475569;"><strong>Answer:</strong> Place the new Excel file in <code>backend/excel sheetr/Aaradhya Gruh Udyog - Master Data.xlsx</code>, and run the automated command: <code>php artisan mlm:import-excel</code>. It parses customers, validates 1:3 placement slots, updates transactions, and syncs the database.</p>
+        </div>
+
+        <div class="callout callout-info avoid-break" style="margin-top: 20px;">
+            <div class="callout-icon">📞</div>
+            <div>
+                <strong>Technical Support &amp; Maintenance:</strong><br>
+                For technical assistance, server updates, or custom module additions, contact your development team at <strong>Kharchdaan Tech Support</strong>.<br>
+                All project code and migrations are securely version-controlled on GitHub.
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

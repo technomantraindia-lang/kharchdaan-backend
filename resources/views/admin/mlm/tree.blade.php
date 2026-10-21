@@ -435,13 +435,18 @@
             @php
                 $currentRootId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? null;
             @endphp
-            @if($currentRootId && Route::has('admin.mlm.tree.move.form'))
-                <a href="{{ admin_route('mlm.tree.move.form', $currentRootId) }}" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition flex-shrink-0">
-                    <i class="fas fa-arrows-up-down-left-right text-[10px]"></i> Move Member
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="{{ asset('docs/Aaradhya_MLM_Admin_User_Manual.pdf') }}" target="_blank" download class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-rose-800 bg-white border border-rose-200 rounded-md hover:bg-rose-50 transition flex-shrink-0 shadow-2xs">
+                    <i class="fas fa-file-pdf text-rose-600 text-[11px]"></i> Admin Manual (PDF)
                 </a>
-            @else
-                <span class="text-slate-400 text-xs font-medium">Move Member</span>
-            @endif
+                @if($currentRootId && Route::has('admin.mlm.tree.move.form'))
+                    <a href="{{ admin_route('mlm.tree.move.form', $currentRootId) }}" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition flex-shrink-0">
+                        <i class="fas fa-arrows-up-down-left-right text-[10px]"></i> Move Member
+                    </a>
+                @else
+                    <span class="text-slate-400 text-xs font-medium">Move Member</span>
+                @endif
+            </div>
         </div>
     </div>
 
