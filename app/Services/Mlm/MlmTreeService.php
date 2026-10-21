@@ -57,30 +57,42 @@ class MlmTreeService
     {
         $downlines = $this->getDownlineCounts();
 
-        // 1. Company Master Nodes (Top ID C22020008 + M1..M13)
-        $companyCodes = [
-            'C22020008',
+        $mPlaceholderCodes = [
             'C25070003','C25070004','C25070005','C25070006',
             'C25070007','C25070008','C25070009','C25070010',
-            'C25070011','C25070012','C25070013','C25070014','C25070015'
+            'C25070011','C25070012','C25070013','C25070014','C25070015',
+        ];
+
+        // 1. Executive Top ID & Direct Pillars (Real Leaders)
+        $pillarCodes = [
+            'C22020008', // Nimesh Jagirdar (Top ID & Founder)
+            'C22010003', // Janakben Bihola (Left Pillar)
+            'C22020001', // Niruben Zala (Middle Pillar)
+            'C22030018', // Gaurav Agarwal (Right Pillar)
         ];
 
         $companyMembers = Member::query()
             ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
-            ->whereHas('user', function ($q) use ($companyCodes) {
-                $q->whereIn('mlm_member_id', $companyCodes);
+            ->whereHas('user', function ($q) use ($pillarCodes) {
+                $q->whereIn('mlm_member_id', $pillarCodes);
             })
             ->get()
             ->sortBy(function (Member $m) {
-                return $m->customer_id === 'C22020008' ? -1 : (int) $m->id;
+                return match ($m->customer_id) {
+                    'C22020008' => 0,
+                    'C22010003' => 1,
+                    'C22020001' => 2,
+                    'C22030018' => 3,
+                    default => 99,
+                };
             })
             ->values();
 
-        // 2. Top Distributor Leaders
+        // 2. Top Distributor Leaders (All real human distributors)
         $topDistributors = Member::query()
             ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
-            ->whereHas('user', function ($q) use ($companyCodes) {
-                $q->whereNotIn('mlm_member_id', $companyCodes);
+            ->whereHas('user', function ($q) use ($mPlaceholderCodes, $pillarCodes) {
+                $q->whereNotIn('mlm_member_id', array_merge($mPlaceholderCodes, ['C22020008']));
             })
             ->get()
             ->sortByDesc(fn (Member $m) => $downlines[$m->id] ?? 0)
@@ -102,11 +114,10 @@ class MlmTreeService
                 $dl = $downlines[$m->id] ?? 0;
                 $label = match ($cid) {
                     'C22020008' => "👑 {$name} — Top ID & Founder (Aaradhya Gruh Udyog - {$dl} Downlines)",
-                    'C25070004' => "🏢 {$name} — Left Pillar ({$dl} Downlines)",
-                    'C25070005' => "🏢 {$name} — Middle Pillar ({$dl} Downlines)",
-                    'C25070006' => "🏢 {$name} — Right Pillar ({$dl} Downlines)",
-                    'C25070003' => "🌿 {$name} — Company Branch M1 ({$dl} Downlines)",
-                    default => "🌿 {$name} — Branch Master ({$dl} Downlines)",
+                    'C22010003' => "🌟 {$name} — Left Pillar Leader ({$dl} Downlines)",
+                    'C22020001' => "🌟 {$name} — Middle Pillar Leader ({$dl} Downlines)",
+                    'C22030018' => "🌟 {$name} — Right Pillar Leader ({$dl} Downlines)",
+                    default => "🌿 {$name} — Master Distributor ({$dl} Downlines)",
                 };
                 return [
                     'id' => $m->id,
@@ -116,7 +127,7 @@ class MlmTreeService
                     'label' => $label,
                 ];
             })->all(),
-            'leaders' => $topDistributors->take(25)->map(fn ($m) => [
+            'leaders' => $topDistributors->take(30)->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->user?->name,
                 'customer_id' => $m->customer_id,
@@ -130,10 +141,21 @@ class MlmTreeService
 
     public function roots(): Collection
     {
+        $mPlaceholderCodes = [
+            'C25070003','C25070004','C25070005','C25070006',
+            'C25070007','C25070008','C25070009','C25070010',
+            'C25070011','C25070012','C25070013','C25070014','C25070015',
+        ];
+
         return Member::query()
             ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
             ->withCount('placementChildren')
             ->whereNull('placement_parent_id')
+            ->where('status', 'active')
+            ->whereHas('user', function ($q) use ($mPlaceholderCodes) {
+                $q->whereNotIn('mlm_member_id', $mPlaceholderCodes);
+            })
+            ->orderByRaw("CASE WHEN id = 10 THEN 0 ELSE 1 END")
             ->orderBy('id')
             ->get();
     }
@@ -177,24 +199,15 @@ class MlmTreeService
             ->sum('calculated_amount');
 
         $cid = $member->customer_id;
-        $companyCodes = [
-            'C22020008',
-            'C25070003','C25070004','C25070005','C25070006',
-            'C25070007','C25070008','C25070009','C25070010',
-            'C25070011','C25070012','C25070013','C25070014','C25070015'
-        ];
-        $isCompanyNode = in_array($cid, $companyCodes, true);
-        $companyLabel = null;
-        if ($isCompanyNode) {
-            $companyLabel = match ($cid) {
-                'C22020008' => 'Top ID: Nimesh Jagirdar (Aaradhya Gruh Udyog)',
-                'C25070004' => 'Pillar Left (Aaradhya)',
-                'C25070005' => 'Pillar Middle (Aaradhya)',
-                'C25070006' => 'Pillar Right (Aaradhya)',
-                'C25070003' => 'Company Branch M1',
-                default => 'Company Branch Master',
-            };
-        }
+        $leadershipCodes = ['C22020008', 'C22010003', 'C22020001', 'C22030018'];
+        $isCompanyNode = in_array($cid, $leadershipCodes, true);
+        $companyLabel = match ($cid) {
+            'C22020008' => 'Top ID: Nimesh Jagirdar (Aaradhya Gruh Udyog)',
+            'C22010003' => 'Left Pillar Leader (Janakben Bihola)',
+            'C22020001' => 'Middle Pillar Leader (Niruben Zala)',
+            'C22030018' => 'Right Pillar Leader (Gaurav Agarwal)',
+            default => null,
+        };
 
         $address = $member->user?->addresses?->first();
 

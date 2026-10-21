@@ -256,7 +256,7 @@ class ImportMlmExcelCommand extends Command
         }
 
         $exportData = [
-            'root_code' => 'C25070003',
+            'root_code' => 'C22020008',
             'customers' => array_values($customers),
             'placements' => $treePlacements,
             'transactions' => $transactions,

@@ -1,5 +1,5 @@
 {
-    "root_code": "C25070003",
+    "root_code": "C22020008",
     "customers": [
         {
             "mobile": "9725862182",
@@ -11493,193 +11493,133 @@
         }
     ],
     "placements": {
-        "C25070004": {
-            "upline": "C22020008",
-            "position": "left",
-            "slot_index": 1
-        },
-        "C25070005": {
-            "upline": "C22020008",
-            "position": "middle",
-            "slot_index": 2
-        },
-        "C25070006": {
-            "upline": "C22020008",
-            "position": "right",
-            "slot_index": 3
-        },
-        "C25070007": {
-            "upline": "C25070004",
-            "position": "left",
-            "slot_index": 1
-        },
-        "C25070008": {
-            "upline": "C25070004",
-            "position": "middle",
-            "slot_index": 2
-        },
-        "C25070009": {
-            "upline": "C25070004",
-            "position": "right",
-            "slot_index": 3
-        },
-        "C25070010": {
-            "upline": "C25070005",
-            "position": "left",
-            "slot_index": 1
-        },
-        "C25070011": {
-            "upline": "C25070005",
-            "position": "middle",
-            "slot_index": 2
-        },
-        "C25070012": {
-            "upline": "C25070005",
-            "position": "right",
-            "slot_index": 3
-        },
-        "C25070013": {
-            "upline": "C25070006",
-            "position": "left",
-            "slot_index": 1
-        },
-        "C25070014": {
-            "upline": "C25070006",
-            "position": "middle",
-            "slot_index": 2
-        },
-        "C25070015": {
-            "upline": "C25070006",
-            "position": "right",
-            "slot_index": 3
-        },
         "C22010003": {
-            "upline": "C25070007",
+            "upline": "C22020008",
             "position": "left",
             "slot_index": 1
         },
         "C22020001": {
-            "upline": "C25070007",
+            "upline": "C22020008",
             "position": "middle",
             "slot_index": 2
         },
         "C22030018": {
-            "upline": "C25070007",
+            "upline": "C22020008",
             "position": "right",
             "slot_index": 3
         },
         "C22020004": {
-            "upline": "C25070008",
+            "upline": "C22030035",
             "position": "left",
             "slot_index": 1
         },
         "C22020010": {
-            "upline": "C25070008",
+            "upline": "C22030035",
             "position": "middle",
             "slot_index": 2
         },
         "C22030036": {
-            "upline": "C25070008",
+            "upline": "C22030035",
             "position": "right",
             "slot_index": 3
         },
         "C22020012": {
-            "upline": "C25070009",
+            "upline": "C22050012",
             "position": "left",
             "slot_index": 1
         },
         "C22020019": {
-            "upline": "C25070009",
+            "upline": "C22050012",
             "position": "middle",
             "slot_index": 2
         },
         "C22050007": {
-            "upline": "C25070009",
+            "upline": "C22050012",
             "position": "right",
             "slot_index": 3
         },
         "C22060008": {
-            "upline": "C25070010",
+            "upline": "C22110013",
             "position": "left",
             "slot_index": 1
         },
         "C22070058": {
-            "upline": "C25070010",
+            "upline": "C22110013",
             "position": "middle",
             "slot_index": 2
         },
         "C22020013": {
-            "upline": "C25070010",
+            "upline": "C22110013",
             "position": "right",
             "slot_index": 3
         },
         "C22050015": {
-            "upline": "C25070011",
+            "upline": "C23030013",
             "position": "left",
             "slot_index": 1
         },
         "C25070002": {
-            "upline": "C25070011",
+            "upline": "C23030013",
             "position": "middle",
             "slot_index": 2
         },
         "C24070001": {
-            "upline": "C25070011",
+            "upline": "C23030013",
             "position": "right",
             "slot_index": 3
         },
         "C24010714": {
-            "upline": "C25070012",
+            "upline": "C22120023",
             "position": "left",
             "slot_index": 1
         },
         "C23070004": {
-            "upline": "C25070012",
+            "upline": "C22120023",
             "position": "middle",
             "slot_index": 2
         },
         "C23060012": {
-            "upline": "C25070012",
+            "upline": "C22120023",
             "position": "right",
             "slot_index": 3
         },
         "C22100027": {
-            "upline": "C25070013",
+            "upline": "C24070727",
             "position": "left",
             "slot_index": 1
         },
         "C22090007": {
-            "upline": "C25070013",
+            "upline": "C24070727",
             "position": "middle",
             "slot_index": 2
         },
         "C22070072": {
-            "upline": "C25070013",
+            "upline": "C24070727",
             "position": "right",
             "slot_index": 3
         },
         "C22070021": {
-            "upline": "C25070014",
+            "upline": "C24070781",
             "position": "middle",
             "slot_index": 2
         },
         "C22050017": {
-            "upline": "C25070014",
+            "upline": "C24070781",
             "position": "right",
             "slot_index": 3
         },
         "C22030027": {
-            "upline": "C25070015",
+            "upline": "C24080001",
             "position": "left",
             "slot_index": 1
         },
         "C22030026": {
-            "upline": "C25070015",
+            "upline": "C24080001",
             "position": "middle",
             "slot_index": 2
         },
         "C22030019": {
-            "upline": "C25070015",
+            "upline": "C24080001",
             "position": "right",
             "slot_index": 3
         },
@@ -14364,19 +14304,19 @@
             "slot_index": 3
         },
         "C22070047": {
-            "upline": "C25070003",
+            "upline": "C24070781",
             "position": "left",
             "slot_index": 1
         },
         "C23010013": {
-            "upline": "C25070003",
-            "position": "middle",
-            "slot_index": 2
+            "upline": "C24080735",
+            "position": "left",
+            "slot_index": 1
         },
         "C23010022": {
-            "upline": "C25070003",
-            "position": "right",
-            "slot_index": 3
+            "upline": "C24080735",
+            "position": "middle",
+            "slot_index": 2
         },
         "C23020028": {
             "upline": "C22070047",
@@ -15310,11 +15250,6 @@
         },
         "C25120004": {
             "upline": "C22060010",
-            "position": "left",
-            "slot_index": 1
-        },
-        "C25070003": {
-            "upline": "C25070014",
             "position": "left",
             "slot_index": 1
         }

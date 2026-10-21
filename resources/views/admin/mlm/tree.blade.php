@@ -487,8 +487,8 @@
                 <button type="button" id="btnExpandLevel2" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Show Level 1 & 2">
                     L2
                 </button>
-                <button type="button" id="btnExpandLevel3" class="px-2.5 py-1 text-[11px] font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded border border-orange-300 transition" title="Show Real Distributors (Levels 1 to 3)">
-                    <i class="fas fa-users text-[10px] mr-0.5"></i> L3 (Distributors)
+                <button type="button" id="btnExpandLevel3" class="px-2.5 py-1 text-[11px] font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded border border-orange-300 transition" title="Show Levels 1 to 3">
+                    <i class="fas fa-users text-[10px] mr-0.5"></i> L3
                 </button>
                 <button type="button" id="btnExpandAll" class="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition">
                     <i class="fas fa-folder-open text-[10px]"></i> Expand All
@@ -604,7 +604,7 @@
 
     const rootPayloads = @json($rootPayloads);
     const initialRoot = @json($initialRoot);
-    const canManage = @json(auth()->user()->hasPermission('mlm.manage'));
+    const canManage = @json(auth()->user()?->hasPermission('mlm.manage') ?? false);
     
     let activeTopRoot = initialRoot;
     let focusHistory = []; // Stack of { id, name, customer_id }
@@ -653,28 +653,28 @@
     // Render an interactive Org Chart Node Card
     const renderNodeCard = (member, position = 'root') => {
         const card = document.createElement('div');
-        const isCompanyRoot = member.customer_id === 'C25070003';
-        const isCompanyNode = Boolean(member.is_company_node);
-        const cardClass = isCompanyRoot 
+        const isTopRoot = member.customer_id === 'C22020008' || position === 'root';
+        const isPillarLeader = ['C22010003', 'C22020001', 'C22030018'].includes(member.customer_id);
+        const cardClass = isTopRoot 
             ? 'pos-company-root ring-2 ring-amber-400/50' 
-            : (isCompanyNode ? 'pos-company-node' : posCardClass(position));
+            : (isPillarLeader ? 'pos-pillar-node ring-1 ring-orange-300' : posCardClass(position));
 
         card.className = `org-node-card ${cardClass} p-3.5`;
         card.dataset.nodeCard = 'true';
         card.dataset.nodeId = member.id;
         card._memberData = member;
 
-        const initials = isCompanyRoot 
+        const initials = isTopRoot 
             ? '👑' 
-            : (isCompanyNode ? '🏢' : ((member.name || 'M').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()));
+            : ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase());
         const incomeFormatted = member.total_income_formatted || '₹0';
         const dlCount = Number(member.downline_count ?? 0);
         const dlBadge = `<span class="inline-flex items-center gap-1 font-bold text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200" title="Total Network Downlines under this member"><i class="fas fa-users text-[8px]"></i> ${dlCount} DL</span>`;
 
-        const avatarClass = isCompanyRoot
+        const avatarClass = isTopRoot
             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
-            : (isCompanyNode 
-                ? 'bg-gradient-to-tr from-slate-700 to-slate-900 text-white border-slate-600'
+            : (isPillarLeader 
+                ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
                 : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold');
 
         const companyBadge = member.company_label 
@@ -1413,6 +1413,22 @@
     // Initial Mount
     if (initialRoot) {
         mountTree(initialRoot);
+        // Automatically expand Level 1 and Level 2 so real distributor names are immediately visible!
+        setTimeout(async () => {
+            const rootBranch = panContainer.firstElementChild;
+            if (rootBranch && rootBranch._childrenContainer) {
+                if (rootBranch._childrenContainer.dataset.loaded !== 'true') {
+                    await loadChildren(rootBranch, false);
+                }
+                const l1Branches = Array.from(rootBranch._childrenContainer.querySelectorAll(':scope > .org-child-slot > .org-tree-branch'));
+                for (const branch of l1Branches) {
+                    if (branch._childrenContainer && branch._childrenContainer.dataset.loaded !== 'true') {
+                        await loadChildren(branch, false);
+                    }
+                }
+                centerTree();
+            }
+        }, 80);
     }
 })();
 </script>
