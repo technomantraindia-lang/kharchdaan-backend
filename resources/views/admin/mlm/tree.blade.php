@@ -436,7 +436,7 @@
                 $currentRootId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? null;
             @endphp
             <div class="flex items-center gap-2 flex-wrap">
-                <a href="{{ asset('docs/Aaradhya_MLM_Admin_User_Manual.pdf') }}" target="_blank" download class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-rose-800 bg-white border border-rose-200 rounded-md hover:bg-rose-50 transition flex-shrink-0 shadow-2xs">
+                <a href="{{ admin_route('mlm.manual') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-rose-800 bg-white border border-rose-200 rounded-md hover:bg-rose-50 transition flex-shrink-0 shadow-2xs" title="Open complete step-by-step PDF manual in browser">
                     <i class="fas fa-file-pdf text-rose-600 text-[11px]"></i> Admin Manual (PDF)
                 </a>
                 @if($currentRootId && Route::has('admin.mlm.tree.move.form'))

@@ -110,6 +110,7 @@ Route::middleware('admin')->group(function () {
     Route::get('/mlm/sponsor-network', [MlmMemberController::class, 'sponsorNetwork'])->middleware('permission:mlm.view')->name('mlm.sponsor-network');
     Route::get('/mlm/genealogy', [MlmMemberController::class, 'genealogy'])->middleware('permission:mlm.view')->name('mlm.genealogy');
     Route::get('/mlm/levels', [MlmMemberController::class, 'levels'])->middleware('permission:mlm.view')->name('mlm.levels');
+    Route::get('/mlm/manual', [MlmMemberController::class, 'manual'])->name('mlm.manual');
 
     // MLM Placement Tree
     Route::prefix('mlm/tree')->name('mlm.tree.')->group(function (): void {

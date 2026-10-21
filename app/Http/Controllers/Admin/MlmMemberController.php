@@ -562,4 +562,17 @@ class MlmMemberController extends Controller
             'mlm.activity.view',
         ], true) && (bool) $user?->hasPermission('mlm.manage');
     }
+
+    public function manual(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $path = public_path('docs/Aaradhya_MLM_Admin_User_Manual.pdf');
+        if (! file_exists($path)) {
+            $path = base_path('Aaradhya_MLM_Admin_User_Manual.pdf');
+        }
+
+        return response()->file($path, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="Aaradhya_MLM_Admin_User_Manual.pdf"',
+        ]);
+    }
 }

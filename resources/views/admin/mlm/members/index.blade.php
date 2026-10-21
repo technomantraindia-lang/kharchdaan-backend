@@ -19,7 +19,7 @@
             <a href="{{ admin_route('mlm.tree.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
                 <i class="fas fa-sitemap text-indigo-500"></i> Placement Tree (1:3)
             </a>
-            <a href="{{ asset('docs/Aaradhya_MLM_Admin_User_Manual.pdf') }}" target="_blank" download class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200/80 rounded-lg hover:bg-rose-100 shadow-xs transition">
+            <a href="{{ admin_route('mlm.manual') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200/80 rounded-lg hover:bg-rose-100 shadow-xs transition" title="Open complete step-by-step PDF manual in browser">
                 <i class="fas fa-file-pdf text-rose-600"></i> Admin Manual (PDF)
             </a>
             @if(auth()->user()->hasPermission('mlm.manage') || auth()->user()->hasPermission('mlm.create'))
