@@ -17,10 +17,8 @@ use App\Models\Product;
 use App\Models\Role;
 use App\Models\ShippingMethod;
 use App\Models\User;
-use App\Services\Mlm\MlmCalculationService;
 use App\Services\Mlm\MlmOrderIntegrationService;
 use App\Services\Mlm\MlmPayoutService;
-use App\Support\MlmDecimal;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -51,13 +49,13 @@ class MlmSampleDataSeeder extends Seeder
                 'low_level_start' => 8,
                 'low_level_end' => 19,
                 'status' => 'active',
-                'effective_from' => now()->subYears(1)->startOfDay(),
+                'effective_from' => '2020-01-01 00:00:00',
                 'created_by' => $admin->id,
             ]);
         } else {
             $rule->update([
                 'name' => 'Direct Selling PV Formula v1',
-                'effective_from' => now()->subYears(1)->startOfDay(),
+                'effective_from' => '2020-01-01 00:00:00',
             ]);
         }
 
@@ -66,70 +64,39 @@ class MlmSampleDataSeeder extends Seeder
             ['charge' => 50.00, 'min_free_order' => 500.00, 'status' => 'active']
         );
 
-        $products = Product::where('status', 'active')->get();
-        if ($products->isEmpty()) {
-            $products = collect([
-                Product::create([
-                    'name' => 'Direct Selling Starter Package',
-                    'slug' => 'direct-selling-starter-package',
-                    'sku' => 'KD001',
-                    'price' => 1500.00,
-                    'sale_price' => 1000.00,
-                    'gst_percentage' => 5,
-                    'stock_qty' => 500,
-                    'image' => 'images/tata-dal.jpg',
-                    'status' => 'active',
-                ]),
-                Product::create([
-                    'name' => 'KharchDaan Wellness Pack',
-                    'slug' => 'kharchdaan-wellness-pack',
-                    'sku' => 'KD002',
-                    'price' => 2000.00,
-                    'sale_price' => 1800.00,
-                    'gst_percentage' => 5,
-                    'stock_qty' => 500,
-                    'image' => 'images/health-wellness-ayurveda.jpg',
-                    'status' => 'active',
-                ]),
+        $product = Product::where('status', 'active')->first();
+        if (! $product) {
+            $product = Product::create([
+                'name' => 'Aaradhya Special Combo Pack',
+                'slug' => 'aaradhya-special-combo-pack',
+                'sku' => 'AGU001',
+                'price' => 1000.00,
+                'sale_price' => 800.00,
+                'gst_percentage' => 5,
+                'stock_qty' => 5000,
+                'image' => 'images/tata-dal.jpg',
+                'status' => 'active',
             ]);
         }
 
         $appKey = (string) config('app.key');
-        $period = now()->format('ym');
 
-        $firstNames = [
-            'Aarav', 'Vihaan', 'Vivaan', 'Ananya', 'Diya', 'Advik', 'Kabir', 'Aryan', 'Ishaan', 'Dhruv',
-            'Saanvi', 'Mira', 'Riya', 'Avani', 'Aditi', 'Prisha', 'Anika', 'Tara', 'Navya', 'Pooja',
-            'Rahul', 'Rohit', 'Amit', 'Sunil', 'Vikas', 'Deepak', 'Suresh', 'Manish', 'Rajesh', 'Sanjay',
-            'Priya', 'Neha', 'Sneha', 'Swati', 'Pooja', 'Anjali', 'Kavita', 'Shreya', 'Divya', 'Payal',
-            'Gaurav', 'Nitin', 'Alok', 'Saurabh', 'Ashish', 'Pankaj', 'Abhishek', 'Sachin', 'Mohit', 'Kunal',
-            'Kiran', 'Megha', 'Ritu', 'Simran', 'Komal', 'Sonia', 'Barkha', 'Tanvi', 'Isha', 'Bhavna',
-            'Arun', 'Varun', 'Tarun', 'Harish', 'Lalit', 'Manoj', 'Vijay', 'Ajay', 'Kamal', 'Rakesh',
-            'Shweta', 'Monika', 'Preeti', 'Jyoti', 'Kavita', 'Sangeeta', 'Sunita', 'Rekha', 'Geeta', 'Usha',
-            'Naveen', 'Pradeep', 'Dharmendra', 'Ramesh', 'Mukesh', 'Mahesh', 'Girish', 'Naresh', 'Yogesh', 'Umesh',
-            'Chirag', 'Tushar', 'Mayank', 'Harsh', 'Yash', 'Dev', 'Karan', 'Rohan', 'Sameer', 'Vikram'
-        ];
+        // Locate and load client master data JSON
+        $dataPath = database_path('data/mlm_client_data.json');
+        if (! file_exists($dataPath)) {
+            $fallbackPath = 'C:/Users/LENOVO/Downloads/Aaradhya Gruh Udyog - Master Data.xlsx';
+            if (file_exists($fallbackPath)) {
+                // If JSON not built yet, we could load it from fallback
+            }
+            throw new \RuntimeException("MLM Client Master Data file not found at: {$dataPath}");
+        }
 
-        $lastNames = [
-            'Sharma', 'Verma', 'Gupta', 'Patel', 'Singh', 'Kumar', 'Joshi', 'Mehta', 'Shah', 'Nair',
-            'Chopra', 'Malhotra', 'Bhatia', 'Reddy', 'Rao', 'Iyer', 'Agarwal', 'Bansal', 'Mittal', 'Garg',
-            'Deshmukh', 'Kulkarni', 'Patil', 'Pawar', 'Shinde', 'Jadhav', 'More', 'Chavan', 'Kadam', 'Sawant',
-            'Das', 'Banerjee', 'Chatterjee', 'Mukherjee', 'Dutta', 'Ghosh', 'Sen', 'Roy', 'Bose', 'Saha',
-            'Pandey', 'Mishra', 'Tiwari', 'Dubey', 'Shukla', 'Tripathi', 'Chaubey', 'Dwivedi', 'Upadhyay', 'Pathak'
-        ];
+        $clientData = json_decode(file_get_contents($dataPath), true);
+        $customers = $clientData['customers'] ?? [];
+        $placements = $clientData['placements'] ?? [];
+        $transactions = $clientData['transactions'] ?? [];
 
-        $banks = [
-            ['name' => 'HDFC Bank', 'ifsc' => 'HDFC0001234', 'branch' => 'Connaught Place, Delhi'],
-            ['name' => 'State Bank of India', 'ifsc' => 'SBIN0004567', 'branch' => 'Bandra Kurla, Mumbai'],
-            ['name' => 'ICICI Bank', 'ifsc' => 'ICIC0009876', 'branch' => 'MG Road, Bangalore'],
-            ['name' => 'Axis Bank', 'ifsc' => 'UTIB0002345', 'branch' => 'Sector 18, Noida'],
-            ['name' => 'Kotak Mahindra Bank', 'ifsc' => 'KKBK0003456', 'branch' => 'C-Scheme, Jaipur'],
-            ['name' => 'Punjab National Bank', 'ifsc' => 'PUNB0007890', 'branch' => 'Civil Lines, Ludhiana'],
-        ];
-
-        $positions = ['left', 'middle', 'right'];
-
-        // Clean existing members safely to avoid duplicate hash collisions on re-seed
+        // Clean existing MLM dummy members and orders safely
         \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
         MlmPayoutLine::truncate();
         MlmPayoutCycle::truncate();
@@ -150,152 +117,72 @@ class MlmSampleDataSeeder extends Seeder
         Payment::truncate();
         Order::truncate();
         Member::truncate();
-        User::where('email', 'like', 'member%@example.com')->delete();
+        Address::truncate();
+        User::where('role_id', $customerRole->id)->delete();
         \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
 
-        $createdMembers = [];
-        $totalMembers = 100;
+        $defaultPassword = Hash::make('password');
+        $userMap = [];
+        $memberMap = [];
 
-        // Ensure primary customer exists
-        $rootUser = User::where('email', 'customer@example.com')->first();
-        if (! $rootUser) {
-            $rootUser = User::create([
-                'name' => 'John Doe (Root Leader)',
-                'email' => 'customer@example.com',
-                'password' => Hash::make('password'),
-                'phone' => '9800000001',
-                'role_id' => $customerRole->id,
-                'status' => 'active',
-                'mlm_member_id' => 'C'.$period.'0001',
-            ]);
-        } else {
-            $rootUser->update([
-                'name' => 'John Doe (Root Leader)',
-                'phone' => '9800000001',
-                'mlm_member_id' => 'C'.$period.'0001',
-            ]);
-        }
+        DB::beginTransaction();
 
-        // 1. Create Root Member
-        $pan1 = 'ABCDE1001F';
-        $aadhaar1 = '100000000001';
-        $bankAcc1 = '910000000001';
-        $rootMember = Member::create([
-            'user_id' => $rootUser->id,
-            'sponsor_member_id' => null,
-            'placement_parent_id' => null,
-            'placement_position' => null,
-            'status' => Member::STATUS_ACTIVE,
-            'joined_at' => now()->subDays(60),
-            'created_by' => $admin->id,
-            'sponsor_name_snapshot' => null,
-            'sponsor_relationship_status' => null,
-            'sponsor_assigned_at' => null,
-            'kyc_status' => Member::KYC_APPROVED,
-            'pan_number' => $pan1,
-            'pan_hash' => hash_hmac('sha256', $pan1, $appKey),
-            'aadhaar_reference' => $aadhaar1,
-            'aadhaar_hash' => hash_hmac('sha256', $aadhaar1, $appKey),
-            'bank_account_holder_name' => $rootUser->name,
-            'bank_account_number' => $bankAcc1,
-            'bank_account_hash' => hash_hmac('sha256', $bankAcc1, $appKey),
-            'ifsc_code' => 'HDFC0001234',
-            'bank_name' => 'HDFC Bank',
-            'bank_branch' => 'Connaught Place, Delhi',
-            'kyc_verified_by' => $admin->id,
-            'kyc_verified_at' => now()->subDays(55),
-        ]);
-        $createdMembers[1] = $rootMember;
-
-        // 2. Create Downline Members 2 through 100 in 1:3 Ternary Tree
-        $placementParentQueue = [1];
-        $currentParentIdx = 0;
-        $currentPositionIdx = 0;
-
-        for ($i = 2; $i <= $totalMembers; $i++) {
-            $parentId = $placementParentQueue[$currentParentIdx];
-            $position = $positions[$currentPositionIdx];
-
-            // Advance position pointer
-            $currentPositionIdx++;
-            if ($currentPositionIdx >= 3) {
-                $currentPositionIdx = 0;
-                $currentParentIdx++;
-            }
-            $placementParentQueue[] = $i;
-
-            // Determine sponsor: 50% direct sponsor by parent, 30% by root, 20% by an upline
-            $sponsorId = match ($i % 5) {
-                0, 1 => 1, // Root
-                2, 3 => $parentId, // Direct parent
-                default => max(1, $parentId - 1), // Upline
-            };
-
-            $fName = $firstNames[($i - 1) % count($firstNames)];
-            $lName = $lastNames[($i - 1) % count($lastNames)];
-            $name = $fName . ' ' . $lName;
-            $email = 'member' . $i . '@example.com';
-            $phone = '98000' . str_pad((string) $i, 5, '0', STR_PAD_LEFT);
-            $memberCode = 'C' . $period . str_pad((string) $i, 4, '0', STR_PAD_LEFT);
+        // Pass 1: Insert all Users, Addresses, and Members from real client master data
+        foreach ($customers as $idx => $c) {
+            $code = $c['code'];
+            $name = ! empty($c['name']) ? $c['name'] : 'Customer '.$code;
+            $phone = ! empty($c['mobile']) ? $c['mobile'] : '98000'.str_pad((string) ($idx + 1), 5, '0', STR_PAD_LEFT);
+            $email = strtolower($code).'@kharchdaan.com';
+            $regDate = Carbon::parse($c['reg_date'])->setTime(10, 0, 0);
 
             $user = User::create([
                 'name' => $name,
                 'email' => $email,
-                'password' => Hash::make('password'),
+                'password' => $defaultPassword,
+                'plain_password' => 'password',
                 'phone' => $phone,
                 'role_id' => $customerRole->id,
-                'status' => $i === 97 ? 'inactive' : ($i === 98 ? 'blocked' : 'active'),
-                'mlm_member_id' => $memberCode,
+                'status' => $c['status'] === 'blocked' ? 'blocked' : 'active',
+                'mlm_member_id' => $code,
+                'created_at' => $regDate,
+                'updated_at' => $regDate,
             ]);
+            $userMap[$code] = $user;
+
+            $nameParts = explode(' ', trim($name));
+            $fName = array_shift($nameParts);
+            $lName = ! empty($nameParts) ? implode(' ', $nameParts) : '';
 
             Address::create([
                 'user_id' => $user->id,
                 'type' => 'shipping',
                 'fname' => $fName,
                 'lname' => $lName,
-                'address' => ($i * 12) . ', Main Street, Sector ' . ($i % 20 + 1),
-                'city' => ['Delhi', 'Mumbai', 'Bangalore', 'Jaipur', 'Lucknow', 'Pune', 'Kolkata', 'Hyderabad'][$i % 8],
-                'state' => ['Delhi', 'Maharashtra', 'Karnataka', 'Rajasthan', 'Uttar Pradesh', 'Maharashtra', 'West Bengal', 'Telangana'][$i % 8],
-                'zip' => str_pad((string) (110000 + $i), 6, '0', STR_PAD_LEFT),
+                'address' => ! empty($c['address']) ? $c['address'] : (! empty($c['area']) ? $c['area'] : 'Ahmedabad'),
+                'apt' => ! empty($c['area']) ? $c['area'] : null,
+                'city' => ! empty($c['city']) ? $c['city'] : 'Ahmedabad',
+                'state' => ! empty($c['state']) ? $c['state'] : 'Gujarat',
+                'zip' => ! empty($c['pincode']) ? $c['pincode'] : '380001',
                 'country' => 'India',
                 'phone' => $phone,
                 'default' => true,
+                'created_at' => $regDate,
+                'updated_at' => $regDate,
             ]);
 
-            // KYC Status variation
-            $kycStatus = match (true) {
-                $i % 15 === 0 => Member::KYC_REJECTED,
-                $i % 10 === 0 => Member::KYC_PENDING,
-                $i % 7 === 0 => Member::KYC_UNDER_REVIEW,
-                default => Member::KYC_APPROVED,
-            };
-
-            $pan = 'ABCDE' . str_pad((string) (1000 + $i), 4, '0', STR_PAD_LEFT) . chr(65 + ($i % 26));
-            $aadhaar = '1' . str_pad((string) $i, 11, '0', STR_PAD_LEFT);
-            $bankAcc = '91' . str_pad((string) $i, 10, '0', STR_PAD_LEFT);
-            $bankInfo = $banks[$i % count($banks)];
-
-            $sponsorMember = $createdMembers[$sponsorId] ?? $rootMember;
-
-            $status = match (true) {
-                $i === 97 => Member::STATUS_INACTIVE,
-                $i === 98 => Member::STATUS_BLOCKED,
-                $i >= 95 => Member::STATUS_PENDING,
-                default => Member::STATUS_ACTIVE,
-            };
+            $pan = 'ABC'.strtoupper(substr(md5($code), 0, 6)).'Z';
+            $aadhaar = '2'.str_pad((string) ($idx + 1), 11, '0', STR_PAD_LEFT);
+            $bankAcc = '91'.str_pad((string) ($idx + 1), 10, '0', STR_PAD_LEFT);
 
             $member = Member::create([
                 'user_id' => $user->id,
-                'sponsor_member_id' => $sponsorMember->id,
-                'placement_parent_id' => $parentId,
-                'placement_position' => $position,
-                'status' => $status,
-                'joined_at' => now()->subDays(max(1, 60 - (int) ($i / 2))),
+                'sponsor_member_id' => null,
+                'placement_parent_id' => null,
+                'placement_position' => null,
+                'status' => $c['status'] === 'blocked' ? Member::STATUS_BLOCKED : Member::STATUS_ACTIVE,
+                'joined_at' => $regDate,
                 'created_by' => $admin->id,
-                'sponsor_name_snapshot' => $sponsorMember->user->name,
-                'sponsor_relationship_status' => 'active',
-                'sponsor_assigned_at' => now()->subDays(max(1, 60 - (int) ($i / 2))),
-                'kyc_status' => $kycStatus,
+                'kyc_status' => Member::KYC_APPROVED,
                 'pan_number' => $pan,
                 'pan_hash' => hash_hmac('sha256', $pan, $appKey),
                 'aadhaar_reference' => $aadhaar,
@@ -303,57 +190,95 @@ class MlmSampleDataSeeder extends Seeder
                 'bank_account_holder_name' => $name,
                 'bank_account_number' => $bankAcc,
                 'bank_account_hash' => hash_hmac('sha256', $bankAcc, $appKey),
-                'ifsc_code' => $bankInfo['ifsc'],
-                'bank_name' => $bankInfo['name'],
-                'bank_branch' => $bankInfo['branch'],
-                'kyc_rejection_reason' => $kycStatus === Member::KYC_REJECTED ? 'Bank passbook copy is blurred and illegible' : null,
-                'kyc_verified_by' => $kycStatus === Member::KYC_APPROVED ? $admin->id : null,
-                'kyc_verified_at' => $kycStatus === Member::KYC_APPROVED ? now()->subDays(max(1, 55 - (int) ($i / 2))) : null,
+                'ifsc_code' => 'SBIN0004567',
+                'bank_name' => 'State Bank of India',
+                'bank_branch' => ! empty($c['area']) ? $c['area'] : 'Ahmedabad',
+                'kyc_verified_by' => $admin->id,
+                'kyc_verified_at' => $regDate,
+                'created_at' => $regDate,
+                'updated_at' => $regDate,
             ]);
-
-            $createdMembers[$i] = $member;
+            $memberMap[$code] = $member;
         }
 
-        // Update sequence so new additions start at 101
+        // Pass 2: Link direct sponsors and placement hierarchy slots
+        foreach ($customers as $c) {
+            $code = $c['code'];
+            $member = $memberMap[$code] ?? null;
+            if (! $member) {
+                continue;
+            }
+
+            $refCode = $c['referral_id'] ?? '';
+            $sponsorMember = $memberMap[$refCode] ?? null;
+
+            $placementInfo = $placements[$code] ?? null;
+            $placementParent = $placementInfo ? ($memberMap[$placementInfo['upline']] ?? null) : null;
+            $placementPosition = $placementInfo ? $placementInfo['position'] : null;
+
+            $updates = [];
+            if ($sponsorMember && $sponsorMember->id !== $member->id) {
+                $updates['sponsor_member_id'] = $sponsorMember->id;
+                $updates['sponsor_name_snapshot'] = $sponsorMember->user->name;
+                $updates['sponsor_relationship_status'] = 'active';
+                $updates['sponsor_assigned_at'] = $member->joined_at;
+            }
+
+            if ($placementParent && $placementParent->id !== $member->id) {
+                $updates['placement_parent_id'] = $placementParent->id;
+                $updates['placement_position'] = $placementPosition;
+            }
+
+            if (! empty($updates)) {
+                DB::table('mlm_members')->where('id', $member->id)->update($updates);
+            }
+        }
+
+        DB::commit();
+
+        // Update member sequence
         MlmMemberSequence::updateOrCreate(
-            ['period' => $period],
-            ['next_number' => 101]
+            ['period' => now()->format('ym')],
+            ['next_number' => 800]
         );
 
-        // 3. Create Realistic Orders across Downline Members and Trigger MLM Calculations
+        // Seed realistic orders for active transacting members
         $orderService = app(MlmOrderIntegrationService::class);
+        $seenMembers = [];
+        $ordersProcessed = 0;
 
-        // Select 32 distinct active members across level 1 to level 4
-        $orderingMemberIds = [
-            1, 2, 3, 4, 5, 8, 12, 14, 18, 22, 27, 31, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 92, 94, 15, 20, 25, 30, 36, 42
-        ];
+        foreach ($transactions as $tx) {
+            if ($ordersProcessed >= 35) {
+                break;
+            }
+            $custCode = $tx['customer_code'];
+            if (isset($seenMembers[$custCode])) {
+                continue;
+            }
 
-        $orderAmounts = [
-            500.00, 750.00, 1200.00, 1800.00, 2500.00, 3000.00, 4500.00, 6000.00, 8500.00, 10000.00, 12500.00, 15000.00
-        ];
-
-        // 4 time buckets: 3 weeks ago, 2 weeks ago, 1 week ago, current week
-        $weekDates = [
-            0 => now()->subWeeks(3)->startOfWeek()->addDays(2)->setTime(11, 30),
-            1 => now()->subWeeks(2)->startOfWeek()->addDays(2)->setTime(14, 15),
-            2 => now()->subWeeks(1)->startOfWeek()->addDays(2)->setTime(16, 45),
-            3 => now()->startOfWeek()->addDays(1)->setTime(10, 0),
-        ];
-
-        foreach ($orderingMemberIds as $idx => $mId) {
-            $member = $createdMembers[$mId] ?? null;
+            $member = $memberMap[$custCode] ?? null;
             if (! $member || $member->status !== Member::STATUS_ACTIVE) {
                 continue;
             }
 
-            $weekIndex = $idx % 4;
-            $orderDate = $weekDates[$weekIndex]->copy()->addHours($idx % 5);
-            $subtotal = $orderAmounts[$idx % count($orderAmounts)];
+            // Must have a placement parent to distribute upline commissions
+            $hasParent = DB::table('mlm_members')->where('id', $member->id)->whereNotNull('placement_parent_id')->exists();
+            if (! $hasParent) {
+                continue;
+            }
+
+            $seenMembers[$custCode] = true;
+            $amount = (float) $tx['amount'];
+            if ($amount < 250) {
+                $amount = 600.0;
+            }
+            $subtotal = $amount;
             $gst = round($subtotal * 0.05, 2);
             $total = $subtotal + $gst;
+            $orderDate = Carbon::parse($tx['date'])->setTime(rand(10, 18), rand(0, 59));
 
             $order = Order::create([
-                'order_num' => 'ORD-MLM-' . (10000 + $idx + 1),
+                'order_num' => 'ORD-TXN-'.$tx['tx_id'],
                 'user_id' => $member->user_id,
                 'subtotal' => $subtotal,
                 'discount' => 0.00,
@@ -369,9 +294,9 @@ class MlmSampleDataSeeder extends Seeder
 
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $products->first()->id,
-                'qty' => (int) max(1, round($subtotal / 150)),
-                'price' => 150.00,
+                'product_id' => $product->id,
+                'qty' => max(1, (int) ($tx['qty'] ?? 1)),
+                'price' => $subtotal / max(1, (int) ($tx['qty'] ?? 1)),
                 'gst_pct' => 5,
             ]);
 
@@ -387,45 +312,25 @@ class MlmSampleDataSeeder extends Seeder
                 'amount' => $total,
                 'method' => 'online',
                 'status' => 'paid',
-                'txn_id' => 'TXN-MLM-' . (50000 + $idx + 1),
+                'txn_id' => 'TXN-AGU-'.$tx['tx_id'],
                 'created_at' => $orderDate,
             ]);
 
-            // Calculate MLM PV and commission distribution up the tree
             $orderService->process($order);
+            $ordersProcessed++;
         }
 
-        // 4. Generate Weekly Payout Cycles
+        // Generate weekly payout settlement cycles
         $payoutService = app(MlmPayoutService::class);
-
-        // Cycle 1: 3 weeks ago (Paid cycle)
         try {
-            $cycleDate1 = now()->subWeeks(3)->startOfWeek();
-            $cycle1 = $payoutService->createWeeklyCycle($cycleDate1, $admin, 'Weekly MLM Settlement Cycle 1');
-            if ($cycle1 && $cycle1->status === MlmPayoutCycle::STATUS_PENDING_APPROVAL) {
-                $cycle1 = $payoutService->approve($cycle1, $admin);
-                $cycle1 = $payoutService->startProcessing($cycle1, $admin);
-                $payoutService->markPaid($cycle1, $admin, 'BATCH-PAY-2026-W36', now()->subWeeks(3)->endOfWeek(), 'All bank NEFT transfers settled successfully.');
+            $cycle = $payoutService->createWeeklyCycle(
+                now()->startOfWeek(),
+                $admin,
+                'Aaradhya Gruh Udyog Weekly Settlement Cycle'
+            );
+            if ($cycle && $cycle->status === MlmPayoutCycle::STATUS_PENDING_APPROVAL) {
+                $cycle = $payoutService->approve($cycle, $admin);
             }
-        } catch (\Throwable $e) {
-            // Safe fallback
-        }
-
-        // Cycle 2: 2 weeks ago (Approved cycle)
-        try {
-            $cycleDate2 = now()->subWeeks(2)->startOfWeek();
-            $cycle2 = $payoutService->createWeeklyCycle($cycleDate2, $admin, 'Weekly MLM Settlement Cycle 2');
-            if ($cycle2 && $cycle2->status === MlmPayoutCycle::STATUS_PENDING_APPROVAL) {
-                $payoutService->approve($cycle2, $admin);
-            }
-        } catch (\Throwable $e) {
-            // Safe fallback
-        }
-
-        // Cycle 3: 1 week ago (Pending Approval cycle)
-        try {
-            $cycleDate3 = now()->subWeeks(1)->startOfWeek();
-            $payoutService->createWeeklyCycle($cycleDate3, $admin, 'Weekly MLM Settlement Cycle 3 (Pending Approval)');
         } catch (\Throwable $e) {
             // Safe fallback
         }
