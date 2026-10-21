@@ -21,6 +21,44 @@
         @endif
     </div>
 
+    <!-- Role Assignment Quick Guide Banner -->
+    <div class="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-blue-50 border border-blue-200/80 rounded-xl p-4 shadow-xs">
+        <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-sm mt-0.5">
+                <i class="fas fa-key"></i>
+            </div>
+            <div class="flex-1 text-xs text-blue-900">
+                <div class="font-bold text-sm text-blue-950 flex items-center gap-2">
+                    <span>How to Assign a Role & Manage Section Permissions</span>
+                    <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">Admin Guide</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2.5">
+                    <div class="bg-white/80 p-2.5 rounded-lg border border-blue-100 flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center flex-shrink-0">1</span>
+                        <div>
+                            <strong class="text-slate-900">Select or Create Staff</strong>
+                            <p class="text-slate-600 text-[11px] mt-0.5">Click <strong>Add Sub-Admin / Staff</strong> above, or click the <i class="fas fa-edit text-blue-500"></i> icon on any existing staff member below.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 p-2.5 rounded-lg border border-blue-100 flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center flex-shrink-0">2</span>
+                        <div>
+                            <strong class="text-slate-900">Choose System Role</strong>
+                            <p class="text-slate-600 text-[11px] mt-0.5">Under <em>System Role</em>, select <strong>Super Admin</strong> (unrestricted full access) or <strong>Sub Admin</strong> / <strong>Staff</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white/80 p-2.5 rounded-lg border border-blue-100 flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center flex-shrink-0">3</span>
+                        <div>
+                            <strong class="text-slate-900">Check Section Permissions</strong>
+                            <p class="text-slate-600 text-[11px] mt-0.5">Check or uncheck access to specific modules (e.g., Products, Orders, MLM, Payouts, Reports), then click <strong>Save Changes</strong>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Filter Card -->
     <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
         <form method="GET" action="{{ admin_route('users.index') }}" class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">

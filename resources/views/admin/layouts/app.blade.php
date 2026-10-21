@@ -706,7 +706,8 @@
                     @if(auth()->user()->hasPermission('users.view') || auth()->user()->isSuperAdmin())
                     <a href="{{ admin_route('users.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.users.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-user-shield w-4 text-center text-sm {{ request()->routeIs('*.users.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Sub-Admins & Staff</span>
+                        <span class="flex-1">Staff &amp; Roles</span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Assign Roles</span>
                     </a>
                     @endif
 
