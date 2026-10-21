@@ -130,7 +130,7 @@
 
     /* 1. Base / Detailed Mode */
     .org-node-card {
-        width: 215px;
+        width: 235px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 12px;
@@ -164,6 +164,8 @@
     .org-node-card.pos-left { border-top: 4px solid #0284c7; }
     .org-node-card.pos-middle { border-top: 4px solid #d97706; }
     .org-node-card.pos-right { border-top: 4px solid #059669; }
+    .org-node-card.pos-company-root { border-top: 4px solid #f59e0b; background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50px); }
+    .org-node-card.pos-company-node { border-top: 4px solid #6366f1; background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 50px); }
 
     /* Expand / Collapse Button */
     .org-expand-btn {
@@ -343,21 +345,47 @@
     <!-- Tree Controls & Search Toolbar -->
     <div class="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-xs">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
-            <div class="lg:col-span-4">
-                <label for="rootMember" class="block text-xs font-semibold text-slate-600 mb-1.5">Root Member</label>
-                <select id="rootMember" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
-                    @forelse($roots as $root)
-                        <option value="{{ $root->id }}" @selected($initialRoot && (($initialRoot['member']['id'] ?? $initialRoot['id'] ?? null) === $root->id))>
-                            {{ $root->customer_id }} &mdash; {{ $root->user?->name ?? 'Member' }}
-                        </option>
-                    @empty
-                        <option value="">No root members available</option>
-                    @endforelse
+            <div class="lg:col-span-5">
+                <label for="rootMember" class="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>Root Member / Branch</span>
+                    <span class="text-[10px] text-slate-400 font-normal">Select company node or distributor</span>
+                </label>
+                <select id="rootMember" class="w-full px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
+                    @php
+                        $activeId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? ($root->id ?? null);
+                    @endphp
+                    @if(!empty($leaderOptions['company']))
+                        <optgroup label="👑 Company Master Positions (Aaradhya Gruh Udyog)">
+                            @foreach($leaderOptions['company'] as $comp)
+                                <option value="{{ $comp['id'] }}" @selected($activeId == $comp['id'])>
+                                    {{ $comp['label'] }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    @endif
+                    @if(!empty($leaderOptions['leaders']))
+                        <optgroup label="⭐ Real Distributor Leaders & Downline Networks">
+                            @foreach($leaderOptions['leaders'] as $ldr)
+                                <option value="{{ $ldr['id'] }}" @selected($activeId == $ldr['id'])>
+                                    {{ $ldr['label'] }}
+                                </option>
+                            @endforeach
+                        </optgroup>
+                    @endif
+                    @if(empty($leaderOptions['company']) && empty($leaderOptions['leaders']))
+                        @forelse($roots as $rootItem)
+                            <option value="{{ $rootItem->id }}" @selected($activeId == $rootItem->id)>
+                                {{ $rootItem->customer_id }} &mdash; {{ $rootItem->user?->name ?? 'Member' }}
+                            </option>
+                        @empty
+                            <option value="">No root members available</option>
+                        @endforelse
+                    @endif
                 </select>
             </div>
 
-            <div class="lg:col-span-5 relative">
-                <label for="treeMemberSearch" class="block text-xs font-semibold text-slate-600 mb-1.5">Search & Jump to Member</label>
+            <div class="lg:col-span-4 relative">
+                <label for="treeMemberSearch" class="block text-xs font-semibold text-slate-700 mb-1.5">Search & Jump to Member</label>
                 <div class="flex gap-2">
                     <div class="relative flex-1">
                         <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
@@ -374,9 +402,30 @@
                 <div class="font-bold text-blue-950 flex items-center gap-1.5">
                     <i class="fas fa-info-circle text-blue-600"></i> Matrix Hierarchy
                 </div>
-                <div class="text-[11px] text-blue-800 mt-0.5">Supports 1:3 placement width up to Level 19 depth.</div>
+                <div class="text-[11px] text-blue-800 mt-0.5">Physical 1:3 placement matrix down to 19 levels.</div>
             </div>
         </div>
+
+        <!-- Quick Switch to Real Distributor Leaders & Key Branches -->
+        @if(!empty($leaderOptions['quick_pills']))
+        <div class="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold text-slate-700 flex items-center gap-1 mr-1">
+                <i class="fas fa-bolt text-amber-500"></i> Quick Leader Network:
+            </span>
+            @php
+                $topRootId = $roots->first()?->id ?? 747;
+            @endphp
+            <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $topRootId) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-orange-50/80 text-orange-950 border-orange-200 hover:bg-orange-100' }}" data-member-id="{{ $topRootId }}">
+                👑 M1 Master Root (765 DL)
+            </button>
+            @foreach($leaderOptions['quick_pills'] as $pill)
+                <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $pill['id']) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-900' }}" data-member-id="{{ $pill['id'] }}" title="Phone: {{ $pill['phone'] }}">
+                    <span class="font-bold">{{ $pill['name'] }}</span>
+                    <span class="text-[10px] opacity-80 font-mono ml-0.5">({{ $pill['downlines'] }} DL)</span>
+                </button>
+            @endforeach
+        </div>
+        @endif
 
         <div class="mt-4 p-3 rounded-lg bg-blue-50/70 border border-blue-100 text-xs text-blue-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div><strong>Sponsor Tree and Placement Tree are separate.</strong> Sponsor information is shown on each card; branches below are placement relationships only.</div>
@@ -434,6 +483,9 @@
                 </button>
                 <button type="button" id="btnExpandLevel2" class="px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 rounded border border-slate-200 transition" title="Show Level 1 & 2">
                     L2
+                </button>
+                <button type="button" id="btnExpandLevel3" class="px-2.5 py-1 text-[11px] font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded border border-orange-300 transition" title="Show Real Distributors (Levels 1 to 3)">
+                    <i class="fas fa-users text-[10px] mr-0.5"></i> L3 (Distributors)
                 </button>
                 <button type="button" id="btnExpandAll" class="px-2.5 py-1 text-[11px] font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 transition">
                     <i class="fas fa-folder-open text-[10px]"></i> Expand All
@@ -598,36 +650,82 @@
     // Render an interactive Org Chart Node Card
     const renderNodeCard = (member, position = 'root') => {
         const card = document.createElement('div');
-        card.className = `org-node-card ${posCardClass(position)} p-3.5`;
+        const isCompanyRoot = member.customer_id === 'C25070003';
+        const isCompanyNode = Boolean(member.is_company_node);
+        const cardClass = isCompanyRoot 
+            ? 'pos-company-root ring-2 ring-amber-400/50' 
+            : (isCompanyNode ? 'pos-company-node' : posCardClass(position));
+
+        card.className = `org-node-card ${cardClass} p-3.5`;
         card.dataset.nodeCard = 'true';
         card.dataset.nodeId = member.id;
         card._memberData = member;
 
-        const initials = (member.name || 'M').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+        const initials = isCompanyRoot 
+            ? '👑' 
+            : (isCompanyNode ? '🏢' : ((member.name || 'M').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()));
         const incomeFormatted = member.total_income_formatted || '₹0';
+        const dlCount = Number(member.downline_count ?? 0);
+        const dlBadge = `<span class="inline-flex items-center gap-1 font-bold text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200" title="Total Network Downlines under this member"><i class="fas fa-users text-[8px]"></i> ${dlCount} DL</span>`;
+
+        const avatarClass = isCompanyRoot
+            ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
+            : (isCompanyNode 
+                ? 'bg-gradient-to-tr from-slate-700 to-slate-900 text-white border-slate-600'
+                : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold');
+
+        const companyBadge = member.company_label 
+            ? `<div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1">
+                 <i class="fas fa-crown text-[8px] text-amber-600"></i> <span>${escapeHtml(member.company_label)}</span>
+               </div>`
+            : '';
+
+        const phoneHtml = member.phone 
+            ? `<div class="flex items-center gap-1 text-[10px] text-slate-600 truncate mt-0.5">
+                 <i class="fas fa-phone-alt text-[8px] text-slate-400"></i>
+                 <span class="font-mono text-[10px] font-medium text-slate-700">${escapeHtml(member.phone)}</span>
+               </div>`
+            : '';
+
+        const sponsorHtml = member.sponsor 
+            ? `<div class="flex justify-between items-center text-[10px] truncate" title="${escapeHtml(member.sponsor.name)} (${escapeHtml(member.sponsor.customer_id)})">
+                 <span class="font-medium text-slate-400">Sponsor:</span>
+                 <span class="font-bold text-slate-800 truncate max-w-[125px]">${escapeHtml(member.sponsor.name)}</span>
+               </div>
+               <div class="flex justify-between items-center text-[9px] text-slate-400 -mt-0.5 font-mono">
+                 <span>ID:</span>
+                 <span class="font-semibold text-slate-600">${escapeHtml(member.sponsor.customer_id)}</span>
+               </div>`
+            : `<div class="flex justify-between items-center text-[10px]"><span class="font-medium text-slate-400">Sponsor:</span> <span class="font-bold text-amber-700">Master Root</span></div>`;
 
         card.innerHTML = `
             <!-- Box Content (for Detailed & Compact modes) -->
             <div class="card-box-content">
-                <div class="flex items-center justify-between gap-1.5 mb-2">
-                    ${posBadge(position || member.placement_position)}
+                <div class="flex items-center justify-between gap-1 mb-2">
+                    <div class="flex items-center gap-1">
+                        ${posBadge(position || member.placement_position)}
+                        ${dlBadge}
+                    </div>
                     ${statusBadge(member.status)}
                 </div>
 
-                <div class="flex items-center gap-2 mb-2">
-                    <div class="card-avatar w-8 h-8 rounded-full bg-slate-100 text-blue-700 font-extrabold text-xs flex items-center justify-center border border-slate-200 flex-shrink-0">
-                        ${escapeHtml(initials)}
+                <div class="flex items-center gap-2 mb-1.5">
+                    <div class="card-avatar w-8 h-8 rounded-full ${avatarClass} text-xs flex items-center justify-center border border-slate-200 flex-shrink-0">
+                        ${initials}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="card-name font-bold text-slate-900 text-xs truncate" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</div>
-                        <div class="font-mono text-[10px] font-semibold text-blue-600 truncate">${escapeHtml(member.customer_id)}</div>
+                        <div class="card-name font-bold text-slate-900 text-xs truncate leading-snug" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</div>
+                        <div class="font-mono text-[10px] font-bold text-blue-600 truncate">${escapeHtml(member.customer_id)}</div>
+                        ${phoneHtml}
                     </div>
                 </div>
 
+                ${companyBadge}
+
                 <!-- Detailed Card Meta -->
-                <div class="card-full-meta text-[10px] text-slate-500 pt-2 border-t border-slate-100 space-y-1 mb-2.5">
+                <div class="card-full-meta text-[10px] text-slate-500 pt-1.5 border-t border-slate-100 space-y-1 mb-2">
                     <div class="flex justify-between items-center"><span class="font-medium text-slate-400">Level:</span> <span class="font-semibold text-slate-700">${escapeHtml(member.level_label)}</span></div>
-                    <div class="flex justify-between items-center truncate" title="${escapeHtml(member.sponsor ? `${member.sponsor.customer_id} (${member.sponsor.name})` : 'None')}"><span class="font-medium text-slate-400">Sponsor:</span> <span class="font-semibold text-slate-700 truncate max-w-[110px]">${escapeHtml(member.sponsor ? member.sponsor.customer_id : 'Root')}</span></div>
+                    ${sponsorHtml}
                     <div class="flex justify-between items-center pt-1 border-t border-slate-100/80">
                         <span class="font-medium text-slate-400">Income:</span>
                         <span class="font-bold text-emerald-700 font-mono text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/80">${escapeHtml(incomeFormatted)}</span>
@@ -640,10 +738,10 @@
                 </div>
 
                 <div class="card-full-actions flex items-center justify-between gap-1 pt-2 border-t border-slate-100 text-[10px]">
-                    <button type="button" class="btn-node-drawer px-2 py-0.5 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded transition flex items-center gap-1">
+                    <button type="button" class="btn-node-drawer px-2.5 py-1 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center gap-1">
                         <i class="fas fa-eye text-[9px]"></i> Info
                     </button>
-                    <button type="button" class="btn-node-focus px-2 py-0.5 font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded transition flex items-center gap-1" title="Focus subtree under this member">
+                    <button type="button" class="btn-node-focus px-2.5 py-1 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center gap-1" title="Focus subtree under this member">
                         <i class="fas fa-crosshairs text-[9px]"></i> Focus
                     </button>
                 </div>
@@ -651,7 +749,7 @@
 
             <!-- Circle Inner Content (for Circle mode) -->
             <div class="circle-inner-avatar hidden">
-                ${escapeHtml(initials)}
+                ${initials}
             </div>
 
             <button type="button" class="org-expand-btn" data-expand="true" aria-expanded="false" title="Expand placement slots">
@@ -923,18 +1021,26 @@
                     <div class="text-lg font-black text-orange-600 mt-0.5">${escapeHtml(member.level_label)}</div>
                 </div>
                 <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200/70">
-                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Matrix Children</div>
-                    <div class="text-lg font-black text-emerald-600 mt-0.5">${member.has_children ? 'Active 1:3' : 'Available'}</div>
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Downline Team</div>
+                    <div class="text-lg font-black text-indigo-600 mt-0.5">${escapeHtml(member.downline_count || 0)} Members</div>
                 </div>
             </div>
 
             <div class="space-y-2.5 pt-2 border-t border-slate-100">
+                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                    <div class="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-phone text-blue-600"></i> Contact & Location
+                    </div>
+                    <div class="font-semibold text-slate-800 mt-1">${escapeHtml(member.phone || 'No phone')} &bull; ${escapeHtml(member.email || 'No email')}</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(member.full_address || member.city || 'Gujarat')}</div>
+                </div>
+
                 <div class="p-3 rounded-xl bg-orange-50/60 border border-orange-200/70">
                     <div class="text-[10px] font-extrabold text-orange-900 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fas fa-user-tag text-orange-600"></i> Direct Sponsor
                     </div>
                     <div class="font-bold text-slate-900 mt-1">${escapeHtml(member.sponsor ? member.sponsor.name : 'Root Leader / None')}</div>
-                    <div class="font-mono text-orange-700 text-[11px] font-semibold mt-0.5">${escapeHtml(member.sponsor ? member.sponsor.customer_id : '')}</div>
+                    <div class="font-mono text-orange-700 text-[11px] font-semibold mt-0.5">${escapeHtml(member.sponsor ? `${member.sponsor.customer_id} ${member.sponsor.phone ? '• ' + member.sponsor.phone : ''}` : '')}</div>
                 </div>
 
                 <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -942,7 +1048,7 @@
                         <i class="fas fa-sitemap text-slate-500"></i> Placement Parent
                     </div>
                     <div class="font-bold text-slate-900 mt-1">${escapeHtml(member.placement_parent ? member.placement_parent.name : 'Matrix Root')}</div>
-                    <div class="font-mono text-slate-600 text-[11px] font-semibold mt-0.5">${escapeHtml(member.placement_parent ? member.placement_parent.customer_id : '')}</div>
+                    <div class="font-mono text-slate-600 text-[11px] font-semibold mt-0.5">${escapeHtml(member.placement_parent ? `${member.placement_parent.customer_id} ${member.placement_parent.phone ? '• ' + member.placement_parent.phone : ''}` : '')}</div>
                 </div>
             </div>
         `;
@@ -1002,16 +1108,57 @@
         });
     });
 
+    // Load member tree by ID
+    const loadMemberTree = async (memberId, isSubtreeFocus = false) => {
+        try {
+            clearMessage();
+            const url = viewport.dataset.childrenUrl.replace('__MEMBER__', memberId);
+            const response = await fetch(url, { headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('Failed to load member hierarchy.');
+            const payload = await response.json();
+            
+            if (!isSubtreeFocus) {
+                focusHistory = [];
+                activeTopRoot = { member: payload.parent, slots: payload.slots };
+            }
+            mountTree({ member: payload.parent, slots: payload.slots }, isSubtreeFocus);
+            
+            if (rootSelect) {
+                rootSelect.value = String(memberId);
+            }
+
+            // Sync quick leader pills
+            document.querySelectorAll('.quick-leader-pill').forEach((btn) => {
+                if (btn.dataset.memberId === String(memberId)) {
+                    btn.className = 'quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border bg-orange-600 text-white border-orange-600 shadow-xs';
+                } else {
+                    btn.className = 'quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border bg-slate-50 text-slate-700 border-slate-200 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-900';
+                }
+            });
+
+            // Update URL without reload
+            const urlObj = new URL(window.location.href);
+            urlObj.searchParams.set('root', memberId);
+            window.history.replaceState({}, '', urlObj.toString());
+        } catch (err) {
+            showMessage(err.message || 'Error loading member tree.');
+        }
+    };
+
+    // Quick Leader Pills Click
+    document.querySelectorAll('.quick-leader-pill').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const memberId = Number(btn.dataset.memberId);
+            if (memberId) loadMemberTree(memberId, false);
+        });
+    });
+
     // Root Selector Change
     rootSelect?.addEventListener('change', () => {
         const selectedId = Number(rootSelect.value);
-        const rootPayload = rootPayloads.find((item) => {
-            const mId = item.member ? item.member.id : item.id;
-            return mId === selectedId;
-        });
-        activeTopRoot = rootPayload || null;
-        focusHistory = [];
-        mountTree(activeTopRoot);
+        if (selectedId) {
+            loadMemberTree(selectedId, false);
+        }
     });
 
     // Search Member
@@ -1040,10 +1187,18 @@
 
             searchResults.innerHTML = searchCache.map((item) => {
                 const member = item.member || item;
+                const dl = member.downline_count !== undefined ? `${member.downline_count} DL` : '';
                 return `
-                <div class="p-3 hover:bg-blue-50/60 cursor-pointer border-b border-slate-100 last:border-0 transition" data-result-id="${member.id}">
-                    <div class="font-bold text-slate-900">${escapeHtml(member.name)}</div>
-                    <div class="font-mono text-blue-600 text-[11px]">${escapeHtml(member.customer_id)} &bull; ${escapeHtml(member.position_label || 'Member')}</div>
+                <div class="p-3 hover:bg-orange-50/70 cursor-pointer border-b border-slate-100 last:border-0 transition flex items-center justify-between gap-2" data-result-id="${member.id}">
+                    <div class="min-w-0">
+                        <div class="font-bold text-slate-900 text-xs truncate">${escapeHtml(member.name)}</div>
+                        <div class="font-mono text-blue-600 text-[11px] truncate">${escapeHtml(member.customer_id)} &bull; ${escapeHtml(member.phone || '')} &bull; ${escapeHtml(member.city || 'Gujarat')}</div>
+                    </div>
+                    <div class="flex-shrink-0 text-right">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800">
+                            <i class="fas fa-sitemap text-[9px]"></i> ${escapeHtml(dl || 'View Tree')}
+                        </span>
+                    </div>
                 </div>`;
             }).join('');
             searchResults.classList.remove('hidden');
@@ -1061,40 +1216,8 @@
 
         searchResults.classList.add('hidden');
         const memberId = Number(item.dataset.resultId);
-        const matched = searchCache.find((entry) => {
-            const m = entry.member || entry;
-            return m.id === memberId;
-        });
-
-        if (!matched) return;
-
-        try {
-            const rootId = matched.root_id || (matched.path && matched.path[0]) || memberId;
-            const path = matched.path || [memberId];
-
-            if (rootSelect && String(rootSelect.value) !== String(rootId)) {
-                rootSelect.value = String(rootId);
-                const rootPayload = rootPayloads.find((p) => {
-                    const mId = p.member ? p.member.id : p.id;
-                    return mId === rootId;
-                });
-                activeTopRoot = rootPayload || null;
-                focusHistory = [];
-                mountTree(activeTopRoot);
-            }
-
-            if (path.length) {
-                await openPath(path);
-            }
-
-            const targetBranch = findBranchInDom(memberId);
-            if (targetBranch) {
-                document.querySelectorAll('.tree-highlight').forEach((el) => el.classList.remove('tree-highlight'));
-                targetBranch._card.classList.add('tree-highlight');
-                targetBranch._card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-            }
-        } catch (error) {
-            showMessage(error.message || 'Error locating member in hierarchy.');
+        if (memberId) {
+            await loadMemberTree(memberId, false);
         }
     });
 
@@ -1174,6 +1297,51 @@
         }
     });
 
+    document.getElementById('btnExpandLevel3')?.addEventListener('click', async () => {
+        const rootBranch = panContainer.firstElementChild;
+        if (!rootBranch) return;
+        
+        // Open L1
+        if (rootBranch._childrenContainer.dataset.loaded !== 'true') {
+            await loadChildren(rootBranch, false);
+        } else {
+            rootBranch._childrenContainer.classList.remove('hidden');
+            rootBranch.classList.add('has-expanded-children');
+            rootBranch._expandButton.classList.add('is-expanded');
+            rootBranch._expandButton.setAttribute('aria-expanded', 'true');
+            rootBranch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+        }
+
+        // Open L2
+        const l1Branches = Array.from(rootBranch._childrenContainer.querySelectorAll(':scope > .org-child-slot > .org-tree-branch'));
+        for (const branch of l1Branches) {
+            if (branch._childrenContainer.dataset.loaded !== 'true') {
+                await loadChildren(branch, false);
+            } else {
+                branch._childrenContainer.classList.remove('hidden');
+                branch.classList.add('has-expanded-children');
+                branch._expandButton.classList.add('is-expanded');
+                branch._expandButton.setAttribute('aria-expanded', 'true');
+                branch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+            }
+        }
+
+        // Open L3 (Real Distributors under M5..M13)
+        const l2Branches = Array.from(rootBranch._childrenContainer.querySelectorAll('.org-children-wrapper > .org-child-slot > .org-tree-branch'));
+        for (const branch of l2Branches) {
+            if (branch._childrenContainer.dataset.loaded !== 'true') {
+                await loadChildren(branch, false);
+            } else {
+                branch._childrenContainer.classList.remove('hidden');
+                branch.classList.add('has-expanded-children');
+                branch._expandButton.classList.add('is-expanded');
+                branch._expandButton.setAttribute('aria-expanded', 'true');
+                branch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+            }
+        }
+        centerTree();
+    });
+
     document.getElementById('btnExpandAll')?.addEventListener('click', async () => {
         const branches = Array.from(panContainer.querySelectorAll('.org-tree-branch'));
         for (const branch of branches) {
@@ -1242,6 +1410,12 @@
     // Initial Mount
     if (initialRoot) {
         mountTree(initialRoot);
+        const rootCid = initialRoot.member ? initialRoot.member.customer_id : (initialRoot.customer_id || '');
+        if (rootCid === 'C25070003') {
+            setTimeout(() => {
+                document.getElementById('btnExpandLevel3')?.click();
+            }, 120);
+        }
     }
 })();
 </script>

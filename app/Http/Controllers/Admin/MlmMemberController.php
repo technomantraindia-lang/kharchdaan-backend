@@ -142,7 +142,11 @@ class MlmMemberController extends Controller
     {
         $roots = $this->treeService->roots();
         $requestedRoot = $request->integer('root');
-        $root = $roots->firstWhere('id', $requestedRoot) ?? $roots->first();
+        
+        $root = $requestedRoot 
+            ? Member::with(['user.addresses', 'sponsor.user', 'placementParent.user'])->find($requestedRoot) 
+            : null;
+        $root = $root ?? $roots->first();
         
         $initialRoot = null;
         if ($root) {
@@ -153,7 +157,9 @@ class MlmMemberController extends Controller
             ];
         }
 
-        $rootPayloads = $roots->map(function (Member $rootMember): array {
+        $leaderOptions = $this->treeService->leaderOptions();
+
+        $rootPayloads = collect([$root])->filter()->map(function (Member $rootMember): array {
             $childrenData = $this->treeService->children($rootMember);
             return [
                 'member' => $childrenData['parent'],
@@ -161,7 +167,7 @@ class MlmMemberController extends Controller
             ];
         })->values();
 
-        return view('admin.mlm.tree', compact('roots', 'initialRoot', 'rootPayloads'));
+        return view('admin.mlm.tree', compact('roots', 'initialRoot', 'rootPayloads', 'root', 'leaderOptions'));
     }
 
     public function treeChildren(Member $member): JsonResponse

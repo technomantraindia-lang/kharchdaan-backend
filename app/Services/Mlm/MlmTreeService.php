@@ -11,10 +11,122 @@ use Illuminate\Support\Facades\DB;
 
 class MlmTreeService
 {
+    protected ?array $downlineCountsCache = null;
+
+    public function getDownlineCounts(): array
+    {
+        if ($this->downlineCountsCache !== null) {
+            return $this->downlineCountsCache;
+        }
+
+        $all = Member::query()->select('id', 'placement_parent_id')->get();
+        $byParent = [];
+        foreach ($all as $m) {
+            $pid = $m->placement_parent_id ?? 0;
+            $byParent[$pid][] = $m->id;
+        }
+
+        $counts = [];
+        $countTree = function ($id) use (&$countTree, &$byParent, &$counts): int {
+            if (isset($counts[$id])) {
+                return $counts[$id];
+            }
+            $children = $byParent[$id] ?? [];
+            $total = count($children);
+            foreach ($children as $cid) {
+                $total += $countTree($cid);
+            }
+            $counts[$id] = $total;
+            return $total;
+        };
+
+        foreach ($all as $m) {
+            $countTree($m->id);
+        }
+
+        return $this->downlineCountsCache = $counts;
+    }
+
+    public function getDownlineCount(int $memberId): int
+    {
+        $counts = $this->getDownlineCounts();
+        return $counts[$memberId] ?? 0;
+    }
+
+    public function leaderOptions(): array
+    {
+        $downlines = $this->getDownlineCounts();
+
+        // 1. Company Master Nodes (M1..M13)
+        $companyCodes = [
+            'C25070003','C25070004','C25070005','C25070006',
+            'C25070007','C25070008','C25070009','C25070010',
+            'C25070011','C25070012','C25070013','C25070014','C25070015'
+        ];
+
+        $companyMembers = Member::query()
+            ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
+            ->whereHas('user', function ($q) use ($companyCodes) {
+                $q->whereIn('mlm_member_id', $companyCodes);
+            })
+            ->orderBy('id')
+            ->get();
+
+        // 2. Top Distributor Leaders
+        $topDistributors = Member::query()
+            ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
+            ->whereHas('user', function ($q) use ($companyCodes) {
+                $q->whereNotIn('mlm_member_id', $companyCodes);
+            })
+            ->get()
+            ->sortByDesc(fn (Member $m) => $downlines[$m->id] ?? 0)
+            ->values();
+
+        // Top 8 for quick toolbar pills
+        $quickPills = $topDistributors->take(8)->map(fn ($m) => [
+            'id' => $m->id,
+            'name' => $m->user?->name ?? 'Distributor',
+            'customer_id' => $m->customer_id,
+            'phone' => $m->user?->phone,
+            'downlines' => $downlines[$m->id] ?? 0,
+        ])->all();
+
+        return [
+            'company' => $companyMembers->map(function ($m) use ($downlines) {
+                $cid = $m->customer_id;
+                $name = $m->user?->name;
+                $dl = $downlines[$m->id] ?? 0;
+                $label = match ($cid) {
+                    'C25070003' => "👑 {$name} — Top Company Root (765 Downlines)",
+                    'C25070004' => "🏢 {$name} — Left Pillar ({$dl} Downlines)",
+                    'C25070005' => "🏢 {$name} — Middle Pillar ({$dl} Downlines)",
+                    'C25070006' => "🏢 {$name} — Right Pillar ({$dl} Downlines)",
+                    default => "🌿 {$name} — Branch Master ({$dl} Downlines)",
+                };
+                return [
+                    'id' => $m->id,
+                    'name' => $name,
+                    'customer_id' => $cid,
+                    'downlines' => $dl,
+                    'label' => $label,
+                ];
+            })->all(),
+            'leaders' => $topDistributors->take(25)->map(fn ($m) => [
+                'id' => $m->id,
+                'name' => $m->user?->name,
+                'customer_id' => $m->customer_id,
+                'mobile' => $m->user?->phone,
+                'downlines' => $downlines[$m->id] ?? 0,
+                'label' => "{$m->user?->name} ({$m->customer_id}) — " . ($downlines[$m->id] ?? 0) . " Downlines",
+            ])->all(),
+            'quick_pills' => $quickPills,
+        ];
+    }
+
     public function roots(): Collection
     {
         return Member::query()
-            ->with(['user', 'sponsor.user', 'placementParent.user'])
+            ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
             ->withCount('placementChildren')
             ->whereNull('placement_parent_id')
             ->orderBy('id')
@@ -24,7 +136,7 @@ class MlmTreeService
     public function children(Member $parent): array
     {
         $children = Member::query()
-            ->with(['user', 'sponsor.user', 'placementParent.user'])
+            ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
             ->withCount('placementChildren')
             ->where('placement_parent_id', $parent->id)
             ->whereIn('placement_position', Member::POSITIONS)
@@ -51,6 +163,7 @@ class MlmTreeService
             ? (int) $member->placement_children_count > 0
             : Member::query()->where('placement_parent_id', $member->id)->exists();
         $level = $this->level($member);
+        $downlineCount = $this->getDownlineCount($member->id);
 
         $totalIncome = (float) MlmIncomeLedger::query()
             ->where('member_id', $member->id)
@@ -58,12 +171,40 @@ class MlmTreeService
             ->where('status', '!=', MlmIncomeLedger::STATUS_REVERSED)
             ->sum('calculated_amount');
 
+        $cid = $member->customer_id;
+        $companyCodes = [
+            'C25070003','C25070004','C25070005','C25070006',
+            'C25070007','C25070008','C25070009','C25070010',
+            'C25070011','C25070012','C25070013','C25070014','C25070015'
+        ];
+        $isCompanyNode = in_array($cid, $companyCodes, true);
+        $companyLabel = null;
+        if ($isCompanyNode) {
+            $companyLabel = match ($cid) {
+                'C25070003' => 'Master Root (Aaradhya Gruh Udyog)',
+                'C25070004' => 'Pillar Left (Aaradhya)',
+                'C25070005' => 'Pillar Middle (Aaradhya)',
+                'C25070006' => 'Pillar Right (Aaradhya)',
+                default => 'Company Branch Master',
+            };
+        }
+
+        $address = $member->user?->addresses?->first();
+
         return [
             'id' => (int) $member->id,
             'customer_id' => $member->customer_id,
             'name' => $member->user?->name ?? 'Unnamed member',
             'email' => $member->user?->email,
             'phone' => $member->user?->phone,
+            'city' => $address?->city ?? 'Ahmedabad',
+            'state' => $address?->state ?? 'Gujarat',
+            'area' => $address?->apt ?? $address?->area ?? '',
+            'full_address' => $address?->address ?? '',
+            'pincode' => $address?->zip ?? '',
+            'is_company_node' => $isCompanyNode,
+            'company_label' => $companyLabel,
+            'downline_count' => $downlineCount,
             'status' => $member->status,
             'status_label' => ucfirst($member->status),
             'kyc_status' => $member->kyc_status,
@@ -80,11 +221,13 @@ class MlmTreeService
                 'id' => $member->sponsor->id,
                 'customer_id' => $member->sponsor->customer_id,
                 'name' => $member->sponsor->user?->name ?? 'Unknown',
+                'phone' => $member->sponsor->user?->phone ?? '',
             ] : null,
             'placement_parent' => $member->placementParent ? [
                 'id' => $member->placementParent->id,
                 'customer_id' => $member->placementParent->customer_id,
                 'name' => $member->placementParent->user?->name ?? 'Unknown',
+                'phone' => $member->placementParent->user?->phone ?? '',
             ] : null,
             'details_url' => admin_route('mlm.members.show', $member),
             'move_url' => admin_route('mlm.tree.move.form', $member),
