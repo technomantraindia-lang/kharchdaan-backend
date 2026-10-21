@@ -413,10 +413,13 @@
                 <i class="fas fa-bolt text-amber-500"></i> Quick Leader Network:
             </span>
             @php
-                $topRootId = $roots->first()?->id ?? 747;
+                $topRoot = $roots->first() ?? $root;
+                $topRootId = $topRoot?->id ?? 10;
+                $topRootName = $topRoot?->user?->name ?? 'Nimesh Jagirdar';
+                $topRootCid = $topRoot?->customer_id ?? 'C22020008';
             @endphp
             <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $topRootId) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-orange-50/80 text-orange-950 border-orange-200 hover:bg-orange-100' }}" data-member-id="{{ $topRootId }}">
-                👑 M1 Master Root (765 DL)
+                👑 Top ID: {{ $topRootName }} ({{ $topRootCid }})
             </button>
             @foreach($leaderOptions['quick_pills'] as $pill)
                 <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $pill['id']) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-900' }}" data-member-id="{{ $pill['id'] }}" title="Phone: {{ $pill['phone'] }}">

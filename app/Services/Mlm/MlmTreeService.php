@@ -57,8 +57,9 @@ class MlmTreeService
     {
         $downlines = $this->getDownlineCounts();
 
-        // 1. Company Master Nodes (M1..M13)
+        // 1. Company Master Nodes (Top ID C22020008 + M1..M13)
         $companyCodes = [
+            'C22020008',
             'C25070003','C25070004','C25070005','C25070006',
             'C25070007','C25070008','C25070009','C25070010',
             'C25070011','C25070012','C25070013','C25070014','C25070015'
@@ -69,8 +70,11 @@ class MlmTreeService
             ->whereHas('user', function ($q) use ($companyCodes) {
                 $q->whereIn('mlm_member_id', $companyCodes);
             })
-            ->orderBy('id')
-            ->get();
+            ->get()
+            ->sortBy(function (Member $m) {
+                return $m->customer_id === 'C22020008' ? -1 : (int) $m->id;
+            })
+            ->values();
 
         // 2. Top Distributor Leaders
         $topDistributors = Member::query()
@@ -97,10 +101,11 @@ class MlmTreeService
                 $name = $m->user?->name;
                 $dl = $downlines[$m->id] ?? 0;
                 $label = match ($cid) {
-                    'C25070003' => "👑 {$name} — Top Company Root (765 Downlines)",
+                    'C22020008' => "👑 {$name} — Top ID & Founder (Aaradhya Gruh Udyog - {$dl} Downlines)",
                     'C25070004' => "🏢 {$name} — Left Pillar ({$dl} Downlines)",
                     'C25070005' => "🏢 {$name} — Middle Pillar ({$dl} Downlines)",
                     'C25070006' => "🏢 {$name} — Right Pillar ({$dl} Downlines)",
+                    'C25070003' => "🌿 {$name} — Company Branch M1 ({$dl} Downlines)",
                     default => "🌿 {$name} — Branch Master ({$dl} Downlines)",
                 };
                 return [
@@ -173,6 +178,7 @@ class MlmTreeService
 
         $cid = $member->customer_id;
         $companyCodes = [
+            'C22020008',
             'C25070003','C25070004','C25070005','C25070006',
             'C25070007','C25070008','C25070009','C25070010',
             'C25070011','C25070012','C25070013','C25070014','C25070015'
@@ -181,10 +187,11 @@ class MlmTreeService
         $companyLabel = null;
         if ($isCompanyNode) {
             $companyLabel = match ($cid) {
-                'C25070003' => 'Master Root (Aaradhya Gruh Udyog)',
+                'C22020008' => 'Top ID: Nimesh Jagirdar (Aaradhya Gruh Udyog)',
                 'C25070004' => 'Pillar Left (Aaradhya)',
                 'C25070005' => 'Pillar Middle (Aaradhya)',
                 'C25070006' => 'Pillar Right (Aaradhya)',
+                'C25070003' => 'Company Branch M1',
                 default => 'Company Branch Master',
             };
         }

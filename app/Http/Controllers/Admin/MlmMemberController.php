@@ -88,14 +88,18 @@ class MlmMemberController extends Controller
         if (!$root) {
             $root = Member::query()
                 ->with(['user', 'sponsor.user'])
-                ->whereNull('sponsor_member_id')
-                ->orderBy('id')
+                ->whereHas('user', fn ($q) => $q->where('mlm_member_id', 'C22020008'))
                 ->first()
+                ?? Member::query()
+                    ->with(['user', 'sponsor.user'])
+                    ->whereNull('sponsor_member_id')
+                    ->orderBy('id')
+                    ->first()
                 ?? Member::with(['user', 'sponsor.user'])->orderBy('id')->first();
         }
 
         $networkData = $root ? $this->treeService->getSponsorNetwork($root) : null;
-        $allMembers = Member::with('user')->orderBy('id')->get();
+        $allMembers = Member::with('user')->get()->sortBy(fn ($m) => $m->customer_id === 'C22020008' ? -1 : (int) $m->id)->values();
 
         return view('admin.mlm.sponsor_network', compact('root', 'networkData', 'allMembers', 'search'));
     }
@@ -111,15 +115,19 @@ class MlmMemberController extends Controller
         if (!$root) {
             $root = Member::query()
                 ->with(['user', 'sponsor.user', 'placementParent.user'])
-                ->whereNull('placement_parent_id')
-                ->orderBy('id')
+                ->whereHas('user', fn ($q) => $q->where('mlm_member_id', 'C22020008'))
                 ->first()
+                ?? Member::query()
+                    ->with(['user', 'sponsor.user', 'placementParent.user'])
+                    ->whereNull('placement_parent_id')
+                    ->orderBy('id')
+                    ->first()
                 ?? Member::with(['user', 'sponsor.user', 'placementParent.user'])->orderBy('id')->first();
         }
 
         $genealogyData = $root ? $this->treeService->getGenealogy($root) : null;
         $roots = $this->treeService->roots();
-        $allMembers = Member::with('user')->orderBy('id')->get();
+        $allMembers = Member::with('user')->get()->sortBy(fn ($m) => $m->customer_id === 'C22020008' ? -1 : (int) $m->id)->values();
 
         return view('admin.mlm.genealogy', compact('root', 'genealogyData', 'roots', 'allMembers'));
     }
@@ -146,7 +154,13 @@ class MlmMemberController extends Controller
         $root = $requestedRoot 
             ? Member::with(['user.addresses', 'sponsor.user', 'placementParent.user'])->find($requestedRoot) 
             : null;
-        $root = $root ?? $roots->first();
+        if (!$root) {
+            $root = Member::query()
+                ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
+                ->whereHas('user', fn ($q) => $q->where('mlm_member_id', 'C22020008'))
+                ->first()
+                ?? $roots->first();
+        }
         
         $initialRoot = null;
         if ($root) {
