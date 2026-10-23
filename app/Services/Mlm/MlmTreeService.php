@@ -189,12 +189,14 @@ class MlmTreeService
             ->where('status', '!=', MlmIncomeLedger::STATUS_REVERSED)
             ->sum('calculated_amount');
 
-        // Check if member is boosted by appreciation idle slots (Double Income)
+        // Check if member is boosted by appreciation idle slots (Double Income & Dual Placement)
         $boostedSlots = Member::query()
+            ->with(['placementParent.user'])
             ->where('appreciation_member_id', $member->id)
             ->get();
         $boostedIncome = 0;
         $boostedLabels = [];
+        $promotionsHeld = [];
         foreach ($boostedSlots as $slot) {
             $boostedLabels[] = $slot->idle_slot_label ?? $slot->customer_id;
             $boostedIncome += (float) MlmIncomeLedger::query()
@@ -202,6 +204,26 @@ class MlmTreeService
                 ->where('status', '!=', MlmIncomeLedger::STATUS_FAILED)
                 ->where('status', '!=', MlmIncomeLedger::STATUS_REVERSED)
                 ->sum('calculated_amount');
+
+            $isSlotExpired = $slot->appreciation_expires_at && $slot->appreciation_expires_at->isPast();
+            $now = now();
+            $diffDays = $slot->appreciation_expires_at ? (int) ceil($now->diffInDays($slot->appreciation_expires_at, false)) : null;
+
+            $promotionsHeld[] = [
+                'slot_id' => $slot->id,
+                'slot_customer_id' => $slot->customer_id,
+                'slot_label' => $slot->idle_slot_label ?? 'Idle Slot',
+                'slot_position' => $slot->placement_position,
+                'slot_level' => $this->level($slot),
+                'slot_path' => $this->placementPath($slot),
+                'assigned_at' => $slot->appreciation_assigned_at?->format('d M Y, h:i A'),
+                'expires_at' => $slot->appreciation_expires_at?->format('d M Y, h:i A'),
+                'expires_at_iso' => $slot->appreciation_expires_at?->toIso8601String(),
+                'days_remaining' => $diffDays !== null ? max(0, $diffDays) : null,
+                'is_expired' => $isSlotExpired,
+                'is_indefinite' => empty($slot->appreciation_expires_at),
+                'note' => $slot->appreciation_note,
+            ];
         }
         $combinedIncome = $totalIncome + $boostedIncome;
 
@@ -231,42 +253,90 @@ class MlmTreeService
         };
 
         $appreciationMember = null;
+        $promotedInfo = null;
         if ($member->appreciation_member_id) {
-            $appMember = $member->appreciationMember ?? Member::find($member->appreciation_member_id);
+            $appMember = $member->appreciationMember ?? Member::with(['user.addresses'])->find($member->appreciation_member_id);
             if ($appMember) {
-                $appreciationMember = [
+                $isExpired = $member->appreciation_expires_at && $member->appreciation_expires_at->isPast();
+                $now = now();
+                $diffDays = $member->appreciation_expires_at ? (int) ceil($now->diffInDays($member->appreciation_expires_at, false)) : null;
+                $diffHours = $member->appreciation_expires_at ? (int) ceil($now->diffInHours($member->appreciation_expires_at, false)) : null;
+
+                $origLevel = $this->level($appMember);
+                $origPath = $this->placementPath($appMember);
+
+                $promotedInfo = [
                     'id' => $appMember->id,
                     'customer_id' => $appMember->customer_id,
                     'name' => $appMember->user?->name ?? 'Distributor',
                     'phone' => $appMember->user?->phone ?? '',
+                    'email' => $appMember->user?->email ?? '',
+                    'original_level' => $origLevel,
+                    'original_level_label' => $origLevel > 19 ? '20+' : (string) $origLevel,
+                    'original_path' => $origPath,
+                    'status' => $appMember->status,
+                    'kyc_status' => $appMember->kyc_status,
+                    'assigned_at' => $member->appreciation_assigned_at?->format('d M Y, h:i A'),
+                    'expires_at' => $member->appreciation_expires_at?->format('d M Y, h:i A'),
+                    'expires_at_iso' => $member->appreciation_expires_at?->toIso8601String(),
+                    'days_remaining' => $diffDays !== null ? max(0, $diffDays) : null,
+                    'hours_remaining' => $diffHours !== null ? max(0, $diffHours) : null,
+                    'is_expired' => $isExpired,
+                    'is_indefinite' => empty($member->appreciation_expires_at),
+                    'note' => $member->appreciation_note,
+                    'idle_slot_label' => $idleLabel,
+                    'idle_slot_code' => $cid,
                 ];
+
+                $appreciationMember = $promotedInfo;
             }
         }
 
         $address = $member->user?->addresses?->first();
 
+        // When a member is promoted to this idle slot, show the promoted member's identity at this card!
+        $displayName = $isTopRoot
+            ? '1 - Nimesh Jagirdar'
+            : ($isIdleSlot
+                ? ($promotedInfo ? $promotedInfo['name'] : ($idleLabel ?? $member->user?->name))
+                : ($member->user?->name ?? 'Unnamed member'));
+
+        $displayPhone = ($isIdleSlot && $promotedInfo)
+            ? $promotedInfo['phone']
+            : $member->user?->phone;
+
+        $displayEmail = ($isIdleSlot && $promotedInfo)
+            ? $promotedInfo['email']
+            : $member->user?->email;
+
         return [
             'id' => (int) $member->id,
-            'customer_id' => $member->customer_id,
-            'name' => $isTopRoot ? '1 - Nimesh Jagirdar' : ($isIdleSlot ? ($idleLabel ?? $member->user?->name) : ($member->user?->name ?? 'Unnamed member')),
-            'email' => $member->user?->email,
-            'phone' => $member->user?->phone,
+            'customer_id' => ($isIdleSlot && $promotedInfo) ? $promotedInfo['customer_id'] : $member->customer_id,
+            'slot_customer_id' => $member->customer_id,
+            'name' => $displayName,
+            'email' => $displayEmail,
+            'phone' => $displayPhone,
             'city' => $address?->city ?? 'Ahmedabad',
             'state' => $address?->state ?? 'Gujarat',
             'area' => $address?->apt ?? $address?->area ?? '',
             'full_address' => $address?->address ?? '',
             'pincode' => $address?->zip ?? '',
-            'is_company_node' => $isTopRoot || $isIdleSlot,
+            'is_company_node' => $isTopRoot || ($isIdleSlot && ! $promotedInfo),
             'is_top_root' => $isTopRoot,
             'is_idle_slot' => $isIdleSlot,
             'idle_slot_label' => $idleLabel,
             'company_label' => $companyLabel,
             'appreciation_member' => $appreciationMember,
+            'promoted_info' => $promotedInfo,
+            'is_promoted_acting' => (bool) ($isIdleSlot && $promotedInfo && ! ($promotedInfo['is_expired'] ?? false)),
+            'is_promoted_expired' => (bool) ($isIdleSlot && $promotedInfo && ($promotedInfo['is_expired'] ?? false)),
             'boosted_by_idle_slots' => $boostedLabels,
+            'promotions_held' => $promotionsHeld,
+            'is_dual_placed' => count($promotionsHeld) > 0,
             'downline_count' => $downlineCount,
-            'status' => $member->status,
-            'status_label' => ucfirst($member->status),
-            'kyc_status' => $member->kyc_status,
+            'status' => ($isIdleSlot && $promotedInfo) ? ($promotedInfo['status'] ?? 'active') : $member->status,
+            'status_label' => ucfirst(($isIdleSlot && $promotedInfo) ? ($promotedInfo['status'] ?? 'active') : $member->status),
+            'kyc_status' => ($isIdleSlot && $promotedInfo) ? ($promotedInfo['kyc_status'] ?? 'approved') : $member->kyc_status,
             'position' => $member->placement_position,
             'position_label' => $member->placement_position
                 ? ucfirst($member->placement_position)
@@ -292,6 +362,98 @@ class MlmTreeService
             'details_url' => admin_route('mlm.members.show', $member),
             'move_url' => admin_route('mlm.tree.move.form', $member),
         ];
+    }
+
+    public function allIdleSlots(): array
+    {
+        $idleCodes = [
+            'C25070004' => 'Idle - 2',
+            'C25070005' => 'Idle - 3',
+            'C25070006' => 'Idle - 4',
+            'C25070007' => 'Idle - 5',
+            'C25070008' => 'Idle - 6',
+            'C25070009' => 'Idle - 7',
+            'C25070010' => 'Idle - 8',
+            'C25070011' => 'Idle - 9',
+            'C25070012' => 'Idle - 10',
+            'C25070013' => 'Idle - 11',
+            'C25070014' => 'Idle - 12',
+            'C25070015' => 'Idle - 13',
+        ];
+
+        $slots = Member::query()
+            ->with(['user', 'appreciationMember.user', 'placementParent.user'])
+            ->where(function ($q) use ($idleCodes) {
+                $q->where('is_idle_slot', true)
+                    ->orWhereHas('user', fn ($uq) => $uq->whereIn('mlm_member_id', array_keys($idleCodes)));
+            })
+            ->get();
+
+        return $slots->map(function (Member $slot) use ($idleCodes) {
+            $cid = $slot->customer_id;
+            $label = $slot->idle_slot_label ?? ($idleCodes[$cid] ?? "Idle Slot #{$slot->id}");
+            $appMember = $slot->appreciationMember;
+            $isOccupied = $slot->appreciation_member_id !== null;
+            $isExpired = $slot->appreciation_expires_at && $slot->appreciation_expires_at->isPast();
+
+            return [
+                'id' => $slot->id,
+                'customer_id' => $cid,
+                'label' => $label,
+                'position' => $slot->placement_position,
+                'level' => $this->level($slot),
+                'parent_name' => $slot->placementParent?->user?->name ?? 'Root',
+                'is_occupied' => $isOccupied,
+                'is_expired' => $isExpired,
+                'promoted_member' => $appMember ? [
+                    'id' => $appMember->id,
+                    'customer_id' => $appMember->customer_id,
+                    'name' => $appMember->user?->name,
+                ] : null,
+                'assigned_at' => $slot->appreciation_assigned_at?->format('d M Y'),
+                'expires_at' => $slot->appreciation_expires_at?->format('d M Y'),
+            ];
+        })->values()->all();
+    }
+
+    public function searchPromotableMembers(string $term): array
+    {
+        $idleCodes = [
+            'C25070003','C25070004','C25070005','C25070006',
+            'C25070007','C25070008','C25070009','C25070010',
+            'C25070011','C25070012','C25070013','C25070014','C25070015',
+        ];
+
+        return Member::query()
+            ->with(['user', 'placementParent.user', 'assignedAppreciationSlots'])
+            ->where('is_idle_slot', false)
+            ->whereHas('user', function ($q) use ($term, $idleCodes) {
+                $q->whereNotIn('mlm_member_id', $idleCodes)
+                    ->where(function ($sub) use ($term) {
+                        $sub->where('mlm_member_id', 'like', "%{$term}%")
+                            ->orWhere('name', 'like', "%{$term}%")
+                            ->orWhere('phone', 'like', "%{$term}%");
+                    });
+            })
+            ->limit(15)
+            ->get()
+            ->map(function (Member $m) {
+                $level = $this->level($m);
+                $activeSlots = $m->assignedAppreciationSlots->map(fn ($s) => $s->idle_slot_label ?? $s->customer_id)->all();
+
+                return [
+                    'id' => $m->id,
+                    'customer_id' => $m->customer_id,
+                    'name' => $m->user?->name ?? 'Distributor',
+                    'phone' => $m->user?->phone ?? '',
+                    'level' => $level,
+                    'level_label' => (string) $level,
+                    'downlines' => $this->getDownlineCount($m->id),
+                    'active_promotions' => $activeSlots,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     public function search(string $term): array

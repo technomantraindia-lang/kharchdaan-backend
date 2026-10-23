@@ -86,6 +86,7 @@ class Member extends Model
         'idle_slot_label',
         'appreciation_member_id',
         'appreciation_assigned_at',
+        'appreciation_expires_at',
         'appreciation_note',
     ];
 
@@ -100,6 +101,7 @@ class Member extends Model
             'kyc_verified_at' => 'datetime',
             'is_idle_slot' => 'boolean',
             'appreciation_assigned_at' => 'datetime',
+            'appreciation_expires_at' => 'datetime',
         ];
     }
 
@@ -237,11 +239,6 @@ class Member extends Model
         return $this->maskValue($this->aadhaar_reference, 4);
     }
 
-    public function getMaskedBankAccountAttribute(): ?string
-    {
-        return $this->maskValue($this->bank_account_number, 4);
-    }
-
     private function maskValue(?string $value, int $visibleCharacters): ?string
     {
         if (! $value) {
@@ -251,5 +248,15 @@ class Member extends Model
         $visible = substr($value, -$visibleCharacters);
 
         return str_repeat('*', max(strlen($value) - $visibleCharacters, 0)).$visible;
+    }
+
+    public function isAppreciationActive(): bool
+    {
+        return $this->appreciation_member_id !== null && (! $this->appreciation_expires_at || $this->appreciation_expires_at->isFuture());
+    }
+
+    public function isAppreciationExpired(): bool
+    {
+        return $this->appreciation_member_id !== null && $this->appreciation_expires_at !== null && $this->appreciation_expires_at->isPast();
     }
 }

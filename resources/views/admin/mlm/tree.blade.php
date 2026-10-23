@@ -166,6 +166,22 @@
     .org-node-card.pos-right { border-top: 4px solid #059669; }
     .org-node-card.pos-company-root { border-top: 4px solid #f59e0b; background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50px); }
     .org-node-card.pos-company-node { border-top: 4px solid #6366f1; background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 50px); }
+    .org-node-card.pos-promoted-node {
+        border-top: 4px solid #10b981;
+        border-color: #10b981;
+        background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 70px);
+        box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25);
+    }
+    .org-node-card.pos-idle-slot {
+        border-top: 4px solid #f59e0b;
+        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 60px);
+        border: 1.5px dashed #f59e0b;
+    }
+    .org-node-card.pos-expired-node {
+        border-top: 4px solid #f43f5e;
+        border-color: #fca5a5;
+        background: linear-gradient(180deg, #fff1f2 0%, #ffffff 60px);
+    }
 
     /* Expand / Collapse Button */
     .org-expand-btn {
@@ -583,6 +599,217 @@
         </a>
     </div>
 </div>
+
+<!-- Modal: Promote Member to Idle Position (Temporary / Flexible) -->
+<div id="modalPromoteMember" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[1050] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="p-4 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-amber-100 font-black text-base shadow-xs">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-sm tracking-tight leading-tight">Promote Member to Idle Position</h3>
+                    <p class="text-[11px] text-amber-100 font-medium">Temporary Dual-Placement & Double Income</p>
+                </div>
+            </div>
+            <button type="button" id="btnClosePromoteModal" class="w-7 h-7 rounded-lg bg-black/10 hover:bg-black/20 text-white flex items-center justify-center text-xs transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Scrollable Form Body -->
+        <div class="p-5 space-y-4 overflow-y-auto text-xs flex-1">
+            <!-- Target Idle Slot Box / Dropdown -->
+            <div id="promoteSlotSummary" class="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-950 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-amber-200 text-amber-900 flex items-center justify-center font-bold text-xs">
+                        <i class="fas fa-star text-amber-700"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-xs" id="promoteSlotLabel">Idle Slot</div>
+                        <div class="text-[10px] text-amber-800 font-mono" id="promoteSlotCode">ID: C25070004</div>
+                    </div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-200/80 text-amber-900 uppercase">Target Slot</span>
+            </div>
+
+            <!-- Alternative: Slot Picker (when opening from a regular member) -->
+            <div id="promoteSlotPickerRow" class="hidden">
+                <label class="block font-bold text-slate-800 mb-1" for="promoteSlotSelect">
+                    Select Target Idle Position:
+                </label>
+                <select id="promoteSlotSelect" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <!-- Member Search / Selector -->
+            <div id="promoteMemberSearchSection">
+                <label class="block font-bold text-slate-800 mb-1 flex items-center justify-between">
+                    <span>1. Select Existing Member to Promote:</span>
+                    <span class="text-[10px] text-slate-400 font-normal">Search by Name, Code, Phone</span>
+                </label>
+                <div class="relative">
+                    <div class="relative flex items-center">
+                        <i class="fas fa-search absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
+                        <input type="text" id="promoteMemberSearchInput" class="w-full pl-9 pr-8 py-2 text-xs rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition" placeholder="Type name, code (e.g. C22010003), or mobile...">
+                        <button type="button" id="btnClearPromoteSearch" class="hidden absolute right-2.5 text-slate-400 hover:text-slate-600">
+                            <i class="fas fa-times-circle text-xs"></i>
+                        </button>
+                    </div>
+
+                    <!-- Autocomplete Results Dropdown -->
+                    <div id="promoteSearchResultsDropdown" class="hidden absolute top-full left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-20 divide-y divide-slate-100">
+                    </div>
+                </div>
+
+                <!-- Selected Member Card -->
+                <div id="selectedPromoteMemberCard" class="hidden mt-2 p-3 rounded-xl bg-emerald-50/80 border border-emerald-300 text-emerald-950 flex items-center justify-between gap-2 shadow-2xs">
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div class="w-8 h-8 rounded-full bg-emerald-600 text-white font-extrabold flex items-center justify-center text-xs flex-shrink-0" id="selectedMemberAvatar">
+                            M
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-xs truncate text-slate-900" id="selectedMemberName">Member Name</div>
+                            <div class="text-[10px] text-slate-600 font-mono flex items-center gap-1.5 flex-wrap">
+                                <span id="selectedMemberCode" class="text-blue-700 font-bold">C25010004</span>
+                                <span class="text-slate-300">&bull;</span>
+                                <span id="selectedMemberPhone">9876543210</span>
+                                <span class="text-slate-300">&bull;</span>
+                                <span class="text-emerald-700 font-bold" id="selectedMemberLevel">Level 3</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="btnChangeSelectedMember" class="text-[10px] font-bold text-emerald-800 hover:text-emerald-950 underline px-1">
+                        Change
+                    </button>
+                </div>
+                <input type="hidden" id="promoteBeneficiaryId" value="">
+                <input type="hidden" id="promoteTargetSlotId" value="">
+            </div>
+
+            <!-- Duration Selector -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">
+                    2. Promotion Duration ("Temporary time / As much time as you want"):
+                </label>
+                <div class="grid grid-cols-3 gap-1.5 text-center" id="durationChipsContainer">
+                    <button type="button" class="duration-chip active px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition border-amber-500 bg-amber-50 text-amber-900" data-type="days" data-days="7">7 Days</button>
+                    <button type="button" class="duration-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold transition" data-type="days" data-days="15">15 Days</button>
+                    <button type="button" class="duration-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold transition" data-type="days" data-days="30">30 Days</button>
+                    <button type="button" class="duration-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold transition" data-type="days" data-days="90">90 Days</button>
+                    <button type="button" class="duration-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold transition" data-type="date">Custom Date</button>
+                    <button type="button" class="duration-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold transition" data-type="indefinite">Flexible / Indefinite</button>
+                </div>
+
+                <!-- Custom Date Input -->
+                <div id="customDateRow" class="hidden mt-2">
+                    <label class="block text-[10px] font-bold text-slate-600 mb-0.5">Select Expiry Date & Time:</label>
+                    <input type="datetime-local" id="customExpiryInput" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none">
+                </div>
+            </div>
+
+            <!-- Promotion Note / Reason -->
+            <div>
+                <label class="block font-bold text-slate-800 mb-1" for="promoteNoteInput">
+                    3. Promotion Reason / Note (Optional):
+                </label>
+                <input type="text" id="promoteNoteInput" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none" placeholder="e.g. Festival Performance Reward, Acting Team Leader..." value="Temporary Performance Promotion">
+            </div>
+
+            <!-- Guarantee Notice Banner -->
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-[10px] space-y-1">
+                <div class="font-bold text-slate-800 flex items-center gap-1.5">
+                    <i class="fas fa-check-circle text-emerald-600"></i>
+                    <span>Dual-Placement & Double Income Rules:</span>
+                </div>
+                <p>&bull; <strong>Both Places Displayed:</strong> The member will appear at this promoted idle slot AND their original permanent tree position.</p>
+                <p>&bull; <strong>Commission Routing:</strong> Level PV income calculated under this idle slot routes directly to this member during the active promotion.</p>
+                <p>&bull; <strong>Admin Control:</strong> Super Admin can extend time or revert back to Idle at any moment.</p>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-end gap-2.5">
+            <button type="button" id="btnCancelPromoteModal" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200/70 transition">
+                Cancel
+            </button>
+            <button type="button" id="btnSubmitPromotion" class="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 transition shadow-md shadow-orange-500/20 active:scale-98 flex items-center gap-1.5">
+                <i class="fas fa-crown text-xs"></i>
+                <span>Confirm & Promote Member</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Manage / Extend Temporary Promotion -->
+<div id="modalManagePromotion" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[1050] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="p-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white text-sm">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-sm" id="manageModalTitle">Manage Promotion</h3>
+                    <p class="text-[10px] text-emerald-100 font-medium" id="manageModalSubtitle">Active Dual-Placement Slot</p>
+                </div>
+            </div>
+            <button type="button" id="btnCloseManageModal" class="w-7 h-7 rounded-lg bg-black/10 hover:bg-black/20 text-white flex items-center justify-center text-xs transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-5 space-y-4 overflow-y-auto text-xs flex-1">
+            <div class="p-3 rounded-xl bg-emerald-50/80 border border-emerald-300 text-emerald-950">
+                <div class="font-bold text-xs flex items-center gap-1.5" id="manageMemberName">Promoted Member</div>
+                <div class="text-[10px] text-slate-600 font-mono mt-0.5" id="manageMemberCode">ID: C25010004</div>
+                <div class="mt-2 text-[10px] font-semibold text-emerald-800" id="manageCurrentExpiry">Remaining: 22 Days</div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-800 mb-1">Extend / Change Duration:</label>
+                <div class="grid grid-cols-3 gap-1.5 text-center" id="manageDurationChipsContainer">
+                    <button type="button" class="manage-chip active px-2.5 py-1.5 rounded-lg border text-[11px] font-bold border-emerald-500 bg-emerald-50 text-emerald-900" data-type="days" data-days="7">+7 Days</button>
+                    <button type="button" class="manage-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold" data-type="days" data-days="15">+15 Days</button>
+                    <button type="button" class="manage-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold" data-type="days" data-days="30">+30 Days</button>
+                    <button type="button" class="manage-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold" data-type="days" data-days="90">+90 Days</button>
+                    <button type="button" class="manage-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold" data-type="date">New Date</button>
+                    <button type="button" class="manage-chip px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-[11px] font-bold" data-type="indefinite">Make Indefinite</button>
+                </div>
+
+                <div id="manageCustomDateRow" class="hidden mt-2">
+                    <label class="block text-[10px] font-bold text-slate-600 mb-0.5">New Expiry Date:</label>
+                    <input type="datetime-local" id="manageCustomExpiryInput" class="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label class="block font-bold text-slate-800 mb-1" for="manageNoteInput">Promotion Note:</label>
+                <input type="text" id="manageNoteInput" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none">
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] text-slate-500">Want to end this promotion immediately?</span>
+                <button type="button" id="btnEndPromotionNow" class="text-[10px] font-bold text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 transition flex items-center gap-1">
+                    <i class="fas fa-undo text-[9px]"></i> End Promotion & Revert
+                </button>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-end gap-2.5">
+            <button type="button" id="btnCancelManageModal" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200/70 transition">
+                Close
+            </button>
+            <button type="button" id="btnSaveManagePromotion" class="px-5 py-2.5 rounded-xl text-xs font-extrabold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-md shadow-emerald-600/20 active:scale-98">
+                Update Promotion
+            </button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -662,9 +889,21 @@
         const isTopRoot = member.is_top_root || member.customer_id === 'C22020008' || position === 'root';
         const isIdle = Boolean(member.is_idle_slot);
         const isPillarLeader = ['C22010003', 'C22020001', 'C22030018'].includes(member.customer_id);
+        const isPromoted = Boolean(isIdle && (member.is_promoted_acting || (member.promoted_info && !member.promoted_info.is_expired)));
+        const isExpired = Boolean(isIdle && (member.is_promoted_expired || (member.promoted_info && member.promoted_info.is_expired)));
+        const isDualPlaced = Boolean(member.is_dual_placed || (member.promotions_held && member.promotions_held.length > 0));
+
         const cardClass = isTopRoot 
             ? 'pos-company-root ring-2 ring-amber-400/50' 
-            : (isIdle ? 'pos-idle-slot ring-2 ring-amber-400/60 bg-amber-50/40' : (isPillarLeader ? 'pos-pillar-node ring-1 ring-orange-300' : posCardClass(position)));
+            : (isPromoted
+                ? 'pos-promoted-node ring-2 ring-emerald-500/80 bg-gradient-to-b from-amber-50/70 via-emerald-50/30 to-white shadow-md shadow-emerald-500/10'
+                : (isExpired
+                    ? 'pos-expired-node ring-2 ring-rose-400/80 bg-rose-50/40'
+                    : (isIdle
+                        ? 'pos-idle-slot ring-2 ring-amber-400/60 bg-amber-50/40'
+                        : (isPillarLeader 
+                            ? 'pos-pillar-node ring-1 ring-orange-300' 
+                            : (posCardClass(position) + (isDualPlaced ? ' ring-2 ring-amber-400/80 shadow-xs' : ''))))));
 
         card.className = `org-node-card ${cardClass} p-3.5`;
         card.dataset.nodeCard = 'true';
@@ -674,6 +913,12 @@
         let avatarSvg = '';
         if (isTopRoot) {
             avatarSvg = `<svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`;
+        } else if (isPromoted) {
+            const pMon = ((member.name || 'P').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'P';
+            avatarSvg = `<div class="relative flex items-center justify-center">
+                <span class="font-extrabold text-[10px] text-white tracking-tight">${escapeHtml(pMon)}</span>
+                <span class="absolute -top-3.5 -right-3 text-[10px] text-amber-300 drop-shadow">👑</span>
+            </div>`;
         } else if (isIdle) {
             avatarSvg = `<svg class="w-4 h-4 text-amber-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
         } else if (isPillarLeader) {
@@ -692,32 +937,92 @@
 
         const avatarClass = isTopRoot
             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
-            : (isIdle
-                ? 'bg-gradient-to-tr from-amber-400 to-amber-500 text-amber-950 border-amber-300 font-extrabold shadow-xs'
-                : (isPillarLeader 
-                    ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
-                    : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold'));
+            : (isPromoted
+                ? 'bg-gradient-to-tr from-amber-400 via-orange-500 to-emerald-600 text-white shadow-xs border-amber-300 ring-2 ring-amber-300 font-extrabold'
+                : (isIdle
+                    ? 'bg-gradient-to-tr from-amber-400 to-amber-500 text-amber-950 border-amber-300 font-extrabold shadow-xs'
+                    : (isPillarLeader 
+                        ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
+                        : (isDualPlaced
+                            ? 'bg-gradient-to-tr from-amber-50 to-orange-100 text-amber-800 border-amber-300 font-extrabold ring-1 ring-amber-300'
+                            : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold'))));
 
-        let appreciationBadge = '';
-        if (isIdle) {
-            if (member.appreciation_member) {
-                appreciationBadge = `
-                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-emerald-900 text-[9px] font-bold truncate flex items-center gap-1.5" title="Double Income Active for ${escapeHtml(member.appreciation_member.name)}">
-                        <svg class="w-3 h-3 text-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line></svg>
-                        <span>Beneficiary: ${escapeHtml(member.appreciation_member.name)} (${escapeHtml(member.appreciation_member.customer_id)})</span>
+        // Status badge in top right
+        let cardStatusBadge = statusBadge(member.status);
+        if (isPromoted) {
+            cardStatusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-600 text-white shadow-2xs uppercase tracking-wider animate-pulse">★ PROMOTED</span>`;
+        } else if (isExpired) {
+            cardStatusBadge = `<span class="inline-flex px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300">Expired</span>`;
+        }
+
+        // Duration & Expiration Badge (for Promoted Idle Position - Place A)
+        let promotionDurationBadge = '';
+        if (isIdle && member.promoted_info) {
+            if (member.promoted_info.is_indefinite) {
+                promotionDurationBadge = `
+                    <div class="mt-1 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950 text-[9px] font-bold flex items-center justify-between gap-1 shadow-2xs">
+                        <span class="flex items-center gap-1.5 truncate"><i class="fas fa-infinity text-emerald-600 flex-shrink-0"></i> Flexible Duration (Until Reverted)</span>
+                        <span class="text-[8px] font-extrabold text-emerald-800 bg-emerald-200/80 px-1 py-0.2 rounded">Active</span>
+                    </div>`;
+            } else if (!member.promoted_info.is_expired) {
+                const days = member.promoted_info.days_remaining;
+                const isUrgent = days <= 3;
+                const bgClass = isUrgent ? 'bg-amber-50 border-amber-300 text-amber-950' : 'bg-emerald-50 border-emerald-300 text-emerald-950';
+                const iconClass = isUrgent ? 'text-amber-600' : 'text-emerald-600';
+                promotionDurationBadge = `
+                    <div class="mt-1 px-2 py-1 rounded-lg ${bgClass} border text-[9px] font-bold flex items-center justify-between gap-1 shadow-2xs">
+                        <span class="flex items-center gap-1.5 truncate"><i class="fas fa-hourglass-half ${iconClass} flex-shrink-0"></i> ⏳ ${days} ${days === 1 ? 'Day' : 'Days'} Left <span class="font-normal text-slate-500 text-[8px]">(until ${escapeHtml(member.promoted_info.expires_at)})</span></span>
+                        <span class="text-[8px] font-extrabold bg-white/90 text-slate-700 px-1 py-0.2 rounded border border-slate-200 shadow-2xs">Active</span>
                     </div>`;
             } else {
-                appreciationBadge = `
-                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-300 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1.5">
-                        <svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg>
-                        <span>Reserved Idle Position (Blank)</span>
+                promotionDurationBadge = `
+                    <div class="mt-1 px-2 py-1 rounded-lg bg-rose-50 border border-rose-300 text-rose-950 text-[9px] font-bold flex items-center justify-between gap-1 shadow-2xs">
+                        <span class="flex items-center gap-1.5 truncate"><i class="fas fa-exclamation-triangle text-rose-600 flex-shrink-0"></i> Temporary Time Expired</span>
+                        <button type="button" class="btn-manage-promotion px-1.5 py-0.5 rounded text-[8px] font-black bg-rose-600 hover:bg-rose-700 text-white transition" data-id="${member.id}">Extend</button>
                     </div>`;
             }
-        } else if (member.boosted_by_idle_slots && member.boosted_by_idle_slots.length > 0) {
-            appreciationBadge = `
-                <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-300 text-purple-900 text-[9px] font-bold truncate flex items-center gap-1.5" title="Receiving Double Income from Idle Position">
-                    <svg class="w-3 h-3 text-purple-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                    <span>Double Income Active (+${escapeHtml(member.boosted_by_idle_slots.join(', '))})</span>
+        }
+
+        // Dual-Placement Link to Original Position (on Promoted Idle Card - Place A)
+        let originalPositionLink = '';
+        if (isIdle && member.promoted_info && member.promoted_info.original_path) {
+            originalPositionLink = `
+                <div class="mt-1 px-2 py-1 rounded-lg bg-blue-50/80 border border-blue-200 text-blue-950 text-[9px] flex items-center justify-between gap-1 shadow-2xs">
+                    <span class="truncate flex items-center gap-1"><i class="fas fa-map-marker-alt text-blue-600 text-[9px]"></i> Permanent: <strong>Level ${member.promoted_info.original_level_label || '0'}</strong></span>
+                    <button type="button" class="btn-jump-node px-1.5 py-0.5 rounded text-[8px] font-black text-blue-800 bg-white hover:bg-blue-100 border border-blue-300 transition flex items-center gap-0.5" data-path='${JSON.stringify(member.promoted_info.original_path)}' data-target-id="${member.promoted_info.id}" title="Focus on member's permanent original card in the tree">
+                        <span>View Original Card</span> <i class="fas fa-arrow-right text-[7px]"></i>
+                    </button>
+                </div>`;
+        }
+
+        // Dual-Placement Badge on Member's Existing Position Card (Place B)
+        let dualPlacedBadge = '';
+        if (member.promotions_held && member.promotions_held.length > 0) {
+            dualPlacedBadge = member.promotions_held.map(promo => {
+                const timeText = promo.is_indefinite ? 'Flexible' : `${promo.days_remaining}d left`;
+                return `
+                    <div class="mt-1.5 p-2 rounded-lg bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 text-amber-950 text-[9px] shadow-2xs">
+                        <div class="flex items-center justify-between gap-1 font-bold">
+                            <span class="flex items-center gap-1 truncate"><i class="fas fa-crown text-amber-600 text-[9px]"></i> Promoted at: <strong class="text-amber-900">${escapeHtml(promo.slot_label)}</strong></span>
+                            <span class="text-[8px] font-extrabold bg-amber-200/90 text-amber-900 px-1.5 py-0.2 rounded font-mono">${timeText}</span>
+                        </div>
+                        <div class="mt-1 flex items-center justify-between gap-1 pt-1 border-t border-amber-200/60">
+                            <span class="text-[8px] text-emerald-800 font-bold flex items-center gap-1"><i class="fas fa-bolt text-emerald-600"></i> Double Income Active</span>
+                            <button type="button" class="btn-jump-node px-1.5 py-0.5 rounded text-[8px] font-black text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 transition flex items-center gap-0.5" data-path='${JSON.stringify(promo.slot_path || [])}' data-target-id="${promo.slot_id}" title="Jump to promoted idle position in tree">
+                                <span>View Promoted Slot</span> <i class="fas fa-external-link-alt text-[7px]"></i>
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        // Vacant Idle Slot Notice (when unoccupied)
+        let vacantIdleNotice = '';
+        if (isIdle && !member.promoted_info) {
+            vacantIdleNotice = `
+                <div class="mt-1 px-2 py-1 rounded-lg bg-amber-50/80 border border-amber-300 text-amber-900 text-[9px] font-semibold flex items-center gap-1.5">
+                    <i class="fas fa-star text-amber-500"></i>
+                    <span>Unoccupied Idle Slot &bull; Ready for Promotion</span>
                 </div>`;
         }
 
@@ -726,7 +1031,7 @@
             ? `<svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`
             : `<svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
 
-        const companyBadge = rawCompanyLabel 
+        const companyBadge = (rawCompanyLabel && !isPromoted) 
             ? `<div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1.5">
                  ${companyBadgeIcon} <span>${escapeHtml(rawCompanyLabel)}</span>
                </div>`
@@ -750,10 +1055,29 @@
                </div>`
             : `<div class="flex justify-between items-center text-[10px]"><span class="font-medium text-slate-400">Sponsor:</span> <span class="font-bold text-amber-700">Master Root</span></div>`;
 
-        const appreciationActionBtn = isIdle
-            ? (member.appreciation_member
-                ? `<button type="button" class="btn-clear-appreciation px-2 py-0.5 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded text-[9px] border border-rose-200 transition" data-id="${member.id}" title="Remove Beneficiary">Clear</button>`
-                : `<button type="button" class="btn-assign-appreciation px-2 py-0.5 font-bold text-amber-900 bg-amber-200/80 hover:bg-amber-300 rounded text-[9px] border border-amber-300 transition" data-id="${member.id}" title="Assign Customer for Double Income">+ Assign</button>`)
+        // Promotion Action Buttons
+        let promotionActionBtn = '';
+        if (isIdle) {
+            if (member.promoted_info) {
+                promotionActionBtn = `
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="btn-manage-promotion px-2 py-0.8 font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded text-[9px] border border-amber-300 transition flex items-center gap-0.5" data-id="${member.id}" title="Manage Duration or Extend Promotion">
+                            <i class="fas fa-sliders-h text-[8px]"></i> <span>Manage</span>
+                        </button>
+                        <button type="button" class="btn-clear-appreciation px-2 py-0.8 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded text-[9px] border border-rose-200 transition flex items-center gap-0.5" data-id="${member.id}" title="End temporary promotion and revert back to vacant idle slot">
+                            <i class="fas fa-undo text-[8px]"></i> <span>Revert</span>
+                        </button>
+                    </div>`;
+            } else {
+                promotionActionBtn = `
+                    <button type="button" class="btn-open-promote-modal px-2.5 py-0.8 font-extrabold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-500 rounded text-[9px] border border-amber-400 shadow-2xs transition flex items-center gap-1 active:scale-95" data-id="${member.id}" data-label="${escapeHtml(member.idle_slot_label || 'Idle Slot')}" data-code="${escapeHtml(member.slot_customer_id || member.customer_id)}" title="Promote an existing member to this idle slot">
+                        <i class="fas fa-crown text-[8px] text-amber-900"></i> <span>+ Promote</span>
+                    </button>`;
+            }
+        }
+
+        const baseSlotTag = isPromoted && member.promoted_info
+            ? `<span class="text-slate-400 font-normal text-[9px] truncate">(${escapeHtml(member.idle_slot_label || 'Idle Slot')})</span>`
             : '';
 
         card.innerHTML = `
@@ -764,22 +1088,31 @@
                         ${posBadge(position || member.placement_position)}
                         ${dlBadge}
                     </div>
-                    ${statusBadge(member.status)}
+                    ${cardStatusBadge}
                 </div>
 
                 <div class="flex items-center gap-2 mb-1.5">
-                    <div class="card-avatar w-8 h-8 rounded-full ${avatarClass} text-xs flex items-center justify-center border border-slate-200 flex-shrink-0">
+                    <div class="card-avatar w-8 h-8 rounded-full ${avatarClass} text-xs flex items-center justify-center border border-slate-200 flex-shrink-0 relative">
                         ${avatarSvg}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="card-name font-bold text-slate-900 text-xs truncate leading-snug" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</div>
-                        <div class="font-mono text-[10px] font-bold text-blue-600 truncate">${escapeHtml(member.customer_id)}</div>
+                        <div class="card-name font-bold text-slate-900 text-xs truncate leading-snug flex items-center gap-1" title="${escapeHtml(member.name)}">
+                            <span class="truncate">${escapeHtml(member.name)}</span>
+                            ${isPromoted ? '<span class="bg-amber-100 text-amber-800 text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider shrink-0">★ PROMOTED</span>' : ''}
+                        </div>
+                        <div class="font-mono text-[10px] font-bold text-blue-600 truncate flex items-center gap-1">
+                            <span>${escapeHtml(member.customer_id)}</span>
+                            ${baseSlotTag}
+                        </div>
                         ${phoneHtml}
                     </div>
                 </div>
 
                 ${companyBadge}
-                ${appreciationBadge}
+                ${promotionDurationBadge}
+                ${originalPositionLink}
+                ${dualPlacedBadge}
+                ${vacantIdleNotice}
 
                 <!-- Detailed Card Meta -->
                 <div class="card-full-meta text-[10px] text-slate-500 pt-1.5 border-t border-slate-100 space-y-1 mb-2">
@@ -805,7 +1138,7 @@
                             <i class="fas fa-crosshairs text-[9px]"></i> Focus
                         </button>
                     </div>
-                    ${appreciationActionBtn}
+                    ${promotionActionBtn}
                 </div>
             </div>
 
@@ -1049,26 +1382,120 @@
     // Drawer System
     const openDrawer = (member) => {
         currentDrawerMember = member;
-        const initials = (member.name || 'M').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+        const initials = ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'M';
+        const isIdle = Boolean(member.is_idle_slot);
+        const isPromoted = Boolean(isIdle && (member.is_promoted_acting || (member.promoted_info && !member.promoted_info.is_expired)));
+        const isExpired = Boolean(isIdle && (member.is_promoted_expired || (member.promoted_info && member.promoted_info.is_expired)));
+        const isDual = Boolean(member.is_dual_placed || (member.promotions_held && member.promotions_held.length > 0));
+
+        let promoDrawerSection = '';
+        if (isIdle && member.promoted_info) {
+            const pInfo = member.promoted_info;
+            const timeDesc = pInfo.is_indefinite
+                ? '<span class="text-emerald-700 font-bold"><i class="fas fa-infinity"></i> Flexible Duration (Until Reverted)</span>'
+                : (pInfo.is_expired
+                    ? '<span class="text-rose-600 font-bold"><i class="fas fa-exclamation-triangle"></i> Expired on ' + escapeHtml(pInfo.expires_at) + '</span>'
+                    : '<span class="text-emerald-700 font-bold"><i class="fas fa-clock"></i> ' + pInfo.days_remaining + ' Days Remaining (Expires ' + escapeHtml(pInfo.expires_at) + ')</span>');
+
+            const origPathJson = JSON.stringify(pInfo.original_path || []);
+            promoDrawerSection = `
+                <div class="p-3.5 rounded-2xl bg-gradient-to-br from-amber-50 via-emerald-50/40 to-white border-2 border-emerald-400 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                            <i class="fas fa-crown text-amber-500"></i> Active Temporary Promotion
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 uppercase">Dual Placement</span>
+                    </div>
+                    <div class="pt-1 text-slate-800">
+                        <div class="font-bold text-sm text-slate-900">${escapeHtml(member.name)}</div>
+                        <div class="font-mono text-[11px] text-blue-700 font-semibold">${escapeHtml(member.customer_id)} &bull; ${escapeHtml(member.phone || 'No phone')}</div>
+                    </div>
+                    <div class="text-[11px] pt-1 border-t border-emerald-200/60 flex items-center justify-between">
+                        <span class="text-slate-500 font-medium">Duration Status:</span>
+                        <span>${timeDesc}</span>
+                    </div>
+                    ${pInfo.note ? `<div class="text-[10px] text-slate-600 bg-white/70 p-1.5 rounded border border-emerald-200/50"><strong>Reason:</strong> ${escapeHtml(pInfo.note)}</div>` : ''}
+                    <div class="pt-2 flex items-center gap-2">
+                        <button type="button" class="btn-jump-node flex-1 py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg font-bold text-[10px] border border-blue-200 transition flex items-center justify-center gap-1" data-path='${origPathJson}' data-target-id="${pInfo.id}">
+                            <i class="fas fa-map-marker-alt text-blue-600"></i> <span>Jump to Original Permanent Card</span>
+                        </button>
+                        <button type="button" class="btn-manage-promotion px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg font-bold text-[10px] border border-amber-300 transition" data-id="${member.id}">
+                            <i class="fas fa-sliders-h"></i> Manage / Extend
+                        </button>
+                    </div>
+                </div>
+            `;
+        } else if (isIdle && !member.promoted_info) {
+            promoDrawerSection = `
+                <div class="p-3.5 rounded-2xl bg-amber-50/70 border-2 border-dashed border-amber-300 text-center space-y-2">
+                    <div class="text-xs font-bold text-amber-900 flex items-center justify-center gap-1.5">
+                        <i class="fas fa-star text-amber-500"></i> Unoccupied Idle Slot
+                    </div>
+                    <p class="text-[10px] text-slate-500">This slot is reserved for leaders and can receive a temporary member promotion anytime.</p>
+                    <button type="button" class="btn-open-promote-modal w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-amber-950 font-extrabold text-xs shadow-sm transition flex items-center justify-center gap-1.5" data-id="${member.id}" data-label="${escapeHtml(member.idle_slot_label || 'Idle Slot')}" data-code="${escapeHtml(member.slot_customer_id || member.customer_id)}">
+                        <i class="fas fa-crown text-amber-900"></i> <span>Promote Member to this Slot</span>
+                    </button>
+                </div>
+            `;
+        } else if (isDual) {
+            const promoList = (member.promotions_held || []).map(p => {
+                const pathJson = JSON.stringify(p.slot_path || []);
+                const timeStr = p.is_indefinite ? 'Flexible' : `${p.days_remaining}d remaining`;
+                return `
+                    <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-slate-900 text-xs flex items-center gap-1"><i class="fas fa-crown text-amber-500 text-[10px]"></i> ${escapeHtml(p.slot_label)}</div>
+                            <div class="text-[10px] text-amber-800 font-medium">⏳ ${timeStr}</div>
+                        </div>
+                        <button type="button" class="btn-jump-node px-2 py-1 rounded bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-[9px] transition" data-path='${pathJson}' data-target-id="${p.slot_id}">
+                            View Promoted Slot &rarr;
+                        </button>
+                    </div>
+                `;
+            }).join('');
+
+            promoDrawerSection = `
+                <div class="p-3 rounded-2xl bg-gradient-to-r from-amber-50/80 via-orange-50/50 to-white border border-amber-200 space-y-2">
+                    <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1">
+                        <i class="fas fa-bolt text-amber-600"></i> Dual-Placement Active Promotions
+                    </div>
+                    <div class="space-y-1.5">${promoList}</div>
+                </div>
+            `;
+        } else if (!isTopRoot && !isIdle) {
+            promoDrawerSection = `
+                <button type="button" class="btn-drawer-promote-member w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-300 text-amber-950 font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5" data-member-id="${member.id}" data-member-name="${escapeHtml(member.name)}" data-member-code="${escapeHtml(member.customer_id)}" data-member-phone="${escapeHtml(member.phone || '')}" data-member-level="${escapeHtml(member.level_label || '0')}">
+                    <i class="fas fa-crown text-amber-600"></i>
+                    <span>Promote this Member to an Idle Position</span>
+                </button>
+            `;
+        }
         
         drawerBody.innerHTML = `
             <div class="text-center pb-5 border-b border-slate-100">
-                <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-orange-500 via-orange-600 to-amber-500 text-white text-xl font-black flex items-center justify-center shadow-md shadow-orange-500/25 ring-4 ring-orange-400/20 mb-3">
+                <div class="w-16 h-16 mx-auto rounded-2xl ${isPromoted ? 'bg-gradient-to-tr from-amber-400 via-orange-500 to-emerald-600 ring-4 ring-emerald-300/40' : 'bg-gradient-to-tr from-orange-500 via-orange-600 to-amber-500 ring-4 ring-orange-400/20'} text-white text-xl font-black flex items-center justify-center shadow-md shadow-orange-500/25 mb-3 relative">
                     ${escapeHtml(initials)}
+                    ${isPromoted ? '<span class="absolute -top-1.5 -right-1.5 text-base drop-shadow">👑</span>' : ''}
                 </div>
-                <div class="font-black text-slate-900 text-base tracking-tight">${escapeHtml(member.name)}</div>
+                <div class="font-black text-slate-900 text-base tracking-tight flex items-center justify-center gap-1.5">
+                    <span>${escapeHtml(member.name)}</span>
+                    ${isPromoted ? '<span class="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase">★ Promoted</span>' : ''}
+                </div>
                 <div class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full bg-orange-50 border border-orange-200/80 font-mono text-xs font-bold text-orange-700 shadow-2xs">
                     <i class="fas fa-id-card text-[10px] text-orange-500"></i>
                     <span>${escapeHtml(member.customer_id)}</span>
+                    ${isIdle && member.idle_slot_label ? `<span class="text-slate-400 font-normal">(${escapeHtml(member.idle_slot_label)})</span>` : ''}
                 </div>
                 <div class="flex items-center justify-center gap-1.5 mt-3 flex-wrap">
                     ${posBadge(member.position || member.placement_position)}
-                    ${statusBadge(member.status)}
+                    ${isPromoted ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-600 text-white">Active Promotion</span>' : statusBadge(member.status)}
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                         <i class="fas fa-shield-check text-emerald-600 text-[10px]"></i> KYC: ${escapeHtml(member.kyc_status || 'Approved')}
                     </span>
                 </div>
             </div>
+
+            ${promoDrawerSection}
 
             <div class="p-4 bg-gradient-to-br from-orange-50 via-amber-50/50 to-orange-50/30 rounded-2xl border border-orange-200/80 text-center shadow-2xs">
                 <div class="text-[10px] text-orange-800 font-extrabold uppercase tracking-wider flex items-center justify-center gap-1.5">
@@ -1131,7 +1558,438 @@
         if (currentDrawerMember) focusSubtree(currentDrawerMember);
     });
 
-    // Event Delegation: Node Click, Expand Click & Drawer Click
+    // Jump to node in tree by path with smooth pan & highlight animation
+    const jumpToNode = async (pathIds, targetId) => {
+        if (!pathIds || !pathIds.length) return;
+        showMessage('Navigating to position in 1:3 placement tree...', 'info');
+
+        if (focusHistory.length > 0) {
+            focusHistory = [];
+            mountTree(activeTopRoot, false);
+        }
+
+        closeDrawer();
+        closePromoteModal();
+        closeManageModal();
+
+        await openPath(pathIds);
+        clearMessage();
+
+        const branch = findBranchInDom(targetId);
+        if (branch && branch._card) {
+            branch._card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            branch._card.classList.add('tree-highlight');
+            setTimeout(() => {
+                branch._card.classList.remove('tree-highlight');
+            }, 3000);
+        }
+    };
+
+    // Promotion Modal Elements & State
+    const modalPromote = document.getElementById('modalPromoteMember');
+    const btnClosePromoteModal = document.getElementById('btnClosePromoteModal');
+    const btnCancelPromoteModal = document.getElementById('btnCancelPromoteModal');
+    const btnSubmitPromotion = document.getElementById('btnSubmitPromotion');
+    const promoteSlotLabel = document.getElementById('promoteSlotLabel');
+    const promoteSlotCode = document.getElementById('promoteSlotCode');
+    const promoteSlotPickerRow = document.getElementById('promoteSlotPickerRow');
+    const promoteSlotSelect = document.getElementById('promoteSlotSelect');
+    const promoteSlotSummary = document.getElementById('promoteSlotSummary');
+    const promoteMemberSearchInput = document.getElementById('promoteMemberSearchInput');
+    const btnClearPromoteSearch = document.getElementById('btnClearPromoteSearch');
+    const promoteSearchResultsDropdown = document.getElementById('promoteSearchResultsDropdown');
+    const selectedPromoteMemberCard = document.getElementById('selectedPromoteMemberCard');
+    const selectedMemberName = document.getElementById('selectedMemberName');
+    const selectedMemberCode = document.getElementById('selectedMemberCode');
+    const selectedMemberPhone = document.getElementById('selectedMemberPhone');
+    const selectedMemberLevel = document.getElementById('selectedMemberLevel');
+    const selectedMemberAvatar = document.getElementById('selectedMemberAvatar');
+    const btnChangeSelectedMember = document.getElementById('btnChangeSelectedMember');
+    const promoteBeneficiaryId = document.getElementById('promoteBeneficiaryId');
+    const promoteTargetSlotId = document.getElementById('promoteTargetSlotId');
+    const promoteNoteInput = document.getElementById('promoteNoteInput');
+    const customDateRow = document.getElementById('customDateRow');
+    const customExpiryInput = document.getElementById('customExpiryInput');
+
+    let promoteDurationType = 'days';
+    let promoteDurationDays = 7;
+    let searchDebounceTimer = null;
+
+    // Manage Modal Elements & State
+    const modalManage = document.getElementById('modalManagePromotion');
+    const btnCloseManageModal = document.getElementById('btnCloseManageModal');
+    const btnCancelManageModal = document.getElementById('btnCancelManageModal');
+    const btnSaveManagePromotion = document.getElementById('btnSaveManagePromotion');
+    const btnEndPromotionNow = document.getElementById('btnEndPromotionNow');
+    const manageModalTitle = document.getElementById('manageModalTitle');
+    const manageModalSubtitle = document.getElementById('manageModalSubtitle');
+    const manageMemberName = document.getElementById('manageMemberName');
+    const manageMemberCode = document.getElementById('manageMemberCode');
+    const manageCurrentExpiry = document.getElementById('manageCurrentExpiry');
+    const manageNoteInput = document.getElementById('manageNoteInput');
+    const manageCustomDateRow = document.getElementById('manageCustomDateRow');
+    const manageCustomExpiryInput = document.getElementById('manageCustomExpiryInput');
+
+    let manageSlotId = null;
+    let manageDurationType = 'days';
+    let manageDurationDays = 7;
+
+    // Open Promote Modal
+    const openPromoteModal = async (slotId, slotLabel, slotCode, preselected = null) => {
+        closeDrawer();
+        promoteTargetSlotId.value = slotId || '';
+        promoteSlotLabel.textContent = slotLabel || 'Idle Slot';
+        promoteSlotCode.textContent = 'Code: ' + (slotCode || 'Reserved');
+
+        if (!slotId) {
+            // Need to pick from available idle slots
+            promoteSlotSummary.classList.add('hidden');
+            promoteSlotPickerRow.classList.remove('hidden');
+            promoteSlotSelect.innerHTML = '<option value="">Loading available idle slots...</option>';
+            try {
+                const res = await fetch(`{{ admin_route('mlm.tree.idle-slots') }}`, { headers: { Accept: 'application/json' } });
+                const data = await res.json();
+                if (data.slots && data.slots.length) {
+                    promoteSlotSelect.innerHTML = data.slots.map(s => `
+                        <option value="${s.id}">${escapeHtml(s.label)} (${escapeHtml(s.customer_id)}) — Level ${s.level} under ${escapeHtml(s.parent_name)}${s.is_occupied ? ' [Occupied]' : ' [Available]'}</option>
+                    `).join('');
+                    promoteTargetSlotId.value = promoteSlotSelect.value;
+                }
+            } catch (e) {
+                promoteSlotSelect.innerHTML = '<option value="">Error loading slots</option>';
+            }
+        } else {
+            promoteSlotSummary.classList.remove('hidden');
+            promoteSlotPickerRow.classList.add('hidden');
+        }
+
+        if (preselected) {
+            selectPromoteCandidate(preselected);
+        } else {
+            resetSelectedCandidate();
+        }
+
+        // Reset duration chips to default (7 days)
+        document.querySelectorAll('#durationChipsContainer .duration-chip').forEach(c => {
+            c.classList.remove('active', 'border-amber-500', 'bg-amber-50', 'text-amber-900');
+            c.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+        });
+        const defaultChip = document.querySelector('#durationChipsContainer .duration-chip[data-days="7"]');
+        if (defaultChip) {
+            defaultChip.classList.add('active', 'border-amber-500', 'bg-amber-50', 'text-amber-900');
+            defaultChip.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+        }
+        promoteDurationType = 'days';
+        promoteDurationDays = 7;
+        customDateRow.classList.add('hidden');
+
+        promoteNoteInput.value = 'Special performance appreciation promotion';
+        modalPromote.classList.remove('hidden');
+    };
+
+    const closePromoteModal = () => {
+        modalPromote.classList.add('hidden');
+        promoteSearchResultsDropdown.classList.add('hidden');
+    };
+
+    const selectPromoteCandidate = (candidate) => {
+        promoteBeneficiaryId.value = candidate.id || candidate.customer_id;
+        selectedMemberName.textContent = candidate.name || 'Member';
+        selectedMemberCode.textContent = candidate.customer_id || '';
+        selectedMemberPhone.textContent = candidate.phone || 'No phone';
+        selectedMemberLevel.textContent = 'Level ' + (candidate.level_label || candidate.level || '0');
+        selectedMemberAvatar.textContent = ((candidate.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'M';
+
+        selectedPromoteMemberCard.classList.remove('hidden');
+        promoteMemberSearchInput.classList.add('hidden');
+        btnClearPromoteSearch.classList.add('hidden');
+        promoteSearchResultsDropdown.classList.add('hidden');
+    };
+
+    const resetSelectedCandidate = () => {
+        promoteBeneficiaryId.value = '';
+        selectedPromoteMemberCard.classList.add('hidden');
+        promoteMemberSearchInput.classList.remove('hidden');
+        promoteMemberSearchInput.value = '';
+        btnClearPromoteSearch.classList.add('hidden');
+        promoteSearchResultsDropdown.classList.add('hidden');
+    };
+
+    btnChangeSelectedMember?.addEventListener('click', resetSelectedCandidate);
+    btnClosePromoteModal?.addEventListener('click', closePromoteModal);
+    btnCancelPromoteModal?.addEventListener('click', closePromoteModal);
+
+    // Duration Chips in Promote Modal
+    document.querySelectorAll('#durationChipsContainer .duration-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('#durationChipsContainer .duration-chip').forEach(c => {
+                c.classList.remove('active', 'border-amber-500', 'bg-amber-50', 'text-amber-900');
+                c.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+            });
+            chip.classList.add('active', 'border-amber-500', 'bg-amber-50', 'text-amber-900');
+            chip.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+
+            promoteDurationType = chip.dataset.type;
+            if (promoteDurationType === 'days') {
+                promoteDurationDays = Number(chip.dataset.days);
+                customDateRow.classList.add('hidden');
+            } else if (promoteDurationType === 'date') {
+                customDateRow.classList.remove('hidden');
+                // Set default to 30 days from now
+                const d = new Date();
+                d.setDate(d.getDate() + 30);
+                customExpiryInput.value = d.toISOString().slice(0, 16);
+            } else if (promoteDurationType === 'indefinite') {
+                customDateRow.classList.add('hidden');
+            }
+        });
+    });
+
+    // Autocomplete Search in Promote Modal
+    promoteMemberSearchInput?.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        btnClearPromoteSearch.classList.toggle('hidden', !val);
+        clearTimeout(searchDebounceTimer);
+
+        if (val.length < 2) {
+            promoteSearchResultsDropdown.classList.add('hidden');
+            promoteSearchResultsDropdown.innerHTML = '';
+            return;
+        }
+
+        searchDebounceTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`{{ admin_route('mlm.tree.search-promotable') }}?q=` + encodeURIComponent(val), {
+                    headers: { Accept: 'application/json' }
+                });
+                const data = await res.json();
+                const members = data.data || [];
+                if (!members.length) {
+                    promoteSearchResultsDropdown.innerHTML = '<div class="p-3 text-slate-400 text-center">No matching members found</div>';
+                } else {
+                    promoteSearchResultsDropdown.innerHTML = members.map(m => `
+                        <div class="p-2.5 hover:bg-amber-50 cursor-pointer flex items-center justify-between gap-2 candidate-item transition" data-json='${escapeHtml(JSON.stringify(m))}'>
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                                    ${((m.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase())}
+                                </div>
+                                <div class="min-w-0 truncate">
+                                    <div class="font-bold text-slate-900 truncate">${escapeHtml(m.name)}</div>
+                                    <div class="font-mono text-[9px] text-blue-600">${escapeHtml(m.customer_id)} &bull; ${escapeHtml(m.phone || 'No phone')}</div>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-bold text-emerald-800 bg-emerald-100/70 px-1.5 py-0.5 rounded flex-shrink-0">Level ${m.level_label}</span>
+                        </div>
+                    `).join('');
+                }
+                promoteSearchResultsDropdown.classList.remove('hidden');
+            } catch (err) {
+                promoteSearchResultsDropdown.innerHTML = '<div class="p-3 text-rose-500 text-center">Search error</div>';
+                promoteSearchResultsDropdown.classList.remove('hidden');
+            }
+        }, 250);
+    });
+
+    btnClearPromoteSearch?.addEventListener('click', () => {
+        promoteMemberSearchInput.value = '';
+        btnClearPromoteSearch.classList.add('hidden');
+        promoteSearchResultsDropdown.classList.add('hidden');
+    });
+
+    promoteSearchResultsDropdown?.addEventListener('click', (e) => {
+        const item = e.target.closest('.candidate-item');
+        if (!item) return;
+        const candidate = JSON.parse(item.dataset.json);
+        selectPromoteCandidate(candidate);
+    });
+
+    // Submit Promotion
+    btnSubmitPromotion?.addEventListener('click', async () => {
+        const slotId = promoteSlotPickerRow.classList.contains('hidden') ? promoteTargetSlotId.value : promoteSlotSelect.value;
+        const beneficiary = promoteBeneficiaryId.value || promoteMemberSearchInput.value.trim();
+
+        if (!slotId) {
+            alert('Please select a target Idle Slot.');
+            return;
+        }
+        if (!beneficiary) {
+            alert('Please search and select a member to promote.');
+            return;
+        }
+
+        btnSubmitPromotion.disabled = true;
+        btnSubmitPromotion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Promoting...';
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const assignUrlTemplate = @json(admin_route('mlm.tree.assign-appreciation', ['member' => '__MEMBER__']));
+            const url = assignUrlTemplate.replace('__MEMBER__', slotId);
+            const payload = {
+                beneficiary,
+                duration_type: promoteDurationType,
+                duration_days: promoteDurationDays,
+                expires_at: promoteDurationType === 'date' ? customExpiryInput.value : null,
+                note: promoteNoteInput.value.trim(),
+            };
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to promote member.');
+
+            closePromoteModal();
+            showMessage(data.message, 'success');
+
+            // Reload active tree to display card at both positions!
+            await reloadActiveTree();
+        } catch (e) {
+            alert(e.message || 'Error processing promotion.');
+        } finally {
+            btnSubmitPromotion.disabled = false;
+            btnSubmitPromotion.innerHTML = '<i class="fas fa-crown text-xs"></i> <span>Confirm & Promote Member</span>';
+        }
+    });
+
+    // Open Manage Modal
+    const openManageModal = (memberData) => {
+        closeDrawer();
+        manageSlotId = memberData.id;
+        manageModalTitle.textContent = 'Manage ' + (memberData.idle_slot_label || 'Idle Slot');
+        manageMemberName.textContent = memberData.name || 'Promoted Member';
+        manageMemberCode.textContent = 'Customer Code: ' + (memberData.customer_id || '');
+
+        const pInfo = memberData.promoted_info || {};
+        if (pInfo.is_indefinite) {
+            manageCurrentExpiry.innerHTML = '<span class="text-emerald-700 font-bold"><i class="fas fa-infinity"></i> Flexible Duration (Until Reverted)</span>';
+        } else if (pInfo.is_expired) {
+            manageCurrentExpiry.innerHTML = '<span class="text-rose-600 font-bold"><i class="fas fa-exclamation-triangle"></i> Expired on ' + escapeHtml(pInfo.expires_at || '') + '</span>';
+        } else {
+            manageCurrentExpiry.innerHTML = '<span class="text-emerald-700 font-bold"><i class="fas fa-hourglass-half"></i> ' + (pInfo.days_remaining || 0) + ' Days Left (until ' + escapeHtml(pInfo.expires_at || '') + ')</span>';
+        }
+
+        manageNoteInput.value = pInfo.note || memberData.appreciation_note || 'Temporary Promotion';
+
+        // Reset manage chips
+        document.querySelectorAll('#manageDurationChipsContainer .manage-chip').forEach(c => {
+            c.classList.remove('active', 'border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+            c.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+        });
+        const defaultChip = document.querySelector('#manageDurationChipsContainer .manage-chip[data-days="7"]');
+        if (defaultChip) {
+            defaultChip.classList.add('active', 'border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+            defaultChip.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+        }
+        manageDurationType = 'days';
+        manageDurationDays = 7;
+        manageCustomDateRow.classList.add('hidden');
+
+        modalManage.classList.remove('hidden');
+    };
+
+    const closeManageModal = () => {
+        modalManage.classList.add('hidden');
+    };
+
+    btnCloseManageModal?.addEventListener('click', closeManageModal);
+    btnCancelManageModal?.addEventListener('click', closeManageModal);
+
+    // Duration Chips in Manage Modal
+    document.querySelectorAll('#manageDurationChipsContainer .manage-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('#manageDurationChipsContainer .manage-chip').forEach(c => {
+                c.classList.remove('active', 'border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+                c.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+            });
+            chip.classList.add('active', 'border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+            chip.classList.remove('border-slate-200', 'bg-white', 'text-slate-700');
+
+            manageDurationType = chip.dataset.type;
+            if (manageDurationType === 'days') {
+                manageDurationDays = Number(chip.dataset.days);
+                manageCustomDateRow.classList.add('hidden');
+            } else if (manageDurationType === 'date') {
+                manageCustomDateRow.classList.remove('hidden');
+                const d = new Date();
+                d.setDate(d.getDate() + 30);
+                manageCustomExpiryInput.value = d.toISOString().slice(0, 16);
+            } else if (manageDurationType === 'indefinite') {
+                manageCustomDateRow.classList.add('hidden');
+            }
+        });
+    });
+
+    // Save Manage Promotion (Update duration / note)
+    btnSaveManagePromotion?.addEventListener('click', async () => {
+        if (!manageSlotId) return;
+        btnSaveManagePromotion.disabled = true;
+        btnSaveManagePromotion.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const assignUrlTemplate = @json(admin_route('mlm.tree.assign-appreciation', ['member' => '__MEMBER__']));
+            const url = assignUrlTemplate.replace('__MEMBER__', manageSlotId);
+            const payload = {
+                duration_type: manageDurationType,
+                duration_days: manageDurationDays,
+                expires_at: manageDurationType === 'date' ? manageCustomExpiryInput.value : null,
+                note: manageNoteInput.value.trim(),
+            };
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to update promotion.');
+
+            closeManageModal();
+            showMessage(data.message, 'success');
+            await reloadActiveTree();
+        } catch (e) {
+            alert(e.message || 'Error updating promotion.');
+        } finally {
+            btnSaveManagePromotion.disabled = false;
+            btnSaveManagePromotion.innerHTML = 'Update Promotion';
+        }
+    });
+
+    // End Promotion from Manage Modal
+    btnEndPromotionNow?.addEventListener('click', async () => {
+        if (!manageSlotId) return;
+        if (!confirm('Are you sure you want to end this promotion immediately? The slot will revert back to vacant Idle status.')) return;
+        closeManageModal();
+        await unassignAppreciation(manageSlotId);
+    });
+
+    // Reload active tree
+    const reloadActiveTree = async () => {
+        const rootId = (activeTopRoot && activeTopRoot.member) ? activeTopRoot.member.id : (activeTopRoot?.id || 1);
+        try {
+            const url = viewport.dataset.childrenUrl.replace('__MEMBER__', rootId);
+            const res = await fetch(url, { headers: { Accept: 'application/json' } });
+            if (res.ok) {
+                const payload = await res.json();
+                activeTopRoot = { member: payload.parent, slots: payload.slots };
+                mountTree(activeTopRoot, focusHistory.length > 0);
+            }
+        } catch (err) {
+            console.error('Error reloading tree:', err);
+        }
+    };
+
+    // Event Delegation: Node Click, Expand Click & Dual-Placement Actions
     viewport.addEventListener('click', (event) => {
         const expandBtn = event.target.closest('[data-expand]');
         if (expandBtn) {
@@ -1147,22 +2005,34 @@
             return;
         }
 
-        const assignBtn = event.target.closest('.btn-assign-appreciation');
-        if (assignBtn) {
+        const jumpBtn = event.target.closest('.btn-jump-node');
+        if (jumpBtn) {
             event.stopPropagation();
-            const memberId = assignBtn.dataset.id;
-            const codeOrId = prompt('Assign Appreciation Beneficiary:\n\nEnter the Customer Code (e.g. C22010003 for Janakben Bihola) or Member ID to map to this Idle Position for Double Income:');
-            if (!codeOrId || !codeOrId.trim()) return;
+            const path = JSON.parse(jumpBtn.dataset.path || '[]');
+            const targetId = Number(jumpBtn.dataset.targetId);
+            jumpToNode(path, targetId);
+            return;
+        }
 
-            const note = prompt('Optional Note (e.g. Diwali 2026 Appreciation Reward):', 'Special occasion appreciation bonus');
-            assignAppreciation(memberId, codeOrId.trim(), note);
+        const openPromoteBtn = event.target.closest('.btn-open-promote-modal');
+        if (openPromoteBtn) {
+            event.stopPropagation();
+            openPromoteModal(openPromoteBtn.dataset.id, openPromoteBtn.dataset.label, openPromoteBtn.dataset.code);
+            return;
+        }
+
+        const manageBtn = event.target.closest('.btn-manage-promotion');
+        if (manageBtn) {
+            event.stopPropagation();
+            const card = manageBtn.closest('.org-node-card');
+            openManageModal(card?._memberData || { id: manageBtn.dataset.id });
             return;
         }
 
         const clearBtn = event.target.closest('.btn-clear-appreciation');
         if (clearBtn) {
             event.stopPropagation();
-            if (!confirm('Are you sure you want to remove the appreciation beneficiary from this Idle slot?')) return;
+            if (!confirm('Are you sure you want to end this temporary promotion and restore the idle slot back to unoccupied status?')) return;
             unassignAppreciation(clearBtn.dataset.id);
             return;
         }
@@ -1173,36 +2043,52 @@
         }
     });
 
-    const assignAppreciation = async (memberId, beneficiary, note) => {
-        try {
-            clearMessage();
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-            const url = `{{ url('/admin/mlm/tree') }}/${memberId}/assign-appreciation`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken || '',
-                },
-                body: JSON.stringify({ beneficiary, note }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to assign beneficiary.');
-            showMessage(data.message);
-            if (activeTopRoot) {
-                loadMemberTree(activeTopRoot.member?.id || activeTopRoot.id);
-            }
-        } catch (e) {
-            showMessage(e.message || 'Error assigning beneficiary.');
+    // Drawer click delegation (for drawer jump button & promote button)
+    drawerBody?.addEventListener('click', (event) => {
+        const jumpBtn = event.target.closest('.btn-jump-node');
+        if (jumpBtn) {
+            event.stopPropagation();
+            const path = JSON.parse(jumpBtn.dataset.path || '[]');
+            const targetId = Number(jumpBtn.dataset.targetId);
+            jumpToNode(path, targetId);
+            return;
         }
-    };
+
+        const promoteMemberBtn = event.target.closest('.btn-drawer-promote-member');
+        if (promoteMemberBtn) {
+            event.stopPropagation();
+            const candidate = {
+                id: promoteMemberBtn.dataset.memberId,
+                name: promoteMemberBtn.dataset.memberName,
+                customer_id: promoteMemberBtn.dataset.memberCode,
+                phone: promoteMemberBtn.dataset.memberPhone,
+                level_label: promoteMemberBtn.dataset.memberLevel,
+            };
+            openPromoteModal(null, null, null, candidate);
+            return;
+        }
+
+        const openPromoteBtn = event.target.closest('.btn-open-promote-modal');
+        if (openPromoteBtn) {
+            event.stopPropagation();
+            openPromoteModal(openPromoteBtn.dataset.id, openPromoteBtn.dataset.label, openPromoteBtn.dataset.code);
+            return;
+        }
+
+        const manageBtn = event.target.closest('.btn-manage-promotion');
+        if (manageBtn) {
+            event.stopPropagation();
+            openManageModal(currentDrawerMember || { id: manageBtn.dataset.id });
+            return;
+        }
+    });
 
     const unassignAppreciation = async (memberId) => {
         try {
             clearMessage();
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-            const url = `{{ url('/admin/mlm/tree') }}/${memberId}/unassign-appreciation`;
+            const unassignUrlTemplate = @json(admin_route('mlm.tree.unassign-appreciation', ['member' => '__MEMBER__']));
+            const url = unassignUrlTemplate.replace('__MEMBER__', memberId);
             const res = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -1212,13 +2098,11 @@
                 },
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to remove beneficiary.');
-            showMessage(data.message);
-            if (activeTopRoot) {
-                loadMemberTree(activeTopRoot.member?.id || activeTopRoot.id);
-            }
+            if (!res.ok) throw new Error(data.message || 'Failed to revert promotion.');
+            showMessage(data.message, 'success');
+            await reloadActiveTree();
         } catch (e) {
-            showMessage(e.message || 'Error clearing beneficiary.');
+            showMessage(e.message || 'Error reverting promotion.');
         }
     };
 

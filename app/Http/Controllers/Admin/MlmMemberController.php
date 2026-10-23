@@ -203,12 +203,22 @@ class MlmMemberController extends Controller
     public function assignAppreciation(Request $request, Member $member): JsonResponse
     {
         abort_unless($this->can('mlm.manage'), 403, 'Unauthorized action.');
-        $term = trim((string) ($request->input('beneficiary') ?? $request->input('beneficiary_member_id') ?? $request->input('customer_id')));
+        $term = trim((string) (
+            $request->input('beneficiary')
+            ?? $request->input('beneficiary_member_id')
+            ?? $request->input('assigned_appreciation_member_id')
+            ?? $request->input('member_id')
+            ?? $request->input('customer_id')
+        ));
 
-        $beneficiary = Member::with('user')
-            ->where('id', $term)
-            ->orWhereHas('user', fn ($q) => $q->where('mlm_member_id', $term))
-            ->first();
+        if (! $term && $member->appreciation_member_id) {
+            $beneficiary = Member::with('user')->find($member->appreciation_member_id);
+        } else {
+            $beneficiary = Member::with('user')
+                ->where('id', $term)
+                ->orWhereHas('user', fn ($q) => $q->where('mlm_member_id', $term))
+                ->first();
+        }
 
         if (! $beneficiary) {
             return response()->json([
@@ -217,15 +227,45 @@ class MlmMemberController extends Controller
             ], 404);
         }
 
+        $durationType = $request->input('duration_type', 'days');
+        $expiresAt = null;
+
+        if ($durationType === 'days' && $request->filled('duration_days') && (int) $request->input('duration_days') > 0) {
+            $expiresAt = now()->addDays((int) $request->input('duration_days'))->endOfDay();
+        } elseif ($durationType === 'date' && $request->filled('expires_at')) {
+            try {
+                $expiresAt = \Carbon\Carbon::parse($request->input('expires_at'));
+            } catch (\Throwable) {
+                $expiresAt = null;
+            }
+        } elseif ($durationType === 'indefinite') {
+            $expiresAt = null;
+        } elseif ($request->filled('expires_at')) {
+            try {
+                $expiresAt = \Carbon\Carbon::parse($request->input('expires_at'));
+            } catch (\Throwable) {
+                $expiresAt = null;
+            }
+        } elseif ($request->filled('duration_days') && (int) $request->input('duration_days') > 0) {
+            $expiresAt = now()->addDays((int) $request->input('duration_days'))->endOfDay();
+        }
+
+        $slotName = $member->idle_slot_label ?? "Idle Slot #{$member->id}";
+
         $member->update([
             'appreciation_member_id' => $beneficiary->id,
-            'appreciation_assigned_at' => now(),
-            'appreciation_note' => $request->input('note') ?? 'Special occasion appreciation bonus',
+            'appreciation_assigned_at' => $member->appreciation_assigned_at ?? now(),
+            'appreciation_expires_at' => $expiresAt,
+            'appreciation_note' => $request->input('note') ?? ($member->appreciation_note ?? 'Temporary Promotion / Appreciation Bonus'),
         ]);
+
+        $expiryMsg = $expiresAt
+            ? " Active until {$expiresAt->format('d M Y, h:i A')}."
+            : " Set as flexible / indefinite until manually reverted.";
 
         return response()->json([
             'success' => true,
-            'message' => "Successfully linked {$beneficiary->user?->name} ({$beneficiary->customer_id}) to {$member->idle_slot_label} for Double Income!",
+            'message' => "Successfully promoted {$beneficiary->user?->name} ({$beneficiary->customer_id}) to {$slotName}!{$expiryMsg}",
             'member' => $this->treeService->memberPayload($member->fresh(['user', 'appreciationMember.user'])),
         ]);
     }
@@ -234,16 +274,42 @@ class MlmMemberController extends Controller
     {
         abort_unless($this->can('mlm.manage'), 403, 'Unauthorized action.');
 
+        $slotName = $member->idle_slot_label ?? "Idle Slot #{$member->id}";
+
         $member->update([
             'appreciation_member_id' => null,
             'appreciation_assigned_at' => null,
+            'appreciation_expires_at' => null,
             'appreciation_note' => null,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => "Appreciation beneficiary cleared from {$member->idle_slot_label}.",
+            'message' => "Temporary promotion reverted. {$slotName} is now restored to an unoccupied Idle Position.",
             'member' => $this->treeService->memberPayload($member->fresh(['user', 'appreciationMember.user'])),
+        ]);
+    }
+
+    public function idleSlots(Request $request): JsonResponse
+    {
+        abort_unless($this->can('mlm.view'), 403, 'Unauthorized action.');
+
+        return response()->json([
+            'success' => true,
+            'slots' => $this->treeService->allIdleSlots(),
+        ]);
+    }
+
+    public function searchPromotable(Request $request): JsonResponse
+    {
+        abort_unless($this->can('mlm.view'), 403, 'Unauthorized action.');
+        $term = trim((string) $request->input('q', ''));
+        if (strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        return response()->json([
+            'data' => $this->treeService->searchPromotableMembers($term),
         ]);
     }
 

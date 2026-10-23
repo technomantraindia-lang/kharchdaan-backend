@@ -103,7 +103,9 @@ class MlmPayoutService
                     'C25070004','C25070005','C25070006','C25070007','C25070008','C25070009',
                     'C25070010','C25070011','C25070012','C25070013','C25070014','C25070015',
                 ], true)) && $member->appreciation_member_id) {
-                    $beneficiaryId = $member->appreciation_member_id;
+                    if (! $member->appreciation_expires_at || $member->appreciation_expires_at->isFuture()) {
+                        $beneficiaryId = $member->appreciation_member_id;
+                    }
                 }
 
                 $grouped[$beneficiaryId][] = $ledger;
