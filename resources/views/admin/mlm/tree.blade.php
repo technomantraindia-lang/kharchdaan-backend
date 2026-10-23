@@ -355,7 +355,7 @@
                         $activeId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? ($root->id ?? null);
                     @endphp
                     @if(!empty($leaderOptions['company']))
-                        <optgroup label="👑 Company Master Positions (Aaradhya Gruh Udyog)">
+                        <optgroup label="Company Master Positions (Aaradhya Gruh Udyog)">
                             @foreach($leaderOptions['company'] as $comp)
                                 <option value="{{ $comp['id'] }}" @selected($activeId == $comp['id'])>
                                     {{ $comp['label'] }}
@@ -364,7 +364,7 @@
                         </optgroup>
                     @endif
                     @if(!empty($leaderOptions['leaders']))
-                        <optgroup label="⭐ Real Distributor Leaders & Downline Networks">
+                        <optgroup label="Real Distributor Leaders & Downline Networks">
                             @foreach($leaderOptions['leaders'] as $ldr)
                                 <option value="{{ $ldr['id'] }}" @selected($activeId == $ldr['id'])>
                                     {{ $ldr['label'] }}
@@ -418,8 +418,9 @@
                 $topRootName = $topRoot?->user?->name ?? 'Nimesh Jagirdar';
                 $topRootCid = $topRoot?->customer_id ?? 'C22020008';
             @endphp
-            <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $topRootId) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-orange-50/80 text-orange-950 border-orange-200 hover:bg-orange-100' }}" data-member-id="{{ $topRootId }}">
-                👑 Top ID: {{ $topRootName }} ({{ $topRootCid }})
+            <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $topRootId) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-orange-50/80 text-orange-950 border-orange-200 hover:bg-orange-100' }} inline-flex items-center gap-1.5" data-member-id="{{ $topRootId }}">
+                <svg class="w-3.5 h-3.5 fill-current text-amber-500" viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>
+                <span>Top ID: {{ $topRootName }} ({{ $topRootCid }})</span>
             </button>
             @foreach($leaderOptions['quick_pills'] as $pill)
                 <button type="button" class="quick-leader-pill px-3 py-1.5 rounded-lg text-xs font-semibold transition border {{ ($activeId == $pill['id']) ? 'bg-orange-600 text-white border-orange-600 shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-900' }}" data-member-id="{{ $pill['id'] }}" title="Phone: {{ $pill['phone'] }}">
@@ -670,12 +671,24 @@
         card.dataset.nodeId = member.id;
         card._memberData = member;
 
-        const initials = isTopRoot 
-            ? '👑' 
-            : (isIdle ? '⭐' : ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()));
+        let avatarSvg = '';
+        if (isTopRoot) {
+            avatarSvg = `<svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`;
+        } else if (isIdle) {
+            avatarSvg = `<svg class="w-4 h-4 text-amber-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
+        } else if (isPillarLeader) {
+            avatarSvg = `<svg class="w-4 h-4 text-orange-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`;
+        } else {
+            const mon = ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'M';
+            avatarSvg = `<span class="font-extrabold text-[11px] tracking-tight">${escapeHtml(mon)}</span>`;
+        }
+
         const incomeFormatted = member.total_income_formatted || '₹0';
         const dlCount = Number(member.downline_count ?? 0);
-        const dlBadge = `<span class="inline-flex items-center gap-1 font-bold text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200" title="Total Network Downlines under this member"><i class="fas fa-users text-[8px]"></i> ${dlCount} DL</span>`;
+        const dlBadge = `<span class="inline-flex items-center gap-1 font-bold text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200" title="Total Network Downlines under this member">
+            <svg class="w-2.5 h-2.5 text-indigo-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <span>${dlCount} DL</span>
+        </span>`;
 
         const avatarClass = isTopRoot
             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
@@ -689,31 +702,39 @@
         if (isIdle) {
             if (member.appreciation_member) {
                 appreciationBadge = `
-                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-emerald-900 text-[9px] font-bold truncate flex items-center gap-1" title="Double Income Active for ${escapeHtml(member.appreciation_member.name)}">
-                        <i class="fas fa-gift text-[9px] text-emerald-600"></i> Beneficiary: ${escapeHtml(member.appreciation_member.name)} (${escapeHtml(member.appreciation_member.customer_id)})
+                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-emerald-900 text-[9px] font-bold truncate flex items-center gap-1.5" title="Double Income Active for ${escapeHtml(member.appreciation_member.name)}">
+                        <svg class="w-3 h-3 text-emerald-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"></polyline><rect x="2" y="7" width="20" height="5"></rect><line x1="12" y1="22" x2="12" y2="7"></line></svg>
+                        <span>Beneficiary: ${escapeHtml(member.appreciation_member.name)} (${escapeHtml(member.appreciation_member.customer_id)})</span>
                     </div>`;
             } else {
                 appreciationBadge = `
-                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-300 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1">
-                        <i class="fas fa-pause-circle text-[9px] text-amber-600"></i> Reserved Idle Position (Blank)
+                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-300 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1.5">
+                        <svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg>
+                        <span>Reserved Idle Position (Blank)</span>
                     </div>`;
             }
         } else if (member.boosted_by_idle_slots && member.boosted_by_idle_slots.length > 0) {
             appreciationBadge = `
-                <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-300 text-purple-900 text-[9px] font-bold truncate flex items-center gap-1" title="Receiving Double Income from Idle Position">
-                    <i class="fas fa-bolt text-[9px] text-purple-600"></i> Double Income Active (+${escapeHtml(member.boosted_by_idle_slots.join(', '))})
+                <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-300 text-purple-900 text-[9px] font-bold truncate flex items-center gap-1.5" title="Receiving Double Income from Idle Position">
+                    <svg class="w-3 h-3 text-purple-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <span>Double Income Active (+${escapeHtml(member.boosted_by_idle_slots.join(', '))})</span>
                 </div>`;
         }
 
-        const companyBadge = member.company_label 
-            ? `<div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1">
-                 <i class="fas fa-crown text-[8px] text-amber-600"></i> <span>${escapeHtml(member.company_label)}</span>
+        const rawCompanyLabel = (member.company_label || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
+        const companyBadgeIcon = isTopRoot
+            ? `<svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`
+            : `<svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
+
+        const companyBadge = rawCompanyLabel 
+            ? `<div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1.5">
+                 ${companyBadgeIcon} <span>${escapeHtml(rawCompanyLabel)}</span>
                </div>`
             : '';
 
         const phoneHtml = member.phone 
             ? `<div class="flex items-center gap-1 text-[10px] text-slate-600 truncate mt-0.5">
-                 <i class="fas fa-phone-alt text-[8px] text-slate-400"></i>
+                 <svg class="w-2.5 h-2.5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
                  <span class="font-mono text-[10px] font-medium text-slate-700">${escapeHtml(member.phone)}</span>
                </div>`
             : '';
@@ -748,7 +769,7 @@
 
                 <div class="flex items-center gap-2 mb-1.5">
                     <div class="card-avatar w-8 h-8 rounded-full ${avatarClass} text-xs flex items-center justify-center border border-slate-200 flex-shrink-0">
-                        ${initials}
+                        ${avatarSvg}
                     </div>
                     <div class="min-w-0 flex-1">
                         <div class="card-name font-bold text-slate-900 text-xs truncate leading-snug" title="${escapeHtml(member.name)}">${escapeHtml(member.name)}</div>
@@ -790,7 +811,7 @@
 
             <!-- Circle Inner Content (for Circle mode) -->
             <div class="circle-inner-avatar hidden">
-                ${initials}
+                ${avatarSvg}
             </div>
 
             <button type="button" class="org-expand-btn" data-expand="true" aria-expanded="false" title="Expand placement slots">
@@ -1130,7 +1151,7 @@
         if (assignBtn) {
             event.stopPropagation();
             const memberId = assignBtn.dataset.id;
-            const codeOrId = prompt('🌟 Assign Appreciation Beneficiary:\n\nEnter the Customer Code (e.g. C22010003 for Janakben Bihola) or Member ID to map to this Idle Position for Double Income:');
+            const codeOrId = prompt('Assign Appreciation Beneficiary:\n\nEnter the Customer Code (e.g. C22010003 for Janakben Bihola) or Member ID to map to this Idle Position for Double Income:');
             if (!codeOrId || !codeOrId.trim()) return;
 
             const note = prompt('Optional Note (e.g. Diwali 2026 Appreciation Reward):', 'Special occasion appreciation bonus');

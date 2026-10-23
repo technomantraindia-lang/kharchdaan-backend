@@ -113,11 +113,11 @@ class MlmTreeService
                 $name = $m->user?->name;
                 $dl = $downlines[$m->id] ?? 0;
                 $label = match ($cid) {
-                    'C22020008' => "👑 {$name} — Top ID & Founder (Aaradhya Gruh Udyog - {$dl} Downlines)",
-                    'C22010003' => "🌟 {$name} — Left Pillar Leader ({$dl} Downlines)",
-                    'C22020001' => "🌟 {$name} — Middle Pillar Leader ({$dl} Downlines)",
-                    'C22030018' => "🌟 {$name} — Right Pillar Leader ({$dl} Downlines)",
-                    default => "🌿 {$name} — Master Distributor ({$dl} Downlines)",
+                    'C22020008' => "{$name} — Top ID & Founder (Aaradhya Gruh Udyog - {$dl} Downlines)",
+                    'C22010003' => "{$name} — Left Pillar Leader ({$dl} Downlines)",
+                    'C22020001' => "{$name} — Middle Pillar Leader ({$dl} Downlines)",
+                    'C22030018' => "{$name} — Right Pillar Leader ({$dl} Downlines)",
+                    default => "{$name} — Master Distributor ({$dl} Downlines)",
                 };
                 return [
                     'id' => $m->id,
@@ -225,8 +225,8 @@ class MlmTreeService
         $idleLabel = $member->idle_slot_label ?? ($idleCodes[$cid] ?? null);
 
         $companyLabel = match (true) {
-            $isTopRoot => '👑 Top ID: 1 - Nimesh Jagirdar (Master Root)',
-            $isIdleSlot => '🌟 ' . ($idleLabel ?? 'Idle Position') . ' (Appreciation Slot)',
+            $isTopRoot => 'Top ID: 1 - Nimesh Jagirdar (Master Root)',
+            $isIdleSlot => ($idleLabel ?? 'Idle Position') . ' (Appreciation Slot)',
             default => null,
         };
 
