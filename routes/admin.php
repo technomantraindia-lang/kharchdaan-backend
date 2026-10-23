@@ -121,6 +121,8 @@ Route::middleware('admin')->group(function () {
         Route::post('/move/{member}/preview', [MlmMemberController::class, 'movePreview'])->middleware('permission:mlm.manage')->name('move.preview');
         Route::post('/move/{member}', [MlmMemberController::class, 'move'])->middleware('permission:mlm.manage')->name('move');
         Route::get('/{member}/children', [MlmMemberController::class, 'treeChildren'])->middleware('permission:mlm.view')->name('children');
+        Route::post('/{member}/assign-appreciation', [MlmMemberController::class, 'assignAppreciation'])->middleware('permission:mlm.manage')->name('assign-appreciation');
+        Route::post('/{member}/unassign-appreciation', [MlmMemberController::class, 'unassignAppreciation'])->middleware('permission:mlm.manage')->name('unassign-appreciation');
     });
 
     // MLM Calculation Engine (manual only; no live order integration)

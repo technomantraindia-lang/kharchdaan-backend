@@ -179,7 +179,15 @@ class MlmMovementService
 
         $descendantIds = $this->subtree($member)->pluck('id')->all();
         if (in_array($newParent->id, $descendantIds, true)) {
-            $this->fail('new_parent_id', 'A member cannot be placed under their own descendant.');
+            // When applying inactive option or reactivation, detaching from old upline allows re-placement under child
+            if ($member->status === Member::STATUS_INACTIVE || request()->boolean('allow_reactivation_override')) {
+                DB::table('mlm_members')->where('id', $member->id)->update([
+                    'placement_parent_id' => null,
+                    'placement_position' => null,
+                ]);
+            } else {
+                $this->fail('new_parent_id', 'A member cannot be placed under their own descendant while active. Set to inactive first to reassign under child.');
+            }
         }
 
         $occupied = Member::query()

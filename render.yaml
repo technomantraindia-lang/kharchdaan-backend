@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: kharchdaan-backend
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: KharchDaan
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://kharchdaan-backend.onrender.com
+      - key: DB_CONNECTION
+        value: sqlite

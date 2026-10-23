@@ -19,12 +19,27 @@ use Illuminate\Validation\ValidationException;
 
 class MlmPayoutService
 {
+    public function createMonthlyCycle(Carbon|string $date, User $admin, ?string $note = null): MlmPayoutCycle
+    {
+        $periodStart = Carbon::parse($date)->startOfMonth()->startOfDay();
+        $periodEnd = $periodStart->copy()->endOfMonth()->endOfDay();
+        $cycleRef = 'MLM-MONTHLY-'.$periodStart->format('Ym');
+
+        return $this->createPeriodCycle($periodStart, $periodEnd, $cycleRef, $admin, $note);
+    }
+
     public function createWeeklyCycle(Carbon|string $date, User $admin, ?string $note = null): MlmPayoutCycle
     {
         $periodStart = Carbon::parse($date)->startOfWeek(Carbon::MONDAY)->startOfDay();
         $periodEnd = $periodStart->copy()->addDays(6)->endOfDay();
+        $cycleRef = 'MLM-WEEKLY-'.$periodStart->format('Ymd').'-'.$periodEnd->format('Ymd');
 
-        return DB::transaction(function () use ($periodStart, $periodEnd, $admin, $note): MlmPayoutCycle {
+        return $this->createPeriodCycle($periodStart, $periodEnd, $cycleRef, $admin, $note);
+    }
+
+    protected function createPeriodCycle(Carbon $periodStart, Carbon $periodEnd, string $cycleRef, User $admin, ?string $note = null): MlmPayoutCycle
+    {
+        return DB::transaction(function () use ($periodStart, $periodEnd, $cycleRef, $admin, $note): MlmPayoutCycle {
             $cycle = MlmPayoutCycle::query()
                 ->whereDate('period_start', $periodStart->toDateString())
                 ->whereDate('period_end', $periodEnd->toDateString())
@@ -38,7 +53,7 @@ class MlmPayoutService
             $cycle ??= MlmPayoutCycle::create([
                 'period_start' => $periodStart->toDateString(),
                 'period_end' => $periodEnd->toDateString(),
-                'cycle_reference' => 'MLM-'.$periodStart->format('Ymd').'-'.$periodEnd->format('Ymd'),
+                'cycle_reference' => $cycleRef,
                 'status' => MlmPayoutCycle::STATUS_PENDING_CALCULATION,
                 'total_amount' => MlmDecimal::normalize('0'),
                 'net_payable' => MlmDecimal::normalize('0'),
@@ -67,7 +82,9 @@ class MlmPayoutService
             $total = MlmDecimal::normalize('0');
             $gross = MlmDecimal::normalize('0');
             $adjustments = MlmDecimal::normalize('0');
-            $grouped = $ledgers->groupBy('member_id');
+
+            // Group ledgers by recipient (routing Idle Slot income to Appreciation Beneficiary for Double Income)
+            $grouped = [];
             foreach ($ledgers as $ledger) {
                 $total = MlmDecimal::add($total, (string) $ledger->calculated_amount);
                 if (in_array($ledger->income_type, [MlmIncomeLedger::TYPE_ADJUSTMENT, MlmIncomeLedger::TYPE_REVERSAL], true)) {
@@ -79,6 +96,17 @@ class MlmPayoutService
                     'payout_cycle_id' => $cycle->id,
                     'status' => MlmIncomeLedger::STATUS_PENDING_APPROVAL,
                 ]);
+
+                $member = $ledger->member;
+                $beneficiaryId = $ledger->member_id;
+                if ($member && ($member->is_idle_slot || in_array($member->customer_id, [
+                    'C25070004','C25070005','C25070006','C25070007','C25070008','C25070009',
+                    'C25070010','C25070011','C25070012','C25070013','C25070014','C25070015',
+                ], true)) && $member->appreciation_member_id) {
+                    $beneficiaryId = $member->appreciation_member_id;
+                }
+
+                $grouped[$beneficiaryId][] = $ledger;
             }
 
             foreach ($grouped as $memberId => $memberLedgers) {
@@ -100,7 +128,7 @@ class MlmPayoutService
                         'gross_income' => $lineGross,
                         'adjustment_amount' => $lineAdjustments,
                         'net_payable' => $lineNet,
-                        'ledger_count' => $memberLedgers->count(),
+                        'ledger_count' => count($memberLedgers),
                         'status' => MlmPayoutCycle::STATUS_PENDING_APPROVAL,
                     ]
                 );
@@ -114,7 +142,7 @@ class MlmPayoutService
                 'net_payable' => $total,
                 'gross_income' => $gross,
                 'adjustment_amount' => $adjustments,
-                'total_members' => $grouped->count(),
+                'total_members' => count($grouped),
                 'ledger_count' => $ledgers->count(),
                 'calculation_date' => now(),
             ]);

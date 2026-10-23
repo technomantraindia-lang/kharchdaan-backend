@@ -78,13 +78,23 @@ class MlmPayoutController extends Controller
     public function storeCycle(StoreMlmPayoutCycleRequest $request): RedirectResponse
     {
         $this->authorizeManage();
-        $this->payoutService->createWeeklyCycle(
+        $frequency = $request->input('frequency', 'monthly');
+        if ($frequency === 'weekly') {
+            $this->payoutService->createWeeklyCycle(
+                $request->validated('period_start'),
+                $request->user(),
+                $request->validated('admin_note')
+            );
+            return back()->with('success', 'Weekly payout cycle prepared.');
+        }
+
+        $this->payoutService->createMonthlyCycle(
             $request->validated('period_start'),
             $request->user(),
             $request->validated('admin_note')
         );
 
-        return back()->with('success', 'Weekly payout cycle prepared.');
+        return back()->with('success', 'Monthly Direct Selling payout cycle prepared.');
     }
 
     public function approve(MlmPayoutCycle $cycle): RedirectResponse

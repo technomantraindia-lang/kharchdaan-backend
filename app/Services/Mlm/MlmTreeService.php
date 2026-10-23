@@ -141,20 +141,11 @@ class MlmTreeService
 
     public function roots(): Collection
     {
-        $mPlaceholderCodes = [
-            'C25070003','C25070004','C25070005','C25070006',
-            'C25070007','C25070008','C25070009','C25070010',
-            'C25070011','C25070012','C25070013','C25070014','C25070015',
-        ];
-
         return Member::query()
-            ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
+            ->with(['user.addresses', 'sponsor.user', 'placementParent.user', 'appreciationMember.user'])
             ->withCount('placementChildren')
             ->whereNull('placement_parent_id')
             ->where('status', 'active')
-            ->whereHas('user', function ($q) use ($mPlaceholderCodes) {
-                $q->whereNotIn('mlm_member_id', $mPlaceholderCodes);
-            })
             ->orderByRaw("CASE WHEN id = 10 THEN 0 ELSE 1 END")
             ->orderBy('id')
             ->get();
@@ -163,7 +154,7 @@ class MlmTreeService
     public function children(Member $parent): array
     {
         $children = Member::query()
-            ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
+            ->with(['user.addresses', 'sponsor.user', 'placementParent.user', 'appreciationMember.user'])
             ->withCount('placementChildren')
             ->where('placement_parent_id', $parent->id)
             ->whereIn('placement_position', Member::POSITIONS)
@@ -198,23 +189,66 @@ class MlmTreeService
             ->where('status', '!=', MlmIncomeLedger::STATUS_REVERSED)
             ->sum('calculated_amount');
 
+        // Check if member is boosted by appreciation idle slots (Double Income)
+        $boostedSlots = Member::query()
+            ->where('appreciation_member_id', $member->id)
+            ->get();
+        $boostedIncome = 0;
+        $boostedLabels = [];
+        foreach ($boostedSlots as $slot) {
+            $boostedLabels[] = $slot->idle_slot_label ?? $slot->customer_id;
+            $boostedIncome += (float) MlmIncomeLedger::query()
+                ->where('member_id', $slot->id)
+                ->where('status', '!=', MlmIncomeLedger::STATUS_FAILED)
+                ->where('status', '!=', MlmIncomeLedger::STATUS_REVERSED)
+                ->sum('calculated_amount');
+        }
+        $combinedIncome = $totalIncome + $boostedIncome;
+
         $cid = $member->customer_id;
-        $leadershipCodes = ['C22020008', 'C22010003', 'C22020001', 'C22030018'];
-        $isCompanyNode = in_array($cid, $leadershipCodes, true);
-        $companyLabel = match ($cid) {
-            'C22020008' => 'Top ID: Nimesh Jagirdar (Aaradhya Gruh Udyog)',
-            'C22010003' => 'Left Pillar Leader (Janakben Bihola)',
-            'C22020001' => 'Middle Pillar Leader (Niruben Zala)',
-            'C22030018' => 'Right Pillar Leader (Gaurav Agarwal)',
+        $isTopRoot = ($cid === 'C22020008');
+        $idleCodes = [
+            'C25070004' => 'Idle - 2',
+            'C25070005' => 'Idle - 3',
+            'C25070006' => 'Idle - 4',
+            'C25070007' => 'Idle - 5',
+            'C25070008' => 'Idle - 6',
+            'C25070009' => 'Idle - 7',
+            'C25070010' => 'Idle - 8',
+            'C25070011' => 'Idle - 9',
+            'C25070012' => 'Idle - 10',
+            'C25070013' => 'Idle - 11',
+            'C25070014' => 'Idle - 12',
+            'C25070015' => 'Idle - 13',
+        ];
+        $isIdleSlot = (bool) ($member->is_idle_slot || isset($idleCodes[$cid]));
+        $idleLabel = $member->idle_slot_label ?? ($idleCodes[$cid] ?? null);
+
+        $companyLabel = match (true) {
+            $isTopRoot => '👑 Top ID: 1 - Nimesh Jagirdar (Master Root)',
+            $isIdleSlot => '🌟 ' . ($idleLabel ?? 'Idle Position') . ' (Appreciation Slot)',
             default => null,
         };
+
+        $appreciationMember = null;
+        if ($member->appreciation_member_id) {
+            $appMember = $member->appreciationMember ?? Member::find($member->appreciation_member_id);
+            if ($appMember) {
+                $appreciationMember = [
+                    'id' => $appMember->id,
+                    'customer_id' => $appMember->customer_id,
+                    'name' => $appMember->user?->name ?? 'Distributor',
+                    'phone' => $appMember->user?->phone ?? '',
+                ];
+            }
+        }
 
         $address = $member->user?->addresses?->first();
 
         return [
             'id' => (int) $member->id,
             'customer_id' => $member->customer_id,
-            'name' => $member->user?->name ?? 'Unnamed member',
+            'name' => $isTopRoot ? '1 - Nimesh Jagirdar' : ($isIdleSlot ? ($idleLabel ?? $member->user?->name) : ($member->user?->name ?? 'Unnamed member')),
             'email' => $member->user?->email,
             'phone' => $member->user?->phone,
             'city' => $address?->city ?? 'Ahmedabad',
@@ -222,8 +256,13 @@ class MlmTreeService
             'area' => $address?->apt ?? $address?->area ?? '',
             'full_address' => $address?->address ?? '',
             'pincode' => $address?->zip ?? '',
-            'is_company_node' => $isCompanyNode,
+            'is_company_node' => $isTopRoot || $isIdleSlot,
+            'is_top_root' => $isTopRoot,
+            'is_idle_slot' => $isIdleSlot,
+            'idle_slot_label' => $idleLabel,
             'company_label' => $companyLabel,
+            'appreciation_member' => $appreciationMember,
+            'boosted_by_idle_slots' => $boostedLabels,
             'downline_count' => $downlineCount,
             'status' => $member->status,
             'status_label' => ucfirst($member->status),
@@ -234,8 +273,9 @@ class MlmTreeService
                 : 'Root',
             'level' => $level,
             'level_label' => $level > 19 ? '20+' : (string) $level,
-            'total_income' => (int) round($totalIncome),
-            'total_income_formatted' => '₹'.number_format(round($totalIncome)),
+            'total_income' => (int) round($combinedIncome),
+            'total_income_formatted' => '₹'.number_format(round($combinedIncome)),
+            'slot_income_formatted' => '₹'.number_format(round($totalIncome)),
             'has_children' => $hasChildren,
             'sponsor' => $member->sponsor ? [
                 'id' => $member->sponsor->id,

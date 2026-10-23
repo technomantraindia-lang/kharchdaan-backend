@@ -200,6 +200,53 @@ class MlmMemberController extends Controller
         ]);
     }
 
+    public function assignAppreciation(Request $request, Member $member): JsonResponse
+    {
+        abort_unless($this->can('mlm.manage'), 403, 'Unauthorized action.');
+        $term = trim((string) ($request->input('beneficiary') ?? $request->input('beneficiary_member_id') ?? $request->input('customer_id')));
+
+        $beneficiary = Member::with('user')
+            ->where('id', $term)
+            ->orWhereHas('user', fn ($q) => $q->where('mlm_member_id', $term))
+            ->first();
+
+        if (! $beneficiary) {
+            return response()->json([
+                'success' => false,
+                'message' => "Could not find member with Code or ID '{$term}'.",
+            ], 404);
+        }
+
+        $member->update([
+            'appreciation_member_id' => $beneficiary->id,
+            'appreciation_assigned_at' => now(),
+            'appreciation_note' => $request->input('note') ?? 'Special occasion appreciation bonus',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully linked {$beneficiary->user?->name} ({$beneficiary->customer_id}) to {$member->idle_slot_label} for Double Income!",
+            'member' => $this->treeService->memberPayload($member->fresh(['user', 'appreciationMember.user'])),
+        ]);
+    }
+
+    public function unassignAppreciation(Member $member): JsonResponse
+    {
+        abort_unless($this->can('mlm.manage'), 403, 'Unauthorized action.');
+
+        $member->update([
+            'appreciation_member_id' => null,
+            'appreciation_assigned_at' => null,
+            'appreciation_note' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Appreciation beneficiary cleared from {$member->idle_slot_label}.",
+            'member' => $this->treeService->memberPayload($member->fresh(['user', 'appreciationMember.user'])),
+        ]);
+    }
+
     public function moveForm(Member $member): View
     {
         abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');

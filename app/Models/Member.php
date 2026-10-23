@@ -82,6 +82,11 @@ class Member extends Model
         'kyc_rejection_reason',
         'kyc_verified_by',
         'kyc_verified_at',
+        'is_idle_slot',
+        'idle_slot_label',
+        'appreciation_member_id',
+        'appreciation_assigned_at',
+        'appreciation_note',
     ];
 
     protected function casts(): array
@@ -93,6 +98,8 @@ class Member extends Model
             'aadhaar_reference' => 'encrypted',
             'bank_account_number' => 'encrypted',
             'kyc_verified_at' => 'datetime',
+            'is_idle_slot' => 'boolean',
+            'appreciation_assigned_at' => 'datetime',
         ];
     }
 
@@ -153,6 +160,16 @@ class Member extends Model
     public function placementChildren(): HasMany
     {
         return $this->hasMany(self::class, 'placement_parent_id');
+    }
+
+    public function appreciationMember(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'appreciation_member_id');
+    }
+
+    public function assignedAppreciationSlots(): HasMany
+    {
+        return $this->hasMany(self::class, 'appreciation_member_id');
     }
 
     public function placementMovements(): HasMany

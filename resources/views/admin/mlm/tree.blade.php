@@ -658,11 +658,12 @@
     // Render an interactive Org Chart Node Card
     const renderNodeCard = (member, position = 'root') => {
         const card = document.createElement('div');
-        const isTopRoot = member.customer_id === 'C22020008' || position === 'root';
+        const isTopRoot = member.is_top_root || member.customer_id === 'C22020008' || position === 'root';
+        const isIdle = Boolean(member.is_idle_slot);
         const isPillarLeader = ['C22010003', 'C22020001', 'C22030018'].includes(member.customer_id);
         const cardClass = isTopRoot 
             ? 'pos-company-root ring-2 ring-amber-400/50' 
-            : (isPillarLeader ? 'pos-pillar-node ring-1 ring-orange-300' : posCardClass(position));
+            : (isIdle ? 'pos-idle-slot ring-2 ring-amber-400/60 bg-amber-50/40' : (isPillarLeader ? 'pos-pillar-node ring-1 ring-orange-300' : posCardClass(position)));
 
         card.className = `org-node-card ${cardClass} p-3.5`;
         card.dataset.nodeCard = 'true';
@@ -671,16 +672,38 @@
 
         const initials = isTopRoot 
             ? '👑' 
-            : ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase());
+            : (isIdle ? '⭐' : ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()));
         const incomeFormatted = member.total_income_formatted || '₹0';
         const dlCount = Number(member.downline_count ?? 0);
         const dlBadge = `<span class="inline-flex items-center gap-1 font-bold text-[9px] text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200" title="Total Network Downlines under this member"><i class="fas fa-users text-[8px]"></i> ${dlCount} DL</span>`;
 
         const avatarClass = isTopRoot
             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
-            : (isPillarLeader 
-                ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
-                : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold');
+            : (isIdle
+                ? 'bg-gradient-to-tr from-amber-400 to-amber-500 text-amber-950 border-amber-300 font-extrabold shadow-xs'
+                : (isPillarLeader 
+                    ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
+                    : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold'));
+
+        let appreciationBadge = '';
+        if (isIdle) {
+            if (member.appreciation_member) {
+                appreciationBadge = `
+                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-emerald-900 text-[9px] font-bold truncate flex items-center gap-1" title="Double Income Active for ${escapeHtml(member.appreciation_member.name)}">
+                        <i class="fas fa-gift text-[9px] text-emerald-600"></i> Beneficiary: ${escapeHtml(member.appreciation_member.name)} (${escapeHtml(member.appreciation_member.customer_id)})
+                    </div>`;
+            } else {
+                appreciationBadge = `
+                    <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-300 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1">
+                        <i class="fas fa-pause-circle text-[9px] text-amber-600"></i> Reserved Idle Position (Blank)
+                    </div>`;
+            }
+        } else if (member.boosted_by_idle_slots && member.boosted_by_idle_slots.length > 0) {
+            appreciationBadge = `
+                <div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-purple-50 border border-purple-300 text-purple-900 text-[9px] font-bold truncate flex items-center gap-1" title="Receiving Double Income from Idle Position">
+                    <i class="fas fa-bolt text-[9px] text-purple-600"></i> Double Income Active (+${escapeHtml(member.boosted_by_idle_slots.join(', '))})
+                </div>`;
+        }
 
         const companyBadge = member.company_label 
             ? `<div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1">
@@ -706,6 +729,12 @@
                </div>`
             : `<div class="flex justify-between items-center text-[10px]"><span class="font-medium text-slate-400">Sponsor:</span> <span class="font-bold text-amber-700">Master Root</span></div>`;
 
+        const appreciationActionBtn = isIdle
+            ? (member.appreciation_member
+                ? `<button type="button" class="btn-clear-appreciation px-2 py-0.5 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded text-[9px] border border-rose-200 transition" data-id="${member.id}" title="Remove Beneficiary">Clear</button>`
+                : `<button type="button" class="btn-assign-appreciation px-2 py-0.5 font-bold text-amber-900 bg-amber-200/80 hover:bg-amber-300 rounded text-[9px] border border-amber-300 transition" data-id="${member.id}" title="Assign Customer for Double Income">+ Assign</button>`)
+            : '';
+
         card.innerHTML = `
             <!-- Box Content (for Detailed & Compact modes) -->
             <div class="card-box-content">
@@ -729,6 +758,7 @@
                 </div>
 
                 ${companyBadge}
+                ${appreciationBadge}
 
                 <!-- Detailed Card Meta -->
                 <div class="card-full-meta text-[10px] text-slate-500 pt-1.5 border-t border-slate-100 space-y-1 mb-2">
@@ -746,12 +776,15 @@
                 </div>
 
                 <div class="card-full-actions flex items-center justify-between gap-1 pt-2 border-t border-slate-100 text-[10px]">
-                    <button type="button" class="btn-node-drawer px-2.5 py-1 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center gap-1">
-                        <i class="fas fa-eye text-[9px]"></i> Info
-                    </button>
-                    <button type="button" class="btn-node-focus px-2.5 py-1 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center gap-1" title="Focus subtree under this member">
-                        <i class="fas fa-crosshairs text-[9px]"></i> Focus
-                    </button>
+                    <div class="flex items-center gap-1">
+                        <button type="button" class="btn-node-drawer px-2.5 py-1 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center gap-1">
+                            <i class="fas fa-eye text-[9px]"></i> Info
+                        </button>
+                        <button type="button" class="btn-node-focus px-2.5 py-1 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center gap-1" title="Focus subtree under this member">
+                            <i class="fas fa-crosshairs text-[9px]"></i> Focus
+                        </button>
+                    </div>
+                    ${appreciationActionBtn}
                 </div>
             </div>
 
@@ -1093,11 +1126,80 @@
             return;
         }
 
+        const assignBtn = event.target.closest('.btn-assign-appreciation');
+        if (assignBtn) {
+            event.stopPropagation();
+            const memberId = assignBtn.dataset.id;
+            const codeOrId = prompt('🌟 Assign Appreciation Beneficiary:\n\nEnter the Customer Code (e.g. C22010003 for Janakben Bihola) or Member ID to map to this Idle Position for Double Income:');
+            if (!codeOrId || !codeOrId.trim()) return;
+
+            const note = prompt('Optional Note (e.g. Diwali 2026 Appreciation Reward):', 'Special occasion appreciation bonus');
+            assignAppreciation(memberId, codeOrId.trim(), note);
+            return;
+        }
+
+        const clearBtn = event.target.closest('.btn-clear-appreciation');
+        if (clearBtn) {
+            event.stopPropagation();
+            if (!confirm('Are you sure you want to remove the appreciation beneficiary from this Idle slot?')) return;
+            unassignAppreciation(clearBtn.dataset.id);
+            return;
+        }
+
         const card = event.target.closest('.org-node-card');
         if (card && card._memberData) {
             openDrawer(card._memberData);
         }
     });
+
+    const assignAppreciation = async (memberId, beneficiary, note) => {
+        try {
+            clearMessage();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const url = `{{ url('/admin/mlm/tree') }}/${memberId}/assign-appreciation`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+                body: JSON.stringify({ beneficiary, note }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to assign beneficiary.');
+            showMessage(data.message);
+            if (activeTopRoot) {
+                loadMemberTree(activeTopRoot.member?.id || activeTopRoot.id);
+            }
+        } catch (e) {
+            showMessage(e.message || 'Error assigning beneficiary.');
+        }
+    };
+
+    const unassignAppreciation = async (memberId) => {
+        try {
+            clearMessage();
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const url = `{{ url('/admin/mlm/tree') }}/${memberId}/unassign-appreciation`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || '',
+                },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Failed to remove beneficiary.');
+            showMessage(data.message);
+            if (activeTopRoot) {
+                loadMemberTree(activeTopRoot.member?.id || activeTopRoot.id);
+            }
+        } catch (e) {
+            showMessage(e.message || 'Error clearing beneficiary.');
+        }
+    };
 
     // Density Mode Toggle
     document.querySelectorAll('.density-btn').forEach((btn) => {
