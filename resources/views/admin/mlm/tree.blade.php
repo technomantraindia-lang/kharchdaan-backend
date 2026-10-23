@@ -130,10 +130,10 @@
 
     /* 1. Base / Detailed Mode */
     .org-node-card {
-        width: 235px;
+        width: 250px;
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
+        border-radius: 14px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
         transition: all 0.2s ease;
         position: relative;
@@ -167,20 +167,20 @@
     .org-node-card.pos-company-root { border-top: 4px solid #f59e0b; background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50px); }
     .org-node-card.pos-company-node { border-top: 4px solid #6366f1; background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 50px); }
     .org-node-card.pos-promoted-node {
-        border-top: 4px solid #10b981;
-        border-color: #10b981;
-        background: linear-gradient(180deg, #ecfdf5 0%, #ffffff 70px);
-        box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25);
+        border-top: 3.5px solid #10b981;
+        border-color: #a7f3d0;
+        background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 55px);
+        box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.18), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
     }
     .org-node-card.pos-idle-slot {
-        border-top: 4px solid #f59e0b;
-        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 60px);
-        border: 1.5px dashed #f59e0b;
+        border-top: 3.5px solid #f59e0b;
+        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50px);
+        border: 1.5px dashed #fcd34d;
     }
     .org-node-card.pos-expired-node {
-        border-top: 4px solid #f43f5e;
-        border-color: #fca5a5;
-        background: linear-gradient(180deg, #fff1f2 0%, #ffffff 60px);
+        border-top: 3.5px solid #f43f5e;
+        border-color: #fecdd3;
+        background: linear-gradient(180deg, #fff1f2 0%, #ffffff 50px);
     }
 
     /* Expand / Collapse Button */
@@ -894,16 +894,16 @@
         const isDualPlaced = Boolean(member.is_dual_placed || (member.promotions_held && member.promotions_held.length > 0));
 
         const cardClass = isTopRoot 
-            ? 'pos-company-root ring-2 ring-amber-400/50' 
+            ? 'pos-company-root ring-1 ring-amber-400/60' 
             : (isPromoted
-                ? 'pos-promoted-node ring-2 ring-emerald-500/80 bg-gradient-to-b from-amber-50/70 via-emerald-50/30 to-white shadow-md shadow-emerald-500/10'
+                ? 'pos-promoted-node ring-1 ring-emerald-400'
                 : (isExpired
-                    ? 'pos-expired-node ring-2 ring-rose-400/80 bg-rose-50/40'
+                    ? 'pos-expired-node ring-1 ring-rose-400/70'
                     : (isIdle
-                        ? 'pos-idle-slot ring-2 ring-amber-400/60 bg-amber-50/40'
+                        ? 'pos-idle-slot ring-1 ring-amber-400/50'
                         : (isPillarLeader 
                             ? 'pos-pillar-node ring-1 ring-orange-300' 
-                            : (posCardClass(position) + (isDualPlaced ? ' ring-2 ring-amber-400/80 shadow-xs' : ''))))));
+                            : (posCardClass(position) + (isDualPlaced ? ' ring-1 ring-amber-400/80 shadow-xs' : ''))))));
 
         card.className = `org-node-card ${cardClass} p-3.5`;
         card.dataset.nodeCard = 'true';
@@ -915,10 +915,7 @@
             avatarSvg = `<svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`;
         } else if (isPromoted) {
             const pMon = ((member.name || 'P').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'P';
-            avatarSvg = `<div class="relative flex items-center justify-center">
-                <span class="font-extrabold text-[10px] text-white tracking-tight">${escapeHtml(pMon)}</span>
-                <span class="absolute -top-3.5 -right-3 text-[10px] text-amber-300 drop-shadow">👑</span>
-            </div>`;
+            avatarSvg = `<span class="font-bold text-[11px] text-white tracking-tight">${escapeHtml(pMon)}</span>`;
         } else if (isIdle) {
             avatarSvg = `<svg class="w-4 h-4 text-amber-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
         } else if (isPillarLeader) {
@@ -938,7 +935,7 @@
         const avatarClass = isTopRoot
             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
             : (isPromoted
-                ? 'bg-gradient-to-tr from-amber-400 via-orange-500 to-emerald-600 text-white shadow-xs border-amber-300 ring-2 ring-amber-300 font-extrabold'
+                ? 'bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-white shadow-xs border-amber-300 ring-2 ring-amber-300 font-extrabold'
                 : (isIdle
                     ? 'bg-gradient-to-tr from-amber-400 to-amber-500 text-amber-950 border-amber-300 font-extrabold shadow-xs'
                     : (isPillarLeader 
@@ -947,12 +944,15 @@
                             ? 'bg-gradient-to-tr from-amber-50 to-orange-100 text-amber-800 border-amber-300 font-extrabold ring-1 ring-amber-300'
                             : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold'))));
 
-        // Status badge in top right
+        // Status badge in top right (clean, non-clashing)
         let cardStatusBadge = statusBadge(member.status);
         if (isPromoted) {
-            cardStatusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-gradient-to-r from-amber-500 via-orange-500 to-emerald-600 text-white shadow-2xs uppercase tracking-wider animate-pulse">★ PROMOTED</span>`;
+            cardStatusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
+                <svg class="w-2.5 h-2.5 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>
+                <span>Promoted</span>
+            </span>`;
         } else if (isExpired) {
-            cardStatusBadge = `<span class="inline-flex px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300">Expired</span>`;
+            cardStatusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-50 text-rose-800 border border-rose-200"><i class="fas fa-clock text-[8px]"></i> <span>Expired</span></span>`;
         }
 
         // Duration & Expiration Badge (for Promoted Idle Position - Place A)
@@ -960,25 +960,29 @@
         if (isIdle && member.promoted_info) {
             if (member.promoted_info.is_indefinite) {
                 promotionDurationBadge = `
-                    <div class="mt-1 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950 text-[9px] font-bold flex items-center justify-between gap-1 shadow-2xs">
-                        <span class="flex items-center gap-1.5 truncate"><i class="fas fa-infinity text-emerald-600 flex-shrink-0"></i> Flexible Duration (Until Reverted)</span>
-                        <span class="text-[8px] font-extrabold text-emerald-800 bg-emerald-200/80 px-1 py-0.2 rounded">Active</span>
+                    <div class="mt-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50/80 border border-emerald-200 text-emerald-950 text-[10px] flex items-center justify-between gap-1 shadow-2xs">
+                        <span class="flex items-center gap-1.5 font-bold"><i class="fas fa-infinity text-emerald-600 text-[9px] flex-shrink-0"></i> Flexible Duration</span>
+                        <span class="text-[9px] font-extrabold text-emerald-800 bg-white/90 px-1.5 py-0.5 rounded border border-emerald-200 flex-shrink-0">Active</span>
                     </div>`;
             } else if (!member.promoted_info.is_expired) {
                 const days = member.promoted_info.days_remaining;
                 const isUrgent = days <= 3;
-                const bgClass = isUrgent ? 'bg-amber-50 border-amber-300 text-amber-950' : 'bg-emerald-50 border-emerald-300 text-emerald-950';
+                const bgClass = isUrgent ? 'bg-amber-50/90 border-amber-300 text-amber-950' : 'bg-emerald-50/80 border-emerald-200 text-emerald-950';
                 const iconClass = isUrgent ? 'text-amber-600' : 'text-emerald-600';
+                const dateClean = (member.promoted_info.expires_at || '').split(',')[0];
                 promotionDurationBadge = `
-                    <div class="mt-1 px-2 py-1 rounded-lg ${bgClass} border text-[9px] font-bold flex items-center justify-between gap-1 shadow-2xs">
-                        <span class="flex items-center gap-1.5 truncate"><i class="fas fa-hourglass-half ${iconClass} flex-shrink-0"></i> ⏳ ${days} ${days === 1 ? 'Day' : 'Days'} Left <span class="font-normal text-slate-500 text-[8px]">(until ${escapeHtml(member.promoted_info.expires_at)})</span></span>
-                        <span class="text-[8px] font-extrabold bg-white/90 text-slate-700 px-1 py-0.2 rounded border border-slate-200 shadow-2xs">Active</span>
+                    <div class="mt-1.5 px-2.5 py-1.5 rounded-lg ${bgClass} border text-[10px] flex items-center justify-between gap-1 shadow-2xs">
+                        <div class="flex items-center gap-1.5 font-bold truncate">
+                            <i class="fas fa-hourglass-half ${iconClass} text-[9px] flex-shrink-0"></i>
+                            <span>${days} ${days === 1 ? 'Day' : 'Days'} Left</span>
+                        </div>
+                        <span class="text-[9px] font-mono font-medium text-slate-600 bg-white/90 px-1.5 py-0.5 rounded border border-slate-200/80 flex-shrink-0">until ${escapeHtml(dateClean)}</span>
                     </div>`;
             } else {
                 promotionDurationBadge = `
-                    <div class="mt-1 px-2 py-1 rounded-lg bg-rose-50 border border-rose-300 text-rose-950 text-[9px] font-bold flex items-center justify-between gap-1 shadow-2xs">
-                        <span class="flex items-center gap-1.5 truncate"><i class="fas fa-exclamation-triangle text-rose-600 flex-shrink-0"></i> Temporary Time Expired</span>
-                        <button type="button" class="btn-manage-promotion px-1.5 py-0.5 rounded text-[8px] font-black bg-rose-600 hover:bg-rose-700 text-white transition" data-id="${member.id}">Extend</button>
+                    <div class="mt-1.5 px-2.5 py-1.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-950 text-[10px] flex items-center justify-between gap-1 shadow-2xs">
+                        <span class="flex items-center gap-1.5 font-bold truncate text-rose-800"><i class="fas fa-exclamation-triangle text-rose-600 flex-shrink-0 text-[9px]"></i> Time Expired</span>
+                        <button type="button" class="btn-manage-promotion px-2 py-0.5 rounded text-[9px] font-bold bg-rose-600 hover:bg-rose-700 text-white transition flex-shrink-0" data-id="${member.id}">Extend</button>
                     </div>`;
             }
         }
@@ -987,10 +991,13 @@
         let originalPositionLink = '';
         if (isIdle && member.promoted_info && member.promoted_info.original_path) {
             originalPositionLink = `
-                <div class="mt-1 px-2 py-1 rounded-lg bg-blue-50/80 border border-blue-200 text-blue-950 text-[9px] flex items-center justify-between gap-1 shadow-2xs">
-                    <span class="truncate flex items-center gap-1"><i class="fas fa-map-marker-alt text-blue-600 text-[9px]"></i> Permanent: <strong>Level ${member.promoted_info.original_level_label || '0'}</strong></span>
-                    <button type="button" class="btn-jump-node px-1.5 py-0.5 rounded text-[8px] font-black text-blue-800 bg-white hover:bg-blue-100 border border-blue-300 transition flex items-center gap-0.5" data-path='${JSON.stringify(member.promoted_info.original_path)}' data-target-id="${member.promoted_info.id}" title="Focus on member's permanent original card in the tree">
-                        <span>View Original Card</span> <i class="fas fa-arrow-right text-[7px]"></i>
+                <div class="mt-1.5 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[10px] flex items-center justify-between gap-1 shadow-2xs">
+                    <span class="truncate flex items-center gap-1.5 text-slate-600">
+                        <i class="fas fa-map-marker-alt text-blue-500 text-[9px] flex-shrink-0"></i>
+                        <span class="truncate">Permanent: <strong class="text-slate-800">Level ${escapeHtml(member.promoted_info.original_level_label || '0')}</strong></span>
+                    </span>
+                    <button type="button" class="btn-jump-node px-2 py-0.5 rounded text-[9px] font-bold text-blue-700 bg-white hover:bg-blue-50 border border-blue-200 transition flex items-center gap-1 shrink-0" data-path='${JSON.stringify(member.promoted_info.original_path)}' data-target-id="${member.promoted_info.id}" title="Focus on member's permanent original card in the tree">
+                        <span>Original</span> <i class="fas fa-arrow-right text-[7px]"></i>
                     </button>
                 </div>`;
         }
@@ -1001,15 +1008,18 @@
             dualPlacedBadge = member.promotions_held.map(promo => {
                 const timeText = promo.is_indefinite ? 'Flexible' : `${promo.days_remaining}d left`;
                 return `
-                    <div class="mt-1.5 p-2 rounded-lg bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-300 text-amber-950 text-[9px] shadow-2xs">
+                    <div class="mt-1.5 p-2 rounded-lg bg-amber-50/70 border border-amber-200 text-amber-950 text-[10px] shadow-2xs space-y-1">
                         <div class="flex items-center justify-between gap-1 font-bold">
-                            <span class="flex items-center gap-1 truncate"><i class="fas fa-crown text-amber-600 text-[9px]"></i> Promoted at: <strong class="text-amber-900">${escapeHtml(promo.slot_label)}</strong></span>
-                            <span class="text-[8px] font-extrabold bg-amber-200/90 text-amber-900 px-1.5 py-0.2 rounded font-mono">${timeText}</span>
+                            <span class="flex items-center gap-1.5 truncate">
+                                <i class="fas fa-crown text-amber-600 text-[9px]"></i>
+                                <span>Active at: <strong class="text-amber-900">${escapeHtml(promo.slot_label)}</strong></span>
+                            </span>
+                            <span class="text-[9px] font-mono font-bold bg-amber-100 text-amber-900 px-1.5 py-0.2 rounded">${timeText}</span>
                         </div>
-                        <div class="mt-1 flex items-center justify-between gap-1 pt-1 border-t border-amber-200/60">
-                            <span class="text-[8px] text-emerald-800 font-bold flex items-center gap-1"><i class="fas fa-bolt text-emerald-600"></i> Double Income Active</span>
-                            <button type="button" class="btn-jump-node px-1.5 py-0.5 rounded text-[8px] font-black text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 transition flex items-center gap-0.5" data-path='${JSON.stringify(promo.slot_path || [])}' data-target-id="${promo.slot_id}" title="Jump to promoted idle position in tree">
-                                <span>View Promoted Slot</span> <i class="fas fa-external-link-alt text-[7px]"></i>
+                        <div class="flex items-center justify-between gap-1 pt-1 border-t border-amber-200/60">
+                            <span class="text-[9px] text-emerald-800 font-semibold flex items-center gap-1"><i class="fas fa-bolt text-emerald-600 text-[8px]"></i> Double Income Active</span>
+                            <button type="button" class="btn-jump-node px-1.5 py-0.5 rounded text-[9px] font-bold text-amber-900 bg-white hover:bg-amber-100 border border-amber-300 transition flex items-center gap-0.5" data-path='${JSON.stringify(promo.slot_path || [])}' data-target-id="${promo.slot_id}" title="Jump to promoted idle position in tree">
+                                <span>View Slot</span> <i class="fas fa-arrow-right text-[7px]"></i>
                             </button>
                         </div>
                     </div>`;
@@ -1020,9 +1030,9 @@
         let vacantIdleNotice = '';
         if (isIdle && !member.promoted_info) {
             vacantIdleNotice = `
-                <div class="mt-1 px-2 py-1 rounded-lg bg-amber-50/80 border border-amber-300 text-amber-900 text-[9px] font-semibold flex items-center gap-1.5">
-                    <i class="fas fa-star text-amber-500"></i>
-                    <span>Unoccupied Idle Slot &bull; Ready for Promotion</span>
+                <div class="mt-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50/70 border border-amber-200/80 text-amber-900 text-[10px] font-medium flex items-center gap-1.5 shadow-2xs">
+                    <i class="fas fa-star text-amber-500 text-[9px] flex-shrink-0"></i>
+                    <span>Vacant Idle Position &bull; Available</span>
                 </div>`;
         }
 
@@ -1047,7 +1057,7 @@
         const sponsorHtml = member.sponsor 
             ? `<div class="flex justify-between items-center text-[10px] truncate" title="${escapeHtml(member.sponsor.name)} (${escapeHtml(member.sponsor.customer_id)})">
                  <span class="font-medium text-slate-400">Sponsor:</span>
-                 <span class="font-bold text-slate-800 truncate max-w-[125px]">${escapeHtml(member.sponsor.name)}</span>
+                 <span class="font-bold text-slate-800 truncate max-w-[130px]">${escapeHtml(member.sponsor.name)}</span>
                </div>
                <div class="flex justify-between items-center text-[9px] text-slate-400 -mt-0.5 font-mono">
                  <span>ID:</span>
@@ -1055,52 +1065,74 @@
                </div>`
             : `<div class="flex justify-between items-center text-[10px]"><span class="font-medium text-slate-400">Sponsor:</span> <span class="font-bold text-amber-700">Master Root</span></div>`;
 
-        // Promotion Action Buttons
-        let promotionActionBtn = '';
-        if (isIdle) {
-            if (member.promoted_info) {
-                promotionActionBtn = `
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="btn-manage-promotion px-2 py-0.8 font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded text-[9px] border border-amber-300 transition flex items-center gap-0.5" data-id="${member.id}" title="Manage Duration or Extend Promotion">
+        const baseSlotTag = isPromoted && member.promoted_info
+            ? `<span class="text-slate-400 font-medium text-[9px] truncate">(${escapeHtml(member.idle_slot_label || 'Idle Slot')})</span>`
+            : '';
+
+        // Card Actions Layout (Structured & Clean)
+        let actionsHtml = '';
+        if (isPromoted) {
+            actionsHtml = `
+                <div class="card-full-actions pt-2.5 border-t border-slate-100 text-[10px] space-y-1.5">
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" class="btn-node-drawer flex-1 py-1 px-2 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center justify-center gap-1">
+                            <i class="fas fa-eye text-[9px]"></i> <span>Info</span>
+                        </button>
+                        <button type="button" class="btn-node-focus flex-1 py-1 px-2 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center justify-center gap-1" title="Focus subtree under this member">
+                            <i class="fas fa-crosshairs text-[9px]"></i> <span>Focus</span>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button type="button" class="btn-manage-promotion w-full py-1 px-2 font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-md text-[9px] border border-amber-300 transition flex items-center justify-center gap-1" data-id="${member.id}" title="Manage Duration or Extend Promotion">
                             <i class="fas fa-sliders-h text-[8px]"></i> <span>Manage</span>
                         </button>
-                        <button type="button" class="btn-clear-appreciation px-2 py-0.8 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded text-[9px] border border-rose-200 transition flex items-center gap-0.5" data-id="${member.id}" title="End temporary promotion and revert back to vacant idle slot">
+                        <button type="button" class="btn-clear-appreciation w-full py-1 px-2 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-md text-[9px] border border-rose-200 transition flex items-center justify-center gap-1" data-id="${member.id}" title="End temporary promotion and revert back to vacant idle slot">
                             <i class="fas fa-undo text-[8px]"></i> <span>Revert</span>
                         </button>
-                    </div>`;
-            } else {
-                promotionActionBtn = `
-                    <button type="button" class="btn-open-promote-modal px-2.5 py-0.8 font-extrabold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-500 rounded text-[9px] border border-amber-400 shadow-2xs transition flex items-center gap-1 active:scale-95" data-id="${member.id}" data-label="${escapeHtml(member.idle_slot_label || 'Idle Slot')}" data-code="${escapeHtml(member.slot_customer_id || member.customer_id)}" title="Promote an existing member to this idle slot">
+                    </div>
+                </div>`;
+        } else if (isIdle && !member.promoted_info) {
+            actionsHtml = `
+                <div class="card-full-actions flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[10px]">
+                    <button type="button" class="btn-node-drawer flex-1 py-1 px-2 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center justify-center gap-1">
+                        <i class="fas fa-eye text-[9px]"></i> <span>Info</span>
+                    </button>
+                    <button type="button" class="btn-open-promote-modal flex-1 py-1 px-2 font-extrabold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-500 rounded-md border border-amber-400 shadow-2xs transition flex items-center justify-center gap-1 active:scale-95" data-id="${member.id}" data-label="${escapeHtml(member.idle_slot_label || 'Idle Slot')}" data-code="${escapeHtml(member.slot_customer_id || member.customer_id)}" title="Promote an existing member to this idle slot">
                         <i class="fas fa-crown text-[8px] text-amber-900"></i> <span>+ Promote</span>
-                    </button>`;
-            }
+                    </button>
+                </div>`;
+        } else {
+            actionsHtml = `
+                <div class="card-full-actions flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[10px]">
+                    <button type="button" class="btn-node-drawer flex-1 py-1 px-2 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center justify-center gap-1">
+                        <i class="fas fa-eye text-[9px]"></i> <span>Info</span>
+                    </button>
+                    <button type="button" class="btn-node-focus flex-1 py-1 px-2 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center justify-center gap-1" title="Focus subtree under this member">
+                        <i class="fas fa-crosshairs text-[9px]"></i> <span>Focus</span>
+                    </button>
+                </div>`;
         }
-
-        const baseSlotTag = isPromoted && member.promoted_info
-            ? `<span class="text-slate-400 font-normal text-[9px] truncate">(${escapeHtml(member.idle_slot_label || 'Idle Slot')})</span>`
-            : '';
 
         card.innerHTML = `
             <!-- Box Content (for Detailed & Compact modes) -->
             <div class="card-box-content">
-                <div class="flex items-center justify-between gap-1 mb-2">
-                    <div class="flex items-center gap-1">
+                <div class="flex items-center justify-between gap-1.5 mb-2.5">
+                    <div class="flex items-center gap-1.5">
                         ${posBadge(position || member.placement_position)}
                         ${dlBadge}
                     </div>
                     ${cardStatusBadge}
                 </div>
 
-                <div class="flex items-center gap-2 mb-1.5">
-                    <div class="card-avatar w-8 h-8 rounded-full ${avatarClass} text-xs flex items-center justify-center border border-slate-200 flex-shrink-0 relative">
+                <div class="flex items-start gap-2.5 mb-2">
+                    <div class="card-avatar w-9 h-9 rounded-full ${avatarClass} text-xs flex items-center justify-center border flex-shrink-0 relative">
                         ${avatarSvg}
                     </div>
                     <div class="min-w-0 flex-1">
-                        <div class="card-name font-bold text-slate-900 text-xs truncate leading-snug flex items-center gap-1" title="${escapeHtml(member.name)}">
-                            <span class="truncate">${escapeHtml(member.name)}</span>
-                            ${isPromoted ? '<span class="bg-amber-100 text-amber-800 text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider shrink-0">★ PROMOTED</span>' : ''}
+                        <div class="card-name font-bold text-slate-900 text-xs truncate leading-snug" title="${escapeHtml(member.name)}">
+                            ${escapeHtml(member.name)}
                         </div>
-                        <div class="font-mono text-[10px] font-bold text-blue-600 truncate flex items-center gap-1">
+                        <div class="font-mono text-[10px] font-bold text-blue-600 truncate flex items-center gap-1.5 mt-0.5">
                             <span>${escapeHtml(member.customer_id)}</span>
                             ${baseSlotTag}
                         </div>
@@ -1115,7 +1147,7 @@
                 ${vacantIdleNotice}
 
                 <!-- Detailed Card Meta -->
-                <div class="card-full-meta text-[10px] text-slate-500 pt-1.5 border-t border-slate-100 space-y-1 mb-2">
+                <div class="card-full-meta text-[10px] text-slate-500 pt-2 border-t border-slate-100 space-y-1 mb-2.5">
                     <div class="flex justify-between items-center"><span class="font-medium text-slate-400">Level:</span> <span class="font-semibold text-slate-700">${escapeHtml(member.level_label)}</span></div>
                     ${sponsorHtml}
                     <div class="flex justify-between items-center pt-1 border-t border-slate-100/80">
@@ -1129,17 +1161,7 @@
                     <div class="text-[10px] font-bold text-emerald-700 font-mono text-center bg-emerald-50 rounded py-0.5 mt-1 border border-emerald-200/80 truncate">${escapeHtml(incomeFormatted)}</div>
                 </div>
 
-                <div class="card-full-actions flex items-center justify-between gap-1 pt-2 border-t border-slate-100 text-[10px]">
-                    <div class="flex items-center gap-1">
-                        <button type="button" class="btn-node-drawer px-2.5 py-1 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center gap-1">
-                            <i class="fas fa-eye text-[9px]"></i> Info
-                        </button>
-                        <button type="button" class="btn-node-focus px-2.5 py-1 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center gap-1" title="Focus subtree under this member">
-                            <i class="fas fa-crosshairs text-[9px]"></i> Focus
-                        </button>
-                    </div>
-                    ${promotionActionBtn}
-                </div>
+                ${actionsHtml}
             </div>
 
             <!-- Circle Inner Content (for Circle mode) -->
