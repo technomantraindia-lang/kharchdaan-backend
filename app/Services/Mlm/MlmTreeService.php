@@ -146,7 +146,7 @@ class MlmTreeService
             ->withCount('placementChildren')
             ->whereNull('placement_parent_id')
             ->where('status', 'active')
-            ->orderByRaw("CASE WHEN id = 10 THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN EXISTS (SELECT 1 FROM users WHERE users.id = mlm_members.user_id AND users.mlm_member_id = 'C22020008') THEN 0 ELSE 1 END")
             ->orderBy('id')
             ->get();
     }

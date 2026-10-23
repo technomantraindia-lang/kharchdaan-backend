@@ -128,9 +128,29 @@ class MlmSampleDataSeeder extends Seeder
         DB::beginTransaction();
 
         // Pass 1: Insert all Users, Addresses, and Members from real client master data
+        $idleMap = [
+            'C25070004' => 'Idle - 2',
+            'C25070005' => 'Idle - 3',
+            'C25070006' => 'Idle - 4',
+            'C25070007' => 'Idle - 5',
+            'C25070008' => 'Idle - 6',
+            'C25070009' => 'Idle - 7',
+            'C25070010' => 'Idle - 8',
+            'C25070011' => 'Idle - 9',
+            'C25070012' => 'Idle - 10',
+            'C25070013' => 'Idle - 11',
+            'C25070014' => 'Idle - 12',
+            'C25070015' => 'Idle - 13',
+        ];
+
         foreach ($customers as $idx => $c) {
             $code = $c['code'];
-            $name = ! empty($c['name']) ? $c['name'] : 'Customer '.$code;
+            if ($code === 'C25070003') continue; // C25070003 was dummy M1; Nimesh C22020008 is Top Root M1
+
+            $idleLabel = $idleMap[$code] ?? null;
+            $isIdle = $idleLabel !== null;
+
+            $name = $isIdle ? $idleLabel : (! empty($c['name']) ? $c['name'] : 'Customer '.$code);
             $phone = ! empty($c['mobile']) ? $c['mobile'] : '98000'.str_pad((string) ($idx + 1), 5, '0', STR_PAD_LEFT);
             $email = strtolower($code).'@kharchdaan.com';
             $regDate = Carbon::parse($c['reg_date'])->setTime(10, 0, 0);
@@ -180,6 +200,8 @@ class MlmSampleDataSeeder extends Seeder
                 'placement_parent_id' => null,
                 'placement_position' => null,
                 'status' => $c['status'] === 'blocked' ? Member::STATUS_BLOCKED : Member::STATUS_ACTIVE,
+                'is_idle_slot' => $isIdle,
+                'idle_slot_label' => $idleLabel,
                 'joined_at' => $regDate,
                 'created_by' => $admin->id,
                 'kyc_status' => Member::KYC_APPROVED,
@@ -224,7 +246,10 @@ class MlmSampleDataSeeder extends Seeder
                 $updates['sponsor_assigned_at'] = $member->joined_at;
             }
 
-            if ($placementParent && $placementParent->id !== $member->id) {
+            if ($code === 'C22020008') {
+                $updates['placement_parent_id'] = null;
+                $updates['placement_position'] = null;
+            } elseif ($placementParent && $placementParent->id !== $member->id) {
                 $updates['placement_parent_id'] = $placementParent->id;
                 $updates['placement_position'] = $placementPosition;
             }
