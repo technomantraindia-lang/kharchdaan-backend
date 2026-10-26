@@ -323,20 +323,22 @@ class MlmMemberController extends Controller
 
     public function moveForm(Member $member): View
     {
-        abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
+        abort_unless($this->can('mlm.move') || $this->can('mlm.manage'), 403, 'Unauthorized action.');
 
         return view('admin.mlm.move', $this->movementService->context($member));
     }
 
     public function moveParentSearch(Request $request, Member $member): JsonResponse
     {
-        abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
+        abort_unless($this->can('mlm.move') || $this->can('mlm.manage'), 403, 'Unauthorized action.');
         $validated = $request->validate([
             'q' => ['required', 'string', 'min:1', 'max:100'],
+            'is_subtree' => ['nullable', 'boolean'],
         ]);
 
         $term = trim($validated['q']);
-        $candidates = $this->movementService->searchParents($member, $term);
+        $isSubtree = $request->boolean('is_subtree', false);
+        $candidates = $this->movementService->searchParents($member, $term, $isSubtree);
         $isRoot = $member->placement_parent_id === null;
 
         return response()->json([
@@ -350,7 +352,7 @@ class MlmMemberController extends Controller
 
     public function movePreview(MoveMlmMemberRequest $request, Member $member): JsonResponse
     {
-        abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
+        abort_unless($this->can('mlm.move') || $this->can('mlm.manage'), 403, 'Unauthorized action.');
 
         try {
             return response()->json([
@@ -366,7 +368,7 @@ class MlmMemberController extends Controller
 
     public function move(MoveMlmMemberRequest $request, Member $member): RedirectResponse|JsonResponse
     {
-        abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
+        abort_unless($this->can('mlm.move') || $this->can('mlm.manage'), 403, 'Unauthorized action.');
         if (! $request->boolean('confirmed') && $request->input('confirmed') != '1') {
             if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
                 return response()->json([
@@ -393,12 +395,16 @@ class MlmMemberController extends Controller
             throw $e;
         }
 
+        $isSingle = ($request->input('move_mode', 'single') !== 'subtree');
+
         if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
             $freshMember = $member->fresh(['user', 'sponsor.user', 'placementParent.user']);
             $newPath = $this->movementService->placementPath($freshMember) ?? [$freshMember->id];
             return response()->json([
                 'success' => true,
-                'message' => 'Placement subtree moved successfully.',
+                'message' => $isSingle
+                    ? 'Member relocated successfully. Previous position preserved as blank select cell for future use.'
+                    : 'Placement subtree moved successfully.',
                 'movement_id' => $movement->id,
                 'old_parent_id' => $movement->old_parent_id,
                 'new_parent_id' => $movement->new_parent_id,
@@ -411,9 +417,10 @@ class MlmMemberController extends Controller
         }
 
         $newParent = Member::with('user')->find($request->input('new_parent_id'));
+        $successMsg = "Placement for {$member->user?->name} ({$member->customer_id}) was successfully moved to {$newParent?->user?->name} ({$newParent?->customer_id}) / " . ucfirst($request->input('new_position')) . " slot." . ($isSingle ? ' Previous slot preserved as a vacant cell for future use.' : '');
 
-        return redirect()->route('admin.mlm.tree.index', ['root' => $newParent?->id ?? $member->id])
-            ->with('success', "Placement subtree for {$member->user?->name} ({$member->customer_id}) was successfully moved to {$newParent?->user?->name} ({$newParent?->customer_id}) / " . ucfirst($request->input('new_position')) . " slot.");
+        return redirect()->to(admin_route('mlm.tree.index', ['root' => $newParent?->id ?? $member->id]))
+            ->with('success', $successMsg);
     }
 
     public function resetTreeToExcel(Request $request): RedirectResponse|JsonResponse

@@ -4,11 +4,13 @@ namespace App\Services\Mlm;
 
 use App\Models\Member;
 use App\Models\PlacementMovement;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class MlmMovementService
@@ -31,9 +33,9 @@ class MlmMovementService
         ];
     }
 
-    public function searchParents(Member $movingMember, string $term): array
+    public function searchParents(Member $movingMember, string $term, bool $isSubtreeMove = false): array
     {
-        $descendantIds = $this->subtree($movingMember)->pluck('id')->all();
+        $descendantIds = $isSubtreeMove ? $this->subtree($movingMember)->pluck('id')->all() : [$movingMember->id];
         $isPgsql = DB::connection()->getDriverName() === 'pgsql';
         $like = $isPgsql ? 'ilike' : 'like';
         $lowerTerm = strtolower($term);
@@ -87,12 +89,17 @@ class MlmMovementService
             $this->fail('new_parent_id', 'The selected placement parent is invalid.');
         }
 
-        $this->validateMove($member, $newParent, $data['new_position']);
-        $subtree = $this->subtree($member);
+        $isSubtreeMove = ($data['move_mode'] ?? 'single') === 'subtree'
+            || ($data['with_downlines'] ?? false) == '1';
+
+        $this->validateMove($member, $newParent, $data['new_position'], $isSubtreeMove);
+
         $oldPath = $this->placementPath($member) ?? [$member->id];
         $newPath = array_merge($this->placementPath($newParent) ?? [$newParent->id], [$member->id]);
         $oldDepth = count($oldPath) - 1;
         $newDepth = count($newPath) - 1;
+
+        $affectedCount = $isSubtreeMove ? $this->subtree($member)->count() : 1;
 
         return [
             'member_id' => $member->id,
@@ -102,7 +109,9 @@ class MlmMovementService
             'new_parent' => $this->memberReference($newParent),
             'old_position' => $member->placement_position,
             'new_position' => $data['new_position'],
-            'affected_subtree_count' => $subtree->count(),
+            'affected_subtree_count' => $affectedCount,
+            'move_mode' => $isSubtreeMove ? 'subtree' : 'single',
+            'keeps_blank_cell' => ! $isSubtreeMove,
             'old_depth' => $oldDepth,
             'new_depth' => $newDepth,
             'old_path' => $this->pathPayload($oldPath),
@@ -121,18 +130,45 @@ class MlmMovementService
                 $this->fail('new_parent_id', 'The selected placement parent is invalid.');
             }
 
-            $this->validateMove($lockedMember, $newParent, $data['new_position']);
+            $isSubtreeMove = ($data['move_mode'] ?? 'single') === 'subtree'
+                || ($data['with_downlines'] ?? false) == '1';
+
+            $this->validateMove($lockedMember, $newParent, $data['new_position'], $isSubtreeMove);
 
             $oldParentId = $lockedMember->placement_parent_id;
             $oldPosition = $lockedMember->placement_position;
             $oldPath = $this->placementPath($lockedMember) ?? [$lockedMember->id];
             $newPath = array_merge($this->placementPath($newParent) ?? [$newParent->id], [$lockedMember->id]);
-            $subtreeCount = $this->subtree($lockedMember)->count();
 
-            $lockedMember->update([
-                'placement_parent_id' => $newParent->id,
-                'placement_position' => $data['new_position'],
-            ]);
+            $existingChildren = Member::query()->where('placement_parent_id', $lockedMember->id)->get();
+
+            if (! $isSubtreeMove) {
+                // Client Requirement: "only selected ID should move & keep blank select cell for future use"
+                // 1. Move lockedMember to target parent and position first (frees up oldParentId, oldPosition)
+                $lockedMember->update([
+                    'placement_parent_id' => $newParent->id,
+                    'placement_position' => $data['new_position'],
+                ]);
+
+                // 2. In lockedMember's old position, preserve a Blank / Vacant select cell
+                $blankMember = $this->createOrAssignBlankSlot($oldParentId, $oldPosition, $lockedMember, $admin);
+
+                // 3. Re-parent any existing children of lockedMember to the blankMember so downlines stay in place!
+                if ($existingChildren->isNotEmpty()) {
+                    Member::query()->where('placement_parent_id', $lockedMember->id)->update([
+                        'placement_parent_id' => $blankMember->id,
+                    ]);
+                }
+
+                $subtreeCount = 1;
+            } else {
+                // Move with complete subtree
+                $lockedMember->update([
+                    'placement_parent_id' => $newParent->id,
+                    'placement_position' => $data['new_position'],
+                ]);
+                $subtreeCount = $this->subtree($lockedMember)->count();
+            }
 
             $movement = PlacementMovement::create([
                 'member_id' => $lockedMember->id,
@@ -140,7 +176,7 @@ class MlmMovementService
                 'new_parent_id' => $newParent->id,
                 'old_position' => $oldPosition,
                 'new_position' => $data['new_position'],
-                'reason' => trim($data['reason']),
+                'reason' => trim($data['reason'] ?? 'Administrative placement move'),
                 'moved_by' => $admin->id,
                 'effective_at' => Carbon::parse($data['effective_at'] ?? now()),
                 'affected_subtree_count' => $subtreeCount,
@@ -155,7 +191,7 @@ class MlmMovementService
             ActivityLogService::log(
                 'placement_move',
                 'mlm_members',
-                "Moved member {$lockedMember->customer_id} to {$newParent->customer_id} / {$data['new_position']}",
+                "Moved member {$lockedMember->customer_id} to {$newParent->customer_id} / {$data['new_position']} (Scope: " . ($isSubtreeMove ? 'Subtree' : 'Single Member with blank cell preserved') . ")",
                 $lockedMember,
                 ['placement_parent_id' => $oldParentId, 'placement_position' => $oldPosition],
                 ['placement_parent_id' => $newParent->id, 'placement_position' => $data['new_position'], 'affected_subtree_count' => $subtreeCount]
@@ -165,7 +201,57 @@ class MlmMovementService
         });
     }
 
-    private function validateMove(Member $member, Member $newParent, string $newPosition): void
+    public function createOrAssignBlankSlot(?int $oldParentId, ?string $oldPosition, Member $movingMember, User $admin): Member
+    {
+        if ($oldParentId) {
+            $existingBlank = Member::query()
+                ->where('placement_parent_id', $oldParentId)
+                ->where('placement_position', $oldPosition)
+                ->where('is_idle_slot', true)
+                ->whereKeyNot($movingMember->id)
+                ->first();
+
+            if ($existingBlank) {
+                return $existingBlank;
+            }
+        }
+
+        // Generate a clean vacant slot code
+        $seq = Member::query()->where('is_idle_slot', true)->count() + 1;
+        $uniqueCode = 'VACANT_' . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        while (User::where('mlm_member_id', $uniqueCode)->exists()) {
+            $seq++;
+            $uniqueCode = 'VACANT_' . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        }
+
+        $customerRoleId = Role::where('name', 'Customer')->value('id') ?? 4;
+
+        $user = User::create([
+            'name' => 'Vacant Slot',
+            'email' => strtolower($uniqueCode) . '@kharchdaan.com',
+            'password' => Hash::make('password'),
+            'plain_password' => 'password',
+            'phone' => '',
+            'role_id' => $customerRoleId,
+            'status' => 'active',
+            'mlm_member_id' => $uniqueCode,
+        ]);
+
+        return Member::create([
+            'user_id' => $user->id,
+            'sponsor_member_id' => $movingMember->sponsor_member_id,
+            'placement_parent_id' => $oldParentId,
+            'placement_position' => $oldPosition,
+            'status' => Member::STATUS_ACTIVE,
+            'is_idle_slot' => true,
+            'idle_slot_label' => 'Vacant Slot',
+            'joined_at' => now(),
+            'created_by' => $admin->id,
+            'kyc_status' => Member::KYC_APPROVED,
+        ]);
+    }
+
+    private function validateMove(Member $member, Member $newParent, string $newPosition, bool $isSubtreeMove = false): void
     {
         if ($this->placementPath($member) === null) {
             $this->fail('member', 'The selected member has an invalid circular placement path.');
@@ -183,26 +269,15 @@ class MlmMovementService
             $this->fail('new_position', 'Select a valid placement position.');
         }
 
-        $descendantIds = $this->subtree($member)->pluck('id')->all();
-        if (in_array($newParent->id, $descendantIds, true)) {
-            // When applying inactive option or reactivation, detaching from old upline allows re-placement under child
-            if ($member->status === Member::STATUS_INACTIVE || request()->boolean('allow_reactivation_override')) {
-                DB::table('mlm_members')->where('id', $member->id)->update([
-                    'placement_parent_id' => null,
-                    'placement_position' => null,
-                ]);
-            } else {
-                $this->fail('new_parent_id', 'A member cannot be placed under their own descendant while active. Set to inactive first to reassign under child.');
-            }
-        }
-
+        // Slot occupancy check (can replace an unassigned vacant idle slot if needed)
         $occupied = Member::query()
             ->where('placement_parent_id', $newParent->id)
             ->where('placement_position', $newPosition)
             ->whereKeyNot($member->id)
-            ->exists();
-        if ($occupied) {
-            $this->fail('new_position', 'The selected placement position is already occupied.');
+            ->first();
+
+        if ($occupied && ! $occupied->is_idle_slot) {
+            $this->fail('new_position', 'The selected placement position is already occupied by ' . ($occupied->user?->name ?? 'another distributor') . '.');
         }
 
         $newParentPath = $this->placementPath($newParent);
@@ -211,9 +286,21 @@ class MlmMovementService
         }
 
         $newDepth = count($newParentPath);
-        $subtreeDepth = $this->subtreeDepth($member);
-        if ($newDepth + $subtreeDepth > self::MAX_LEVEL) {
-            $this->fail('new_parent_id', 'This move would place part of the subtree beyond Level 19.');
+
+        if ($isSubtreeMove) {
+            $descendantIds = $this->subtree($member)->pluck('id')->all();
+            if (in_array($newParent->id, $descendantIds, true)) {
+                $this->fail('new_parent_id', 'A member cannot be placed under their own descendant while moving downlines together.');
+            }
+
+            $subtreeDepth = $this->subtreeDepth($member);
+            if ($newDepth + $subtreeDepth > self::MAX_LEVEL) {
+                $this->fail('new_parent_id', 'This move would place part of the subtree beyond Level 19.');
+            }
+        } else {
+            if ($newDepth > self::MAX_LEVEL) {
+                $this->fail('new_parent_id', 'This move would place the member beyond Level 19.');
+            }
         }
     }
 

@@ -40,6 +40,11 @@ class MoveMlmMemberRequest extends FormRequest
         } catch (\Throwable) {
             $this->merge(['effective_at' => now()->toDateTimeString()]);
         }
+
+        // Default move_mode to single (move only selected ID, keep blank select cell)
+        if (! $this->filled('move_mode')) {
+            $this->merge(['move_mode' => 'single']);
+        }
     }
 
     public function rules(): array
@@ -47,6 +52,7 @@ class MoveMlmMemberRequest extends FormRequest
         return [
             'new_parent_id' => ['required', 'integer', 'exists:mlm_members,id'],
             'new_position' => ['required', Rule::in(Member::POSITIONS)],
+            'move_mode' => ['nullable', 'string', Rule::in(['single', 'subtree'])],
             'reason' => ['nullable', 'string', 'max:2000'],
             'effective_at' => ['nullable'],
             'confirmed' => ['nullable'],

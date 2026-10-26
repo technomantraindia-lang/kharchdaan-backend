@@ -1009,12 +1009,33 @@
                 </div>
             </div>
 
-            <!-- Subtree Impact Notice -->
-            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
-                <i class="fas fa-info-circle text-amber-600 mt-0.5 text-sm shrink-0"></i>
-                <div>
-                    <span class="font-bold">Subtree Relocation:</span>
-                    <span id="ddSubtreeNote">The distributor and their whole 1:3 downline network will move atomically into this slot.</span>
+            <!-- Movement Scope Option -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                    Movement Scope:
+                </label>
+                <div class="space-y-1.5">
+                    <label class="p-2.5 rounded-xl border border-amber-300 bg-amber-50/80 flex items-start gap-2 cursor-pointer transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-100/60">
+                        <input type="radio" name="dd_move_mode" value="single" class="mt-0.5 text-amber-600 focus:ring-amber-500" checked>
+                        <div class="text-[11px]">
+                            <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                                <span>Move ONLY This Member ID</span>
+                                <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Recommended</span>
+                            </div>
+                            <div class="text-slate-600 text-[10px] mt-0.5">
+                                All existing downlines stay in place. A blank select cell (<span class="font-semibold text-amber-900">Vacant Slot</span>) is preserved in their previous position for future use.
+                            </div>
+                        </div>
+                    </label>
+                    <label class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-start gap-2 cursor-pointer transition hover:bg-slate-100/70 has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50/50">
+                        <input type="radio" name="dd_move_mode" value="subtree" class="mt-0.5 text-amber-600 focus:ring-amber-500">
+                        <div class="text-[11px]">
+                            <div class="font-bold text-slate-900">Move Member with Entire Downline Subtree</div>
+                            <div class="text-slate-500 text-[10px] mt-0.5">
+                                Moves this distributor together with their entire downline network into the target slot.
+                            </div>
+                        </div>
+                    </label>
                 </div>
             </div>
 
@@ -3100,6 +3121,8 @@
             const moveUrl = moveUrlTemplate.replace('__MEMBER__', member.id);
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || viewport.dataset.csrf || '';
 
+            const moveMode = document.querySelector('input[name="dd_move_mode"]:checked')?.value || 'single';
+
             const resp = await fetch(moveUrl, {
                 method: 'POST',
                 headers: {
@@ -3112,6 +3135,7 @@
                     _token: csrfToken,
                     new_parent_id: targetParent.id,
                     new_position: selectedPos,
+                    move_mode: moveMode,
                     reason: reason,
                     confirmed: 1,
                 }),
@@ -3148,7 +3172,8 @@
             closeDragDropModal();
 
             if (toastMoveSuccess) {
-                toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot! Updating placement tree...`;
+                const modeMsg = moveMode === 'single' ? ' Previous slot preserved as vacant cell for future use.' : '';
+                toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot!${modeMsg}`;
                 toastMoveSuccess.classList.remove('hidden');
                 setTimeout(() => {
                     toastMoveSuccess.classList.add('hidden');
