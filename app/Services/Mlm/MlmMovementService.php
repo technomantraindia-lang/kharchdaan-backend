@@ -107,7 +107,7 @@ class MlmMovementService
             'new_depth' => $newDepth,
             'old_path' => $this->pathPayload($oldPath),
             'new_path' => $this->pathPayload($newPath),
-            'effective_at' => Carbon::parse($data['effective_at'])->toDateTimeString(),
+            'effective_at' => Carbon::parse($data['effective_at'] ?? now())->toDateTimeString(),
         ];
     }
 
@@ -142,7 +142,7 @@ class MlmMovementService
                 'new_position' => $data['new_position'],
                 'reason' => trim($data['reason']),
                 'moved_by' => $admin->id,
-                'effective_at' => Carbon::parse($data['effective_at']),
+                'effective_at' => Carbon::parse($data['effective_at'] ?? now()),
                 'affected_subtree_count' => $subtreeCount,
                 'status' => 'approved',
                 'approved_at' => now(),

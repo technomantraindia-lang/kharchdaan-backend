@@ -2995,12 +2995,38 @@
         ddTargetName.textContent = targetParent.name || 'Parent Member';
         ddTargetId.textContent = targetParent.customer_id;
 
-        // Reset slot selection
-        let activePos = targetPosition || 'left';
+        // Check which slots of targetParent are already occupied in the visible tree
+        const targetBranch = findBranchInDom(targetParent.id);
+        const occupiedSlots = new Set();
+        if (targetBranch && targetBranch._childrenContainer) {
+            const childCards = targetBranch._childrenContainer.querySelectorAll(':scope > .org-child-slot > .org-tree-branch > .org-node-wrapper > .org-node-card');
+            childCards.forEach(c => {
+                if (c._memberData && c._memberData.id !== member.id) {
+                    const pos = c._memberData.placement_position || (c.classList.contains('pos-left') ? 'left' : (c.classList.contains('pos-middle') ? 'middle' : (c.classList.contains('pos-right') ? 'right' : null)));
+                    if (pos) occupiedSlots.add(pos);
+                }
+            });
+        }
+
+        let activePos = targetPosition;
+        if (!activePos) {
+            const allPositions = ['left', 'middle', 'right'];
+            activePos = allPositions.find(p => !occupiedSlots.has(p)) || 'left';
+        }
         dragDropContext.targetPosition = activePos;
 
         ddSlotButtons.forEach(btn => {
             const pos = btn.dataset.pos;
+            const isOcc = occupiedSlots.has(pos);
+            let statusSpan = btn.querySelector('.slot-status-text');
+            if (!statusSpan) {
+                statusSpan = document.createElement('span');
+                statusSpan.className = 'slot-status-text text-[9px] font-normal';
+                btn.appendChild(statusSpan);
+            }
+            statusSpan.textContent = isOcc ? '(Occupied)' : '(Available)';
+            statusSpan.className = isOcc ? 'slot-status-text text-[9px] font-semibold text-rose-600' : 'slot-status-text text-[9px] font-semibold text-emerald-700';
+
             if (pos === activePos) {
                 btn.classList.add('ring-2', 'ring-offset-1', 'scale-105');
                 if (pos === 'left') btn.classList.add('ring-sky-500');
@@ -3066,31 +3092,40 @@
         try {
             const moveUrlTemplate = viewport.dataset.moveUrl;
             const moveUrl = moveUrlTemplate.replace('__MEMBER__', member.id);
-            const csrfToken = viewport.dataset.csrf;
-
-            const now = new Date();
-            const pad = (n) => String(n).padStart(2, '0');
-            const effectiveAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || viewport.dataset.csrf || '';
 
             const resp = await fetch(moveUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': csrfToken,
                 },
                 body: JSON.stringify({
+                    _token: csrfToken,
                     new_parent_id: targetParent.id,
                     new_position: selectedPos,
                     reason: reason,
-                    effective_at: effectiveAt,
-                    confirmed: true,
+                    confirmed: 1,
                 }),
             });
 
-            const data = await resp.json();
+            if (resp.redirected) {
+                window.location.href = resp.url;
+                return;
+            }
 
-            if (!resp.ok) {
+            let data = null;
+            const contentType = resp.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                data = await resp.json();
+            } else {
+                const text = await resp.text();
+                throw new Error(text && !text.includes('<!DOCTYPE') ? text : 'Server returned an invalid response format.');
+            }
+
+            if (!resp.ok || !data.success) {
                 let errText = data.message || 'Movement validation failed.';
                 if (data.errors) {
                     const firstErr = Object.values(data.errors).flat()[0];
@@ -3115,7 +3150,10 @@
                 window.location.reload();
             }, 800);
         } catch (err) {
-            ddErrorBox.textContent = 'Network or server error while executing move. Please try again or use the Advanced Move form.';
+            console.error('Drag and drop move error:', err);
+            ddErrorBox.textContent = err.message && !err.message.includes('<!DOCTYPE')
+                ? err.message
+                : 'Unable to complete move. If this position is occupied or causes a cycle, please select an available slot or use Advanced Move.';
             ddErrorBox.classList.remove('hidden');
             btnConfirmDragDrop.disabled = false;
             ddBtnText.textContent = 'Confirm & Move';

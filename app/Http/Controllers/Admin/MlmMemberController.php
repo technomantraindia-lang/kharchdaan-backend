@@ -368,14 +368,32 @@ class MlmMemberController extends Controller
     {
         abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
         if (! $request->boolean('confirmed')) {
+            if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Confirm the movement preview before saving.',
+                ], 422);
+            }
             throw ValidationException::withMessages([
                 'confirmed' => 'Confirm the movement preview before saving.',
             ]);
         }
 
-        $movement = $this->movementService->move($member, $request->validated(), $request->user());
+        try {
+            $movement = $this->movementService->move($member, $request->validated(), $request->user());
+        } catch (ValidationException $e) {
+            if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
+                $msg = $e->validator?->errors()->first() ?: (collect($e->errors())->flatten()->first() ?: $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => $msg,
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+            throw $e;
+        }
 
-        if ($request->wantsJson() || $request->ajax()) {
+        if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Placement subtree moved successfully.',
