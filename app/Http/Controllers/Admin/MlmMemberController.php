@@ -394,10 +394,18 @@ class MlmMemberController extends Controller
         }
 
         if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
+            $freshMember = $member->fresh(['user', 'sponsor.user', 'placementParent.user']);
+            $newPath = $this->movementService->placementPath($freshMember) ?? [$freshMember->id];
             return response()->json([
                 'success' => true,
                 'message' => 'Placement subtree moved successfully.',
                 'movement_id' => $movement->id,
+                'old_parent_id' => $movement->old_parent_id,
+                'new_parent_id' => $movement->new_parent_id,
+                'member_id' => $freshMember->id,
+                'new_position' => $movement->new_position,
+                'path' => $newPath,
+                'member' => $this->treeService->memberPayload($freshMember),
                 'target_url' => admin_route('mlm.tree.index', ['root' => $member->id]),
             ]);
         }

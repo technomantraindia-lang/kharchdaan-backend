@@ -3142,13 +3142,55 @@
             closeDragDropModal();
 
             if (toastMoveSuccess) {
-                toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot! Reloading tree hierarchy...`;
+                toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot! Updating placement tree...`;
                 toastMoveSuccess.classList.remove('hidden');
+                setTimeout(() => {
+                    toastMoveSuccess.classList.add('hidden');
+                }, 5000);
             }
 
+            // Invalidate and reload old parent branch to clear previous slot
+            const oldParentId = data.old_parent_id || member.placement_parent_id;
+            if (oldParentId) {
+                const oldParentBranch = findBranchInDom(oldParentId);
+                if (oldParentBranch && oldParentBranch._childrenContainer) {
+                    oldParentBranch._childrenContainer.dataset.loaded = 'false';
+                    await loadChildren(oldParentBranch, false);
+                }
+            }
+
+            // Invalidate and reload new parent branch to show member in new slot
+            const newParentId = data.new_parent_id || targetParent.id;
+            if (newParentId) {
+                const newParentBranch = findBranchInDom(newParentId);
+                if (newParentBranch && newParentBranch._childrenContainer) {
+                    newParentBranch._childrenContainer.dataset.loaded = 'false';
+                    await loadChildren(newParentBranch, false);
+                    newParentBranch._childrenContainer.classList.remove('hidden');
+                    newParentBranch.classList.add('has-expanded-children');
+                    newParentBranch._expandButton.classList.add('is-expanded');
+                    newParentBranch._expandButton.setAttribute('aria-expanded', 'true');
+                    newParentBranch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+                }
+            }
+
+            // Ensure all ancestor branches in path are expanded
+            if (data.path && Array.isArray(data.path) && data.path.length) {
+                await openPath(data.path);
+            }
+
+            // Smoothly scroll to, center, and highlight the newly moved member node!
             setTimeout(() => {
-                window.location.reload();
-            }, 800);
+                const movedId = data.member_id || member.id;
+                const movedBranch = findBranchInDom(movedId);
+                if (movedBranch && movedBranch._card) {
+                    movedBranch._card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                    movedBranch._card.classList.add('tree-highlight');
+                    setTimeout(() => {
+                        movedBranch._card.classList.remove('tree-highlight');
+                    }, 4000);
+                }
+            }, 150);
         } catch (err) {
             console.error('Drag and drop move error:', err);
             ddErrorBox.textContent = err.message && !err.message.includes('<!DOCTYPE')

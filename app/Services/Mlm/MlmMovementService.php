@@ -270,7 +270,7 @@ class MlmMovementService
         return $depth;
     }
 
-    private function placementPath(Member $member): ?array
+    public function placementPath(Member $member): ?array
     {
         $path = [];
         $visited = [];
