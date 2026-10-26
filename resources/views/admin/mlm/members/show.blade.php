@@ -44,6 +44,11 @@
                         <i class="fas fa-id-card me-1"></i> Review KYC
                     </a>
                 @endif
+                @if((auth()->user()->hasPermission('mlm.manage') || auth()->user()->hasPermission('mlm.move')) && $member->placement_parent_id !== null)
+                    <a href="{{ admin_route('mlm.tree.move.form', $member) }}" class="btn btn-sm btn-outline-warning text-dark fw-bold" title="Relocate or move this member in the 1:3 placement matrix">
+                        <i class="fas fa-arrows-up-down-left-right me-1 text-warning"></i> Move Position
+                    </a>
+                @endif
                 <div class="dropdown">
                     <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                         Quick Actions

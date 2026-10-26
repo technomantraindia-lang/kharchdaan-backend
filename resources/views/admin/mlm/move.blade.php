@@ -24,6 +24,29 @@
         </div>
     </div>
 
+    <!-- Quick Switcher: Select Any Member to Relocate -->
+    <div class="p-4 bg-white rounded-xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold text-sm shrink-0">
+                <i class="fas fa-arrows-up-down-left-right"></i>
+            </div>
+            <div>
+                <div class="font-bold text-slate-900 text-xs">Switch Member to Relocate / Move:</div>
+                <div class="text-[11px] text-slate-500">Currently moving <strong class="text-slate-800">{{ $member->user?->name }} ({{ $member->customer_id }})</strong>. Search below to switch to any other distributor.</div>
+            </div>
+        </div>
+        <div class="relative w-full md:w-80">
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                <input type="search" id="switchMemberSearch" class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition" placeholder="Search another member to move..." autocomplete="off">
+                <button type="button" id="clearSwitchSearch" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs" title="Clear">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            </div>
+            <div id="switchSearchResults" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200/90 max-h-64 overflow-y-auto z-50 text-xs divide-y divide-slate-100"></div>
+        </div>
+    </div>
+
     @if(!$current_parent)
     <!-- Root Node Advisory -->
     <div class="p-4 bg-blue-50/90 border border-blue-200 rounded-xl flex items-start gap-3">
@@ -386,6 +409,84 @@
     document.addEventListener('click', (e) => {
         if (!parentResults.contains(e.target) && e.target !== parentSearch && e.target !== parentSearchButton) {
             parentResults.classList.add('hidden');
+        }
+    });
+
+    // Quick Switcher: Search any member to move
+    const switchSearch = document.getElementById('switchMemberSearch');
+    const clearSwitchSearch = document.getElementById('clearSwitchSearch');
+    const switchResults = document.getElementById('switchSearchResults');
+    const searchUrlAll = @json(admin_route('mlm.tree.search'));
+    let switchDebounce = null;
+
+    const executeSwitchSearch = async () => {
+        const q = switchSearch.value.trim();
+        if (!q || q.length < 1) {
+            switchResults.replaceChildren();
+            switchResults.classList.add('hidden');
+            clearSwitchSearch.classList.add('hidden');
+            return;
+        }
+
+        clearSwitchSearch.classList.remove('hidden');
+        switchResults.innerHTML = `
+            <div class="p-3 text-slate-500 text-center flex items-center justify-center gap-2">
+                <i class="fas fa-spinner fa-spin text-amber-600"></i> Searching members...
+            </div>`;
+        switchResults.classList.remove('hidden');
+
+        try {
+            const url = new URL(searchUrlAll, window.location.origin);
+            url.searchParams.set('q', q);
+            const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+            const payload = await resp.json();
+            const list = payload.data || [];
+
+            if (!list.length) {
+                switchResults.innerHTML = `
+                    <div class="p-3 text-slate-500 text-center">
+                        No members found matching "<strong>${escapeHtml(q)}</strong>".
+                    </div>`;
+                return;
+            }
+
+            switchResults.innerHTML = list.map(m => {
+                const moveTargetUrl = `{{ admin_route('mlm.tree.move.form', ':id') }}`.replace(':id', m.id);
+                return `
+                    <a href="${moveTargetUrl}" class="block p-3 hover:bg-amber-50/80 transition flex items-center justify-between gap-3 text-xs">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-slate-900 truncate">${escapeHtml(m.name)}</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">
+                                <span class="font-mono text-blue-600 font-semibold">${escapeHtml(m.customer_id)}</span>
+                                ${m.phone ? `&bull; <span>${escapeHtml(m.phone)}</span>` : ''}
+                                &bull; <span class="text-slate-600">${m.downline_count ?? 0} Downlines</span>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-amber-500 text-white rounded font-bold text-[11px] shadow-2xs shrink-0">
+                            Select & Move &rarr;
+                        </span>
+                    </a>
+                `;
+            }).join('');
+        } catch (e) {
+            switchResults.innerHTML = `<div class="p-3 text-rose-600 text-center">Search failed.</div>`;
+        }
+    };
+
+    switchSearch?.addEventListener('input', () => {
+        if (switchDebounce) clearTimeout(switchDebounce);
+        switchDebounce = setTimeout(executeSwitchSearch, 200);
+    });
+
+    clearSwitchSearch?.addEventListener('click', () => {
+        switchSearch.value = '';
+        executeSwitchSearch();
+        switchSearch.focus();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (switchResults && !switchResults.contains(e.target) && e.target !== switchSearch) {
+            switchResults.classList.add('hidden');
         }
     });
 

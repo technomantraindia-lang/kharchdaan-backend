@@ -205,6 +205,11 @@
                                             <i class="fas fa-id-card text-xs"></i>
                                         </a>
                                     @endif
+                                    @if((auth()->user()->hasPermission('mlm.manage') || auth()->user()->hasPermission('mlm.move')) && $member->placement_parent_id !== null)
+                                        <a href="{{ admin_route('mlm.tree.move.form', $member) }}" class="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-600 text-slate-600 flex items-center justify-center transition" title="Move Placement Subtree / Relocate Position">
+                                            <i class="fas fa-arrows-up-down-left-right text-xs"></i>
+                                        </a>
+                                    @endif
                                     @if(auth()->user()->isSuperAdmin())
                                         <button type="button" 
                                                 onclick="confirmDeleteMember({{ $member->id }}, '{{ addslashes($member->user?->name ?? 'Member') }}', '{{ $member->customer_id ?? 'ID#'.$member->id }}', {{ $member->placement_parent_id === null ? 'true' : 'false' }}, '{{ admin_route('mlm.members.destroy', $member) }}', '{{ addslashes($member->user?->email ?? '') }}')"

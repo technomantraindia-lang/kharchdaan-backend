@@ -462,13 +462,9 @@
                 <a href="{{ admin_route('mlm.manual') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-rose-800 bg-white border border-rose-200 rounded-md hover:bg-rose-50 transition flex-shrink-0 shadow-2xs" title="Open complete step-by-step PDF manual in browser">
                     <i class="fas fa-file-pdf text-rose-600 text-[11px]"></i> Admin Manual (PDF)
                 </a>
-                @if($currentRootId && Route::has('admin.mlm.tree.move.form'))
-                    <a href="{{ admin_route('mlm.tree.move.form', $currentRootId) }}" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-md hover:bg-amber-100 transition flex-shrink-0">
-                        <i class="fas fa-arrows-up-down-left-right text-[10px]"></i> Move Member
-                    </a>
-                @else
-                    <span class="text-slate-400 text-xs font-medium">Move Member</span>
-                @endif
+                <button type="button" id="btnOpenMoveModal" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded-md hover:bg-amber-200 transition flex-shrink-0 shadow-2xs cursor-pointer" title="Move & relocate any distributor in the 1:3 placement matrix">
+                    <i class="fas fa-arrows-up-down-left-right text-[10px] text-amber-700"></i> Move Member
+                </button>
             </div>
         </div>
     </div>
@@ -594,14 +590,18 @@
     </div>
 
     <!-- Drawer Footer Actions (Fixed at Bottom with flex-shrink-0) -->
-    <div id="drawerFooter" class="flex-shrink-0 p-4 border-t border-slate-100 bg-white flex items-center justify-between gap-3 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.06)]">
-        <button type="button" id="btnDrawerFocusSubtree" class="flex-1 py-3 px-4 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white font-extrabold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 active:scale-98">
+    <div id="drawerFooter" class="flex-shrink-0 p-4 border-t border-slate-100 bg-white flex items-center justify-between gap-2 shadow-[0_-4px_15px_-3px_rgba(0,0,0,0.06)]">
+        <button type="button" id="btnDrawerFocusSubtree" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 hover:from-orange-700 hover:to-amber-600 text-white font-extrabold rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20 active:scale-98">
             <i class="fas fa-crosshairs text-xs"></i>
             <span>Focus Subtree</span>
         </button>
-        <a id="btnDrawerFullProfile" href="#" class="py-3 px-4 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-bold border border-slate-200 hover:border-orange-200 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-2xs">
+        <a id="btnDrawerMoveMember" href="#" class="py-2.5 px-3.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-extrabold border border-amber-300 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-2xs" title="Change Placement Position">
+            <i class="fas fa-arrows-up-down-left-right text-[11px] text-amber-700"></i>
+            <span>Move</span>
+        </a>
+        <a id="btnDrawerFullProfile" href="#" class="py-2.5 px-3 bg-white hover:bg-orange-50 text-slate-700 hover:text-orange-600 font-bold border border-slate-200 hover:border-orange-200 rounded-xl text-xs transition flex items-center justify-center gap-1 shadow-2xs">
             <i class="fas fa-external-link-alt text-[10px]"></i>
-            <span>Full Profile</span>
+            <span>Profile</span>
         </a>
     </div>
 </div>
@@ -816,6 +816,82 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Select Member to Move / Relocate Placement Subtree -->
+<div id="modalMoveMemberPicker" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[1050] hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+        <!-- Header -->
+        <div class="p-4 bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 text-white flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white font-black text-base shadow-xs">
+                    <i class="fas fa-arrows-up-down-left-right"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-sm tracking-tight leading-tight">Move & Relocate Member Placement</h3>
+                    <p class="text-[11px] text-amber-100 font-medium">Select any distributor to change their position in the matrix</p>
+                </div>
+            </div>
+            <button type="button" id="btnCloseMovePickerModal" class="w-7 h-7 rounded-lg bg-black/10 hover:bg-black/20 text-white flex items-center justify-center text-xs transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Scrollable Search & Results Body -->
+        <div class="p-5 space-y-4 overflow-y-auto text-xs flex-1">
+            <div>
+                <label class="block font-bold text-slate-800 mb-1.5" for="inputMoveMemberSearch">
+                    Search Member to Relocate:
+                </label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="search" id="inputMoveMemberSearch" class="w-full pl-8 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none text-xs transition" placeholder="Search by name, ID (e.g. C22...), phone number..." autocomplete="off">
+                    <button type="button" id="btnClearMovePickerSearch" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs" title="Clear">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Team Leader Chips -->
+            <div>
+                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <i class="fas fa-bolt text-amber-500"></i> Quick Leader Selection:
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                    @if(isset($leaderOptions) && count($leaderOptions))
+                        @foreach(array_slice($leaderOptions, 0, 8) as $lead)
+                            @if(($lead['customer_id'] ?? '') !== 'C22020008')
+                                <button type="button" class="btn-quick-move-chip px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200 hover:border-amber-300 text-[11px] font-semibold transition" data-id="{{ $lead['id'] }}" data-url="{{ admin_route('mlm.tree.move.form', $lead['id']) }}">
+                                    {{ explode(' ', $lead['name'])[0] }} <span class="font-mono text-[9px] opacity-75">({{ $lead['downline_count'] }} DL)</span>
+                                </button>
+                            @endif
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+
+            <!-- Search Results Dropdown / Container -->
+            <div id="movePickerResults" class="space-y-1.5 border border-slate-200 rounded-xl p-2 bg-slate-50 min-h-[160px] max-h-64 overflow-y-auto">
+                <div class="p-6 text-center text-slate-400 text-xs">
+                    <i class="fas fa-search text-2xl mb-1 text-slate-300 block"></i>
+                    Type a member name, Customer ID, or phone number to find and move.
+                </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-blue-50/70 border border-blue-200 text-blue-900 text-[11px] space-y-1">
+                <div class="font-bold flex items-center gap-1.5">
+                    <i class="fas fa-shield-alt text-blue-600"></i> Controlled & Audited Movement
+                </div>
+                <div>Moving a distributor relocates their entire 1:3 downline placement subtree to the new placement parent and slot. Sponsor relationships remain preserved.</div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-end">
+            <button type="button" id="btnCancelMovePickerModal" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-200/70 transition">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -837,9 +913,19 @@
     const drawer = document.getElementById('memberDrawer');
     const drawerBackdrop = document.getElementById('memberDrawerBackdrop');
     const btnCloseDrawer = document.getElementById('btnCloseDrawer');
-    const drawerBody = document.getElementById('drawerBody');
     const btnDrawerFocusSubtree = document.getElementById('btnDrawerFocusSubtree');
     const btnDrawerFullProfile = document.getElementById('btnDrawerFullProfile');
+    const btnDrawerMoveMember = document.getElementById('btnDrawerMoveMember');
+
+    // Move Picker Modal elements
+    const modalMovePicker = document.getElementById('modalMoveMemberPicker');
+    const btnOpenMoveModal = document.getElementById('btnOpenMoveModal');
+    const btnCloseMovePickerModal = document.getElementById('btnCloseMovePickerModal');
+    const btnCancelMovePickerModal = document.getElementById('btnCancelMovePickerModal');
+    const inputMoveMemberSearch = document.getElementById('inputMoveMemberSearch');
+    const btnClearMovePickerSearch = document.getElementById('btnClearMovePickerSearch');
+    const movePickerResults = document.getElementById('movePickerResults');
+    let movePickerDebounce = null;
 
     const rootPayloads = @json($rootPayloads);
     const initialRoot = @json($initialRoot);
@@ -1108,6 +1194,11 @@
                     </button>
                 </div>`;
         } else {
+            const moveBtn = (!isTopRoot && member.customer_id !== 'C22020008') ? `
+                <a href="${member.move_url || `/super-admin/mlm/tree/move/${member.id}`}" class="btn-node-move flex-1 py-1 px-2 font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition flex items-center justify-center gap-1 shadow-2xs" title="Change placement position for ${escapeHtml(member.name)}">
+                    <i class="fas fa-arrows-up-down-left-right text-[8px] text-amber-700"></i> <span>Move</span>
+                </a>` : '';
+
             actionsHtml = `
                 <div class="card-full-actions flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[10px]">
                     <button type="button" class="btn-node-drawer flex-1 py-1 px-2 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center justify-center gap-1">
@@ -1116,6 +1207,7 @@
                     <button type="button" class="btn-node-focus flex-1 py-1 px-2 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center justify-center gap-1" title="Focus subtree under this member">
                         <i class="fas fa-crosshairs text-[9px]"></i> <span>Focus</span>
                     </button>
+                    ${moveBtn}
                 </div>`;
         }
 
@@ -1571,6 +1663,14 @@
         `;
 
         btnDrawerFullProfile.href = member.details_url || '#';
+        if (btnDrawerMoveMember) {
+            if (member.customer_id === 'C22020008') {
+                btnDrawerMoveMember.classList.add('hidden');
+            } else {
+                btnDrawerMoveMember.classList.remove('hidden');
+                btnDrawerMoveMember.href = member.move_url || `/super-admin/mlm/tree/move/${member.id}`;
+            }
+        }
         drawerBackdrop.classList.remove('hidden');
         drawer.classList.remove('translate-x-full');
     };
@@ -2065,6 +2165,12 @@
             return;
         }
 
+        const moveBtn = event.target.closest('.btn-node-move');
+        if (moveBtn) {
+            event.stopPropagation();
+            return;
+        }
+
         const card = event.target.closest('.org-node-card');
         if (card && card._memberData) {
             openDrawer(card._memberData);
@@ -2496,6 +2602,116 @@
             setZoom(zoomScale + delta);
         }
     }, { passive: false });
+
+    // Move Member Picker Modal Logic
+    const openMovePickerModal = () => {
+        if (!modalMovePicker) return;
+        modalMovePicker.classList.remove('hidden');
+        inputMoveMemberSearch.value = '';
+        btnClearMovePickerSearch.classList.add('hidden');
+        inputMoveMemberSearch.focus();
+    };
+
+    const closeMovePickerModal = () => {
+        if (!modalMovePicker) return;
+        modalMovePicker.classList.add('hidden');
+    };
+
+    btnOpenMoveModal?.addEventListener('click', openMovePickerModal);
+    btnCloseMovePickerModal?.addEventListener('click', closeMovePickerModal);
+    btnCancelMovePickerModal?.addEventListener('click', closeMovePickerModal);
+
+    modalMovePicker?.addEventListener('click', (e) => {
+        if (e.target === modalMovePicker) closeMovePickerModal();
+    });
+
+    const searchMembersToMove = async () => {
+        const q = inputMoveMemberSearch.value.trim();
+        if (!q || q.length < 1) {
+            movePickerResults.innerHTML = `
+                <div class="p-6 text-center text-slate-400 text-xs">
+                    <i class="fas fa-search text-2xl mb-1 text-slate-300 block"></i>
+                    Type a member name, Customer ID, or phone number to find and move.
+                </div>`;
+            btnClearMovePickerSearch.classList.add('hidden');
+            return;
+        }
+
+        btnClearMovePickerSearch.classList.remove('hidden');
+        movePickerResults.innerHTML = `
+            <div class="p-4 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
+                <i class="fas fa-spinner fa-spin text-amber-600"></i> Searching members...
+            </div>`;
+
+        try {
+            const url = new URL(viewport.dataset.searchUrl, window.location.origin);
+            url.searchParams.set('q', q);
+            const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+            const data = await resp.json();
+            const list = data.data || [];
+
+            if (!list.length) {
+                movePickerResults.innerHTML = `
+                    <div class="p-5 text-center text-slate-500 text-xs">
+                        <i class="fas fa-info-circle text-slate-400 text-lg mb-1 block"></i>
+                        No active members found matching "<strong>${escapeHtml(q)}</strong>".
+                    </div>`;
+                return;
+            }
+
+            movePickerResults.innerHTML = list.map(m => {
+                const isRoot = m.customer_id === 'C22020008';
+                const moveUrl = `{{ admin_route('mlm.tree.move.form', ':id') }}`.replace(':id', m.id);
+                return `
+                    <div class="p-3 bg-white hover:bg-amber-50/60 rounded-xl border border-slate-200 transition flex items-center justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-slate-900 text-xs truncate flex items-center gap-1.5">
+                                <span>${escapeHtml(m.name)}</span>
+                                <span class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">${escapeHtml(m.customer_id)}</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                                <span><i class="fas fa-layer-group text-slate-400"></i> Level ${m.level ?? 0}</span>
+                                <span>&bull;</span>
+                                <span><i class="fas fa-sitemap text-slate-400"></i> Parent: <strong>${escapeHtml(m.placement_parent?.name || 'Root')}</strong></span>
+                                <span>&bull;</span>
+                                <span><i class="fas fa-users text-slate-400"></i> ${m.downline_count ?? 0} Downlines</span>
+                            </div>
+                        </div>
+                        ${isRoot ? `
+                            <span class="px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold">Root Leader</span>
+                        ` : `
+                            <a href="${moveUrl}" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-xs shadow-xs transition flex items-center gap-1 shrink-0">
+                                <span>Move Position</span> <i class="fas fa-arrow-right text-[10px]"></i>
+                            </a>
+                        `}
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            movePickerResults.innerHTML = `
+                <div class="p-4 text-center text-rose-600 text-xs">
+                    Failed to search members.
+                </div>`;
+        }
+    };
+
+    inputMoveMemberSearch?.addEventListener('input', () => {
+        if (movePickerDebounce) clearTimeout(movePickerDebounce);
+        movePickerDebounce = setTimeout(searchMembersToMove, 200);
+    });
+
+    btnClearMovePickerSearch?.addEventListener('click', () => {
+        inputMoveMemberSearch.value = '';
+        searchMembersToMove();
+        inputMoveMemberSearch.focus();
+    });
+
+    document.querySelectorAll('.btn-quick-move-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const url = btn.dataset.url;
+            if (url) window.location.href = url;
+        });
+    });
 
     // Initial Mount
     if (initialRoot) {
