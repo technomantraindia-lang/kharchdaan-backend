@@ -120,6 +120,7 @@ Route::middleware('admin')->group(function () {
         Route::get('/move/{member}', [MlmMemberController::class, 'moveForm'])->middleware('permission:mlm.manage')->name('move.form');
         Route::post('/move/{member}/preview', [MlmMemberController::class, 'movePreview'])->middleware('permission:mlm.manage')->name('move.preview');
         Route::post('/move/{member}', [MlmMemberController::class, 'move'])->middleware('permission:mlm.manage')->name('move');
+        Route::post('/reset-excel', [MlmMemberController::class, 'resetTreeToExcel'])->middleware('permission:mlm.manage')->name('reset-excel');
         Route::get('/{member}/children', [MlmMemberController::class, 'treeChildren'])->middleware('permission:mlm.view')->name('children');
         Route::get('/idle-slots', [MlmMemberController::class, 'idleSlots'])->middleware('permission:mlm.view')->name('idle-slots');
         Route::get('/search-promotable', [MlmMemberController::class, 'searchPromotable'])->middleware('permission:mlm.view')->name('search-promotable');

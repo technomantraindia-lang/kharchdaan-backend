@@ -392,6 +392,9 @@
             <a href="{{ admin_route('mlm.genealogy') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
                 <i class="fas fa-project-diagram text-indigo-500"></i> Genealogy (0–19)
             </a>
+            <button type="button" id="btnResetToExcel" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-xs transition cursor-pointer" title="Reset and synchronize all tree cards with Aaradhya Gruh Udyog Master Excel">
+                <i class="fas fa-file-excel text-emerald-600"></i> Sync with Master Excel
+            </button>
         </div>
     </div>
 
@@ -496,6 +499,9 @@
                 $currentRootId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? null;
             @endphp
             <div class="flex items-center gap-2 flex-wrap">
+                <button type="button" id="btnResetToExcelToolbar" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 rounded-md hover:bg-emerald-100 transition flex-shrink-0 shadow-2xs cursor-pointer" title="Reset all tree cards to original Aaradhya Gruh Udyog Master Excel layout">
+                    <i class="fas fa-file-excel text-emerald-600 text-[11px]"></i> Sync with Excel
+                </button>
                 <a href="{{ admin_route('mlm.manual') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-rose-800 bg-white border border-rose-200 rounded-md hover:bg-rose-50 transition flex-shrink-0 shadow-2xs" title="Open complete step-by-step PDF manual in browser">
                     <i class="fas fa-file-pdf text-rose-600 text-[11px]"></i> Admin Manual (PDF)
                 </a>
@@ -3201,6 +3207,59 @@
             ddBtnText.textContent = 'Confirm & Move';
         }
     });
+
+    // Reset tree hierarchy to original Excel master data
+    const resetToExcelHandler = async () => {
+        if (!confirm('Are you sure you want to restore all placement tree cards to the original layout from Aaradhya Gruh Udyog - Master Data.xlsx?\n\nAny manual card moves will be reset. All cards will remain fully editable.')) {
+            return;
+        }
+
+        const buttons = [document.getElementById('btnResetToExcel'), document.getElementById('btnResetToExcelToolbar')].filter(Boolean);
+        buttons.forEach(b => {
+            b.disabled = true;
+            b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing with Excel...';
+        });
+
+        try {
+            const res = await fetch(@json(admin_route('mlm.tree.reset-excel')), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': @json(csrf_token()),
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({})
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to reset tree hierarchy.');
+            }
+
+            const treeMsg = document.getElementById('treeMessage');
+            if (treeMsg) {
+                treeMsg.className = 'p-4 rounded-xl text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-900 mb-4 block';
+                treeMsg.innerHTML = `<i class="fas fa-check-circle text-emerald-600 mr-1.5"></i> ${data.message || 'Tree cards successfully synchronized with Master Excel!'}`;
+                treeMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
+        } catch (err) {
+            console.error('Reset to Excel failed:', err);
+            alert(err.message || 'Failed to sync with master Excel file.');
+            buttons.forEach(b => {
+                b.disabled = false;
+                b.innerHTML = '<i class="fas fa-file-excel text-emerald-600"></i> Sync with Master Excel';
+            });
+        }
+    };
+
+    document.getElementById('btnResetToExcel')?.addEventListener('click', resetToExcelHandler);
+    document.getElementById('btnResetToExcelToolbar')?.addEventListener('click', resetToExcelHandler);
 
     // Initial Mount
     if (initialRoot) {

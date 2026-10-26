@@ -416,6 +416,84 @@ class MlmMemberController extends Controller
             ->with('success', "Placement subtree for {$member->user?->name} ({$member->customer_id}) was successfully moved to {$newParent?->user?->name} ({$newParent?->customer_id}) / " . ucfirst($request->input('new_position')) . " slot.");
     }
 
+    public function resetTreeToExcel(Request $request): RedirectResponse|JsonResponse
+    {
+        abort_unless($this->can('mlm.move') || $this->can('mlm.manage'), 403, 'Unauthorized action.');
+
+        $dataPath = database_path('data/mlm_client_data.json');
+        if (! file_exists($dataPath)) {
+            $msg = 'Master data file not found.';
+            return $request->wantsJson() || $request->ajax()
+                ? response()->json(['success' => false, 'message' => $msg], 404)
+                : back()->with('error', $msg);
+        }
+
+        $clientData = json_decode(file_get_contents($dataPath), true);
+        $placements = $clientData['placements'] ?? [];
+        $customers = $clientData['customers'] ?? [];
+
+        // Map customer_id -> member id
+        $memberMap = Member::pluck('id', 'customer_id')->all();
+
+        DB::beginTransaction();
+        try {
+            // Reset root member Nimesh Jagirdar (C22020008)
+            Member::where('customer_id', 'C22020008')->update([
+                'placement_parent_id' => null,
+                'placement_position' => null,
+            ]);
+
+            $resetCount = 0;
+            foreach ($placements as $downlineCode => $pInfo) {
+                $memberId = $memberMap[$downlineCode] ?? null;
+                $uplineId = $memberMap[$pInfo['upline']] ?? null;
+
+                if ($memberId && $uplineId) {
+                    Member::where('id', $memberId)->update([
+                        'placement_parent_id' => $uplineId,
+                        'placement_position' => $pInfo['position'],
+                    ]);
+                    $resetCount++;
+                }
+            }
+
+            // Also reset sponsor links
+            foreach ($customers as $c) {
+                $code = $c['code'] ?? null;
+                $refCode = $c['referral_id'] ?? null;
+                $memberId = $memberMap[$code] ?? null;
+                $sponsorId = $memberMap[$refCode] ?? null;
+
+                if ($memberId && $sponsorId && $memberId !== $sponsorId) {
+                    Member::where('id', $memberId)->update([
+                        'sponsor_member_id' => $sponsorId,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            $msg = "Placement tree cards successfully synchronized with Aaradhya Gruh Udyog Master Excel ({$resetCount} placements restored). Cards remain fully editable.";
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $msg,
+                    'reset_count' => $resetCount,
+                ]);
+            }
+
+            return redirect()->route('admin.mlm.tree.index')->with('success', $msg);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            $err = 'Failed to reset tree hierarchy: ' . $e->getMessage();
+            return $request->wantsJson() || $request->ajax()
+                ? response()->json(['success' => false, 'message' => $err], 500)
+                : back()->with('error', $err);
+        }
+    }
+
     public function create(): View
     {
         return view('admin.mlm.members.create', $this->formData());

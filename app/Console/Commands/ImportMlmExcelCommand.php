@@ -312,11 +312,15 @@ class ImportMlmExcelCommand extends Command
         file_put_contents($targetJson, json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         $this->info("Saved synchronized dataset to: {$targetJson}");
 
-        // Automatically seed database
-        $this->info("Re-seeding database with client master data...");
-        $this->call(MlmSampleDataSeeder::class);
+        // Optionally seed database
+        if ($this->option('seed')) {
+            $this->info("Re-seeding database with client master data...");
+            $this->call(MlmSampleDataSeeder::class);
+        } else {
+            $this->info("Master dataset synchronized to {$targetJson}. Use --seed to re-seed database immediately.");
+        }
 
-        $this->info("Successfully imported client master data and updated MLM database!");
+        $this->info("Successfully imported client master data and updated MLM dataset!");
         return self::SUCCESS;
     }
 }
