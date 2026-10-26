@@ -451,15 +451,21 @@
             }
 
             switchResults.innerHTML = list.map(m => {
-                const moveTargetUrl = `{{ admin_route('mlm.tree.move.form', ':id') }}`.replace(':id', m.id);
+                const item = m.member || m;
+                const mId = item.id || m.id;
+                const mName = item.name || m.name || 'Member';
+                const mCustomerId = item.customer_id || m.customer_id || '-';
+                const mPhone = item.phone || m.phone || '';
+                const mDownline = item.downline_count ?? m.downline_count ?? 0;
+                const moveTargetUrl = `{{ admin_route('mlm.tree.move.form', ':id') }}`.replace(':id', mId);
                 return `
                     <a href="${moveTargetUrl}" class="block p-3 hover:bg-amber-50/80 transition flex items-center justify-between gap-3 text-xs">
                         <div class="min-w-0 flex-1">
-                            <div class="font-bold text-slate-900 truncate">${escapeHtml(m.name)}</div>
+                            <div class="font-bold text-slate-900 truncate">${escapeHtml(mName)}</div>
                             <div class="text-[11px] text-slate-500 mt-0.5">
-                                <span class="font-mono text-blue-600 font-semibold">${escapeHtml(m.customer_id)}</span>
-                                ${m.phone ? `&bull; <span>${escapeHtml(m.phone)}</span>` : ''}
-                                &bull; <span class="text-slate-600">${m.downline_count ?? 0} Downlines</span>
+                                <span class="font-mono text-blue-600 font-semibold">${escapeHtml(mCustomerId)}</span>
+                                ${mPhone ? `&bull; <span>${escapeHtml(mPhone)}</span>` : ''}
+                                &bull; <span class="text-slate-600">${mDownline} Downlines</span>
                             </div>
                         </div>
                         <span class="px-2.5 py-1 bg-amber-500 text-white rounded font-bold text-[11px] shadow-2xs shrink-0">

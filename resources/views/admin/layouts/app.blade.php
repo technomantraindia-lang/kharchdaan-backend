@@ -1017,158 +1017,274 @@
         if (sidebarClose) sidebarClose.addEventListener('click', closeMobileSidebar);
         if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
-        // Admin Global Search Live Autocomplete Logic
+        // Global and Table Search Live Autocomplete Logic
         (() => {
-            const input = document.getElementById('adminGlobalSearchInput');
-            const clearBtn = document.getElementById('adminGlobalSearchClear');
-            const results = document.getElementById('adminGlobalSearchResults');
             const searchUrl = @json(admin_route('search'));
-            let debounce = null;
-
-            if (!input || !results) return;
 
             const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
             })[character]);
 
-            const performGlobalSearch = async () => {
-                const q = input.value.trim();
-                if (!q) {
-                    results.classList.add('hidden');
-                    clearBtn?.classList.add('hidden');
-                    return;
-                }
+            const highlightMatch = (text, term) => {
+                if (!text || !term) return escapeHtml(text);
+                const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return escapeHtml(String(text)).replace(new RegExp(`(${escaped})`, 'gi'), '<span class="bg-amber-100 text-amber-900 font-bold px-0.5 rounded">$1</span>');
+            };
 
-                clearBtn?.classList.remove('hidden');
+            // 1. Top Navbar Global Search Bar
+            const topInput = document.getElementById('adminGlobalSearchInput');
+            const topClearBtn = document.getElementById('adminGlobalSearchClear');
+            const topResults = document.getElementById('adminGlobalSearchResults');
+            let topDebounce = null;
+            let topHighlightedIdx = -1;
 
-                if (q.length < 1) {
-                    results.classList.add('hidden');
-                    return;
-                }
-
-                results.innerHTML = `
-                    <div class="p-3 text-slate-500 text-center flex items-center justify-center gap-2">
-                        <i class="fas fa-spinner fa-spin text-orange-600"></i> Searching platform...
-                    </div>`;
-                results.classList.remove('hidden');
-
-                try {
-                    const response = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, {
-                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-                    });
-                    if (!response.ok) throw new Error('Search request failed');
-                    const data = await response.json();
-                    const res = data.results || {};
-
-                    const members = res.members || [];
-                    const products = res.products || [];
-                    const orders = res.orders || [];
-                    const customers = res.customers || [];
-
-                    const totalCount = members.length + products.length + orders.length + customers.length;
-
-                    if (totalCount === 0) {
-                        results.innerHTML = `<div class="p-4 text-center text-slate-400">No matching members, products, or orders found.</div>`;
-                        results.classList.remove('hidden');
+            if (topInput && topResults) {
+                const performGlobalSearch = async () => {
+                    const q = topInput.value.trim();
+                    if (!q) {
+                        topResults.classList.add('hidden');
+                        topClearBtn?.classList.add('hidden');
                         return;
                     }
 
-                    let html = '';
+                    topClearBtn?.classList.remove('hidden');
 
-                    // Members / Distributors
-                    if (members.length > 0) {
-                        html += `<div class="px-3 py-1.5 bg-orange-50/80 text-[10px] font-bold text-orange-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-sitemap text-orange-600"></i> Direct Selling Members (${members.length})</div>`;
-                        members.forEach(m => {
-                            html += `
-                            <a href="${m.url}" class="p-2.5 hover:bg-orange-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
-                                <div>
-                                    <div class="font-bold text-slate-900">${escapeHtml(m.name)}</div>
-                                    <div class="text-[11px] text-slate-500 font-mono"><span class="text-blue-600 font-semibold">${escapeHtml(m.customer_id)}</span> ${m.phone ? `&bull; ${escapeHtml(m.phone)}` : ''}</div>
-                                </div>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">${escapeHtml(m.status || 'Active')}</span>
-                            </a>`;
+                    topResults.innerHTML = `
+                        <div class="p-3 text-slate-500 text-center flex items-center justify-center gap-2 text-xs">
+                            <i class="fas fa-spinner fa-spin text-orange-600"></i> Searching platform...
+                        </div>`;
+                    topResults.classList.remove('hidden');
+
+                    try {
+                        const response = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                         });
+                        if (!response.ok) throw new Error('Search request failed');
+                        const data = await response.json();
+                        const res = data.results || {};
+
+                        const members = res.members || [];
+                        const products = res.products || [];
+                        const orders = res.orders || [];
+                        const customers = res.customers || [];
+
+                        const totalCount = members.length + products.length + orders.length + customers.length;
+
+                        if (totalCount === 0) {
+                            topResults.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">No matching members, products, or orders found for "<strong>${escapeHtml(q)}</strong>".</div>`;
+                            topResults.classList.remove('hidden');
+                            return;
+                        }
+
+                        let html = '';
+                        topHighlightedIdx = -1;
+
+                        // Members / Distributors
+                        if (members.length > 0) {
+                            html += `<div class="px-3 py-1.5 bg-orange-50/90 text-[10px] font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-sitemap text-orange-600"></i> Direct Selling Members (${members.length})</div>`;
+                            members.forEach(m => {
+                                html += `
+                                <a href="${m.url}" class="global-search-link p-2.5 hover:bg-orange-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-slate-900 truncate">${highlightMatch(m.name, q)}</div>
+                                        <div class="text-[11px] text-slate-500 font-mono"><span class="text-blue-600 font-semibold">${highlightMatch(m.customer_id, q)}</span> ${m.phone ? `&bull; ${highlightMatch(m.phone, q)}` : ''}</div>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">${escapeHtml(m.status || 'Active')}</span>
+                                </a>`;
+                            });
+                        }
+
+                        // Products
+                        if (products.length > 0) {
+                            html += `<div class="px-3 py-1.5 bg-amber-50/90 text-[10px] font-bold text-amber-950 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-boxes-stacked text-amber-600"></i> Products Catalog (${products.length})</div>`;
+                            products.forEach(p => {
+                                html += `
+                                <a href="${p.url}" class="global-search-link p-2.5 hover:bg-amber-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-slate-900 truncate">${highlightMatch(p.name, q)}</div>
+                                        <div class="text-[11px] text-slate-500">SKU: <span class="font-mono text-slate-700 font-semibold">${highlightMatch(p.sku || 'N/A', q)}</span> &bull; Stock: ${p.stock_qty ?? 100}</div>
+                                    </div>
+                                    <span class="font-bold text-slate-900 text-xs shrink-0">₹${p.price}</span>
+                                </a>`;
+                            });
+                        }
+
+                        // Orders
+                        if (orders.length > 0) {
+                            html += `<div class="px-3 py-1.5 bg-blue-50/90 text-[10px] font-bold text-blue-950 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-bag-shopping text-blue-600"></i> Orders (${orders.length})</div>`;
+                            orders.forEach(o => {
+                                html += `
+                                <a href="${o.url}" class="global-search-link p-2.5 hover:bg-blue-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-slate-900 truncate">Order #${highlightMatch(o.order_num, q)}</div>
+                                        <div class="text-[11px] text-slate-500">${highlightMatch(o.customer_name, q)} &bull; ${escapeHtml(o.status)}</div>
+                                    </div>
+                                    <span class="font-bold text-slate-900 text-xs shrink-0">₹${o.total}</span>
+                                </a>`;
+                            });
+                        }
+
+                        // Customers
+                        if (customers.length > 0) {
+                            html += `<div class="px-3 py-1.5 bg-slate-100 text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-users text-slate-600"></i> Customers (${customers.length})</div>`;
+                            customers.forEach(c => {
+                                html += `
+                                <a href="${c.url}" class="global-search-link p-2.5 hover:bg-slate-50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-slate-900 truncate">${highlightMatch(c.name, q)}</div>
+                                        <div class="text-[11px] text-slate-500">${highlightMatch(c.email || c.phone || '', q)}</div>
+                                    </div>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 shrink-0">${escapeHtml(c.role || 'User')}</span>
+                                </a>`;
+                            });
+                        }
+
+                        topResults.innerHTML = html;
+                        topResults.classList.remove('hidden');
+                    } catch (err) {
+                        topResults.innerHTML = `<div class="p-3 text-rose-600 text-center text-xs">${escapeHtml(err.message || 'Search failed')}</div>`;
+                        topResults.classList.remove('hidden');
+                    }
+                };
+
+                topInput.addEventListener('input', () => {
+                    if (topDebounce) clearTimeout(topDebounce);
+                    topDebounce = setTimeout(performGlobalSearch, 200);
+                });
+
+                topInput.addEventListener('focus', () => {
+                    if (topInput.value.trim().length > 0) {
+                        performGlobalSearch();
+                    }
+                });
+
+                topClearBtn?.addEventListener('click', () => {
+                    topInput.value = '';
+                    topClearBtn.classList.add('hidden');
+                    topResults.classList.add('hidden');
+                    topInput.focus();
+                });
+
+                topInput.addEventListener('keydown', (e) => {
+                    const links = topResults.querySelectorAll('.global-search-link');
+                    if (e.key === 'ArrowDown') {
+                        if (links.length) {
+                            e.preventDefault();
+                            topHighlightedIdx = (topHighlightedIdx + 1) % links.length;
+                            links.forEach((link, idx) => link.classList.toggle('bg-orange-100/70', idx === topHighlightedIdx));
+                            links[topHighlightedIdx]?.scrollIntoView({ block: 'nearest' });
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        if (links.length) {
+                            e.preventDefault();
+                            topHighlightedIdx = (topHighlightedIdx - 1 + links.length) % links.length;
+                            links.forEach((link, idx) => link.classList.toggle('bg-orange-100/70', idx === topHighlightedIdx));
+                            links[topHighlightedIdx]?.scrollIntoView({ block: 'nearest' });
+                        }
+                    } else if (e.key === 'Enter') {
+                        if (topHighlightedIdx >= 0 && links[topHighlightedIdx]) {
+                            e.preventDefault();
+                            links[topHighlightedIdx].click();
+                        }
+                    } else if (e.key === 'Escape') {
+                        topResults.classList.add('hidden');
+                    }
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!topResults.contains(e.target) && e.target !== topInput && e.target !== topClearBtn) {
+                        topResults.classList.add('hidden');
+                    }
+                });
+            }
+
+            // 2. Universal Table Search Auto-Suggest for Products, Orders, Customers
+            const autoSuggestInputs = document.querySelectorAll('form input[name="search"]:not(#memberSearchInput)');
+            autoSuggestInputs.forEach((input) => {
+                const path = window.location.pathname.toLowerCase();
+                let type = 'all';
+                let typeLabel = 'Items';
+                if (path.includes('/products')) { type = 'products'; typeLabel = 'Products'; }
+                else if (path.includes('/orders')) { type = 'orders'; typeLabel = 'Orders'; }
+                else if (path.includes('/customers')) { type = 'customers'; typeLabel = 'Customers'; }
+                else if (path.includes('/mlm')) { type = 'members'; typeLabel = 'Members'; }
+
+                const parentWrapper = input.parentElement;
+                if (!parentWrapper) return;
+                parentWrapper.classList.add('relative');
+
+                const dropdown = document.createElement('div');
+                dropdown.className = 'hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200/90 max-h-72 overflow-y-auto z-50 text-xs divide-y divide-slate-100';
+                parentWrapper.appendChild(dropdown);
+
+                let timer = null;
+                const form = input.closest('form');
+
+                const fetchSuggestions = async () => {
+                    const q = input.value.trim();
+                    if (!q) {
+                        dropdown.classList.add('hidden');
+                        return;
                     }
 
-                    // Products
-                    if (products.length > 0) {
-                        html += `<div class="px-3 py-1.5 bg-amber-50/80 text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-boxes-stacked text-amber-600"></i> Products Catalog (${products.length})</div>`;
-                        products.forEach(p => {
-                            html += `
-                            <a href="${p.url}" class="p-2.5 hover:bg-amber-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
-                                <div>
-                                    <div class="font-bold text-slate-900">${escapeHtml(p.name)}</div>
-                                    <div class="text-[11px] text-slate-500">SKU: <span class="font-mono text-slate-700 font-semibold">${escapeHtml(p.sku || 'N/A')}</span> &bull; Stock: ${p.stock_qty ?? 100}</div>
-                                </div>
-                                <span class="font-bold text-slate-900 text-xs">₹${p.price}</span>
-                            </a>`;
+                    dropdown.innerHTML = `<div class="p-3 text-slate-500 text-center text-xs flex items-center justify-center gap-1.5"><i class="fas fa-spinner fa-spin text-blue-500"></i> Searching ${escapeHtml(typeLabel)}...</div>`;
+                    dropdown.classList.remove('hidden');
+
+                    try {
+                        const res = await fetch(`${searchUrl}?type=${type}&q=${encodeURIComponent(q)}`, {
+                            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                         });
-                    }
+                        if (!res.ok) throw new Error('Search failed');
+                        const data = await res.json();
+                        const list = (data.results && data.results[type]) ? data.results[type] : [];
 
-                    // Orders
-                    if (orders.length > 0) {
-                        html += `<div class="px-3 py-1.5 bg-blue-50/80 text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-bag-shopping text-blue-600"></i> Orders (${orders.length})</div>`;
-                        orders.forEach(o => {
+                        if (!list.length) {
+                            dropdown.innerHTML = `<div class="p-3 text-slate-400 text-center text-xs">No matching ${escapeHtml(typeLabel)} found. Press Enter to filter table.</div>`;
+                            return;
+                        }
+
+                        let html = `<div class="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex justify-between"><span>Matching ${escapeHtml(typeLabel)} (${list.length})</span><span class="text-slate-400 font-normal lowercase">click to filter</span></div>`;
+                        list.forEach((item) => {
+                            const title = item.name || item.order_num || item.customer_name || 'Item';
+                            const sub = item.sku ? `SKU: ${item.sku}` : (item.customer_id || item.email || item.status || '');
+                            const rightBadge = item.price ? `₹${item.price}` : (item.total ? `₹${item.total}` : (item.status || ''));
                             html += `
-                            <a href="${o.url}" class="p-2.5 hover:bg-blue-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
-                                <div>
-                                    <div class="font-bold text-slate-900">Order #${escapeHtml(o.order_num)}</div>
-                                    <div class="text-[11px] text-slate-500">${escapeHtml(o.customer_name)} &bull; ${escapeHtml(o.status)}</div>
-                                </div>
-                                <span class="font-bold text-slate-900 text-xs">₹${o.total}</span>
-                            </a>`;
+                                <div class="table-suggest-item p-2.5 hover:bg-blue-50/70 cursor-pointer flex items-center justify-between gap-2 border-b border-slate-50 last:border-0" data-val="${escapeHtml(item.sku || item.order_num || item.customer_id || item.name)}">
+                                    <div class="min-w-0">
+                                        <div class="font-bold text-slate-900 truncate">${highlightMatch(title, q)}</div>
+                                        <div class="text-[11px] text-slate-500 truncate">${highlightMatch(sub, q)}</div>
+                                    </div>
+                                    ${rightBadge ? `<span class="font-bold text-slate-700 text-xs shrink-0">${escapeHtml(rightBadge)}</span>` : ''}
+                                </div>`;
                         });
-                    }
+                        dropdown.innerHTML = html;
 
-                    // Customers
-                    if (customers.length > 0) {
-                        html += `<div class="px-3 py-1.5 bg-slate-100 text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-users text-slate-600"></i> Customers (${customers.length})</div>`;
-                        customers.forEach(c => {
-                            html += `
-                            <a href="${c.url}" class="p-2.5 hover:bg-slate-50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
-                                <div>
-                                    <div class="font-bold text-slate-900">${escapeHtml(c.name)}</div>
-                                    <div class="text-[11px] text-slate-500">${escapeHtml(c.email || c.phone || '')}</div>
-                                </div>
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">${escapeHtml(c.role || 'User')}</span>
-                            </a>`;
+                        dropdown.querySelectorAll('.table-suggest-item').forEach((row) => {
+                            row.addEventListener('click', () => {
+                                input.value = row.getAttribute('data-val') || '';
+                                dropdown.classList.add('hidden');
+                                if (form) form.submit();
+                            });
                         });
+                    } catch (e) {
+                        dropdown.innerHTML = `<div class="p-3 text-rose-500 text-center text-xs">Search error. Press Filter to search.</div>`;
                     }
+                };
 
-                    results.innerHTML = html;
-                    results.classList.remove('hidden');
-                } catch (err) {
-                    results.innerHTML = `<div class="p-3 text-rose-600 text-center">${escapeHtml(err.message || 'Search failed')}</div>`;
-                    results.classList.remove('hidden');
-                }
-            };
+                input.addEventListener('input', () => {
+                    if (timer) clearTimeout(timer);
+                    timer = setTimeout(fetchSuggestions, 200);
+                });
 
-            input.addEventListener('input', () => {
-                if (debounce) clearTimeout(debounce);
-                debounce = setTimeout(performGlobalSearch, 250);
-            });
+                input.addEventListener('focus', () => {
+                    if (input.value.trim().length > 0) fetchSuggestions();
+                });
 
-            clearBtn?.addEventListener('click', () => {
-                input.value = '';
-                clearBtn.classList.add('hidden');
-                results.classList.add('hidden');
-                input.focus();
-            });
-
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (debounce) clearTimeout(debounce);
-                    performGlobalSearch();
-                } else if (e.key === 'Escape') {
-                    results.classList.add('hidden');
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!results.contains(e.target) && e.target !== input && e.target !== clearBtn) {
-                    results.classList.add('hidden');
-                }
+                document.addEventListener('click', (e) => {
+                    if (!dropdown.contains(e.target) && e.target !== input) {
+                        dropdown.classList.add('hidden');
+                    }
+                });
             });
         })();
     </script>

@@ -487,11 +487,13 @@ class MlmTreeService
                     return null;
                 }
 
-                return [
-                    'member' => $this->memberPayload($member),
+                $payload = $this->memberPayload($member);
+
+                return array_merge($payload, [
+                    'member' => $payload,
                     'root_id' => $path[0],
                     'path' => $path,
-                ];
+                ]);
             })
             ->filter()
             ->values()

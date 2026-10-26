@@ -35,9 +35,14 @@
         <form method="GET" action="{{ admin_route('mlm.members.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="lg:col-span-2">
                 <label class="block text-xs font-semibold text-slate-600 mb-1.5">Search</label>
-                <div class="relative">
+                <div class="relative" id="memberSearchWrapper">
                     <i class="fas fa-search absolute left-3 top-3 text-slate-400 text-xs"></i>
-                    <input type="text" name="search" class="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" value="{{ request('search') }}" placeholder="Member Code, Name, Mobile, Email">
+                    <input type="text" name="search" id="memberSearchInput" class="w-full pl-8 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" value="{{ request('search') }}" placeholder="Member Code, Name, Mobile, Email" autocomplete="off">
+                    <button type="button" id="memberSearchClearBtn" class="{{ request('search') ? '' : 'hidden' }} absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs" title="Clear search">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                    <!-- Auto-suggest Suggestions Dropdown -->
+                    <div id="memberSearchDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200/90 max-h-80 overflow-y-auto z-50 text-xs divide-y divide-slate-100"></div>
                 </div>
             </div>
 
@@ -328,4 +333,196 @@
     });
 </script>
 @endif
+
+<script>
+    // Live Member Search Auto-complete Suggestions
+    (() => {
+        const input = document.getElementById('memberSearchInput');
+        const clearBtn = document.getElementById('memberSearchClearBtn');
+        const dropdown = document.getElementById('memberSearchDropdown');
+        const form = input?.closest('form');
+        const searchUrl = @json(admin_route('search'));
+        let debounceTimer = null;
+        let highlightedIdx = -1;
+        let currentSuggestions = [];
+
+        if (!input || !dropdown) return;
+
+        const escapeHtml = (val) => String(val ?? '').replace(/[&<>'"]/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+        })[c]);
+
+        const highlightMatch = (text, term) => {
+            if (!text || !term) return escapeHtml(text);
+            const str = String(text);
+            const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escaped})`, 'gi');
+            return escapeHtml(str).replace(regex, '<span class="bg-amber-100 text-amber-900 font-bold px-0.5 rounded">$1</span>');
+        };
+
+        const renderSuggestions = (list, query) => {
+            currentSuggestions = list;
+            highlightedIdx = -1;
+
+            if (!list.length) {
+                dropdown.innerHTML = `
+                    <div class="p-3.5 text-slate-500 text-center text-xs">
+                        No members found matching "<strong>${escapeHtml(query)}</strong>".
+                        <div class="text-[11px] text-slate-400 mt-1">Press Enter or Filter to search all records.</div>
+                    </div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
+            let html = `
+                <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fas fa-users text-blue-500 mr-1"></i> Matching Members (${list.length})</span>
+                    <span class="text-slate-400 font-normal lowercase">click to filter table</span>
+                </div>
+                <div class="divide-y divide-slate-50 max-h-72 overflow-y-auto">
+            `;
+
+            list.forEach((m, idx) => {
+                const initial = (m.name || 'M').charAt(0).toUpperCase();
+                const statusColor = (m.status === 'active') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                    (m.status === 'blocked') ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                                    'bg-amber-50 text-amber-700 border-amber-200';
+
+                html += `
+                    <div class="member-suggestion-item p-2.5 hover:bg-blue-50/70 transition flex items-center justify-between gap-2.5 cursor-pointer" data-idx="${idx}">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
+                                ${escapeHtml(initial)}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="font-bold text-slate-900 truncate text-xs flex items-center gap-1.5">
+                                    <span>${highlightMatch(m.name, query)}</span>
+                                    <span class="font-mono text-[11px] text-blue-600 font-semibold px-1.5 py-0.2 rounded bg-blue-50 border border-blue-100">
+                                        ${highlightMatch(m.customer_id, query)}
+                                    </span>
+                                </div>
+                                <div class="text-[11px] text-slate-500 truncate mt-0.5 flex items-center gap-2">
+                                    ${m.phone ? `<span><i class="fas fa-phone-alt text-[9px] text-slate-400 mr-1"></i>${highlightMatch(m.phone, query)}</span>` : ''}
+                                    ${m.sponsor_name && m.sponsor_name !== 'None' ? `<span>&bull; Sponsor: ${escapeHtml(m.sponsor_name)}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${statusColor}">
+                                ${escapeHtml(m.status)}
+                            </span>
+                            <a href="${m.url}" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-white rounded transition shadow-2xs" title="View Profile ↗" onclick="event.stopPropagation()">
+                                <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            dropdown.innerHTML = html;
+            dropdown.classList.remove('hidden');
+
+            dropdown.querySelectorAll('.member-suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const idx = parseInt(item.getAttribute('data-idx'), 10);
+                    selectSuggestion(currentSuggestions[idx]);
+                });
+            });
+        };
+
+        const selectSuggestion = (member) => {
+            if (!member) return;
+            input.value = member.customer_id || member.name;
+            dropdown.classList.add('hidden');
+            if (form) form.submit();
+        };
+
+        const fetchSuggestions = async () => {
+            const q = input.value.trim();
+            if (!q) {
+                dropdown.classList.add('hidden');
+                clearBtn?.classList.add('hidden');
+                return;
+            }
+
+            clearBtn?.classList.remove('hidden');
+
+            dropdown.innerHTML = `
+                <div class="p-3 text-slate-500 text-center flex items-center justify-center gap-2 text-xs">
+                    <i class="fas fa-spinner fa-spin text-blue-600"></i> Finding members...
+                </div>`;
+            dropdown.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${searchUrl}?type=members&q=${encodeURIComponent(q)}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!response.ok) throw new Error('Search failed');
+                const data = await response.json();
+                const members = data.results?.members || [];
+                renderSuggestions(members, q);
+            } catch (err) {
+                dropdown.innerHTML = `<div class="p-3 text-rose-500 text-center text-xs">Unable to load suggestions. Press Filter to search.</div>`;
+            }
+        };
+
+        input.addEventListener('input', () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchSuggestions, 200);
+        });
+
+        input.addEventListener('focus', () => {
+            if (input.value.trim().length > 0) {
+                fetchSuggestions();
+            }
+        });
+
+        clearBtn?.addEventListener('click', () => {
+            input.value = '';
+            dropdown.classList.add('hidden');
+            clearBtn.classList.add('hidden');
+            input.focus();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (dropdown.classList.contains('hidden') || !currentSuggestions.length) return;
+
+            const items = dropdown.querySelectorAll('.member-suggestion-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                highlightedIdx = (highlightedIdx + 1) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                highlightedIdx = (highlightedIdx - 1 + items.length) % items.length;
+                updateHighlight(items);
+            } else if (e.key === 'Enter') {
+                if (highlightedIdx >= 0 && currentSuggestions[highlightedIdx]) {
+                    e.preventDefault();
+                    selectSuggestion(currentSuggestions[highlightedIdx]);
+                }
+            } else if (e.key === 'Escape') {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        const updateHighlight = (items) => {
+            items.forEach((item, i) => {
+                if (i === highlightedIdx) {
+                    item.classList.add('bg-blue-100/80');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('bg-blue-100/80');
+                }
+            });
+        };
+
+        document.addEventListener('click', (e) => {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    })();
+</script>
 @endsection

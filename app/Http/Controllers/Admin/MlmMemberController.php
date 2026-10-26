@@ -200,7 +200,7 @@ class MlmMemberController extends Controller
     public function treeSearch(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'q' => ['required', 'string', 'min:2', 'max:100'],
+            'q' => ['required', 'string', 'min:1', 'max:100'],
         ]);
 
         return response()->json([
