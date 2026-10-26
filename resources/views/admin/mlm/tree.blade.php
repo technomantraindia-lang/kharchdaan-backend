@@ -245,6 +245,43 @@
     .org-slot-empty.slot-middle { border-color: #fde68a; background: #fffbeb; }
     .org-slot-empty.slot-right { border-color: #a7f3d0; background: #ecfdf5; }
 
+    /* Drag & Drop Visual Styles */
+    .org-node-card[draggable="true"] {
+        cursor: grab;
+    }
+    .org-node-card[draggable="true"]:active {
+        cursor: grabbing;
+    }
+    .org-node-card.is-dragging {
+        opacity: 0.45;
+        transform: scale(0.96);
+        border: 2px dashed #f59e0b !important;
+        box-shadow: 0 12px 24px -4px rgba(245, 158, 11, 0.3) !important;
+    }
+    body.tree-drag-in-progress .org-slot-empty {
+        border: 2.5px dashed #10b981 !important;
+        background: #f0fdf4 !important;
+        color: #065f46 !important;
+        transform: scale(1.02);
+        box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.25);
+        animation: pulseDropTarget 1.5s infinite;
+    }
+    @keyframes pulseDropTarget {
+        0%, 100% { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); }
+        50% { border-color: #059669; box-shadow: 0 0 0 7px rgba(16, 185, 129, 0.1); }
+    }
+    .org-slot-empty.slot-drag-hover {
+        background: #dcfce7 !important;
+        border: 2.5px solid #059669 !important;
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.35), 0 10px 20px rgba(16, 185, 129, 0.25) !important;
+        transform: scale(1.08) !important;
+    }
+    .org-node-card.card-drag-target-hover {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.35) !important;
+        transform: scale(1.02);
+    }
+
     .circle-node-meta { display: none; }
     .circle-slot-icon { display: none; }
 
@@ -524,6 +561,10 @@
 
             <!-- Center: Legend -->
             <div class="hidden xl:flex items-center gap-2 text-[11px]">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200 font-bold" title="Click and drag any member card onto an available open slot to reposition them visually">
+                    <i class="fas fa-arrows-up-down-left-right text-amber-600 text-[10px]"></i>
+                    <span>Drag & Drop to Move</span>
+                </span>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold"><span class="w-2 h-2 rounded-full bg-blue-600"></span> Root</span>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-semibold"><span class="w-2 h-2 rounded-full bg-sky-500"></span> Left</span>
                 <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-semibold"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Middle</span>
@@ -552,7 +593,7 @@
         </div>
 
         <!-- Scrollable & Grabbable Viewport -->
-        <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}">
+        <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}" data-move-url="{{ admin_route('mlm.tree.move', ['member' => '__MEMBER__']) }}" data-csrf="{{ csrf_token() }}">
             <div id="treePanContainer" class="tree-pan-container">
                 @if(!$initialRoot)
                     <div class="text-center text-slate-400 py-16">
@@ -892,6 +933,124 @@
         </div>
     </div>
 </div>
+
+<!-- Drag & Drop Move Confirmation Modal -->
+<div id="modalDragDropConfirm" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="px-5 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white">
+                    <i class="fas fa-arrows-up-down-left-right text-sm"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm leading-tight">Confirm Drag & Drop Move</h3>
+                    <p class="text-[11px] text-amber-100">Review placement position before applying changes</p>
+                </div>
+            </div>
+            <button type="button" id="btnCloseDragDropModal" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xs transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Content -->
+        <div class="p-5 space-y-4">
+            <!-- Visual Flow Card -->
+            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 flex items-center justify-between gap-3">
+                <!-- Moving Member -->
+                <div class="flex-1 min-w-0">
+                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Moving Member</div>
+                    <div id="ddMovingName" class="font-bold text-slate-900 text-xs truncate mt-0.5"></div>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span id="ddMovingId" class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-200"></span>
+                        <span id="ddMovingDownlines" class="text-[10px] text-slate-500 font-semibold"></span>
+                    </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 border border-amber-200">
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </div>
+
+                <!-- Target Parent -->
+                <div class="flex-1 min-w-0 text-right">
+                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Target Parent</div>
+                    <div id="ddTargetName" class="font-bold text-slate-900 text-xs truncate mt-0.5"></div>
+                    <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                        <span id="ddTargetId" class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-200"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Position Selection / Confirmation -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                    Target Placement Slot:
+                </label>
+                <div id="ddSlotSelectionContainer" class="grid grid-cols-3 gap-2">
+                    <button type="button" class="btn-dd-slot-pick py-2 px-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-1 border-sky-300 bg-sky-50 text-sky-900" data-pos="left">
+                        <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                        <span>Left Slot</span>
+                    </button>
+                    <button type="button" class="btn-dd-slot-pick py-2 px-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-1 border-amber-300 bg-amber-50 text-amber-900" data-pos="middle">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span>Middle Slot</span>
+                    </button>
+                    <button type="button" class="btn-dd-slot-pick py-2 px-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-1 border-emerald-300 bg-emerald-50 text-emerald-900" data-pos="right">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>Right Slot</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Subtree Impact Notice -->
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
+                <i class="fas fa-info-circle text-amber-600 mt-0.5 text-sm shrink-0"></i>
+                <div>
+                    <span class="font-bold">Subtree Relocation:</span>
+                    <span id="ddSubtreeNote">The distributor and their whole 1:3 downline network will move atomically into this slot.</span>
+                </div>
+            </div>
+
+            <!-- Reason Note -->
+            <div>
+                <label for="inputDragDropReason" class="block text-xs font-bold text-slate-700 mb-1">
+                    Movement Audit Reason / Note:
+                </label>
+                <input type="text" id="inputDragDropReason" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition" value="Repositioned via visual drag and drop on placement tree">
+            </div>
+
+            <!-- Error Box -->
+            <div id="ddErrorBox" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-medium"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
+            <button type="button" id="btnCancelDragDropModal" class="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition">
+                Cancel
+            </button>
+            <div class="flex items-center gap-2">
+                <a id="btnAdvancedMovePreview" href="#" target="_blank" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-amber-800 bg-white border border-slate-300 hover:border-amber-300 rounded-lg transition flex items-center gap-1 shadow-2xs" title="Open full movement audit page">
+                    <i class="fas fa-sliders-h text-[10px]"></i> Advanced Move
+                </a>
+                <button type="button" id="btnConfirmDragDropMove" class="px-4 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 rounded-lg shadow-xs transition flex items-center gap-1.5">
+                    <i class="fas fa-check"></i> <span id="ddBtnText">Confirm & Move</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Toast Notification -->
+<div id="toastMoveSuccess" class="hidden fixed top-5 right-5 z-50 max-w-md bg-white border border-emerald-300 shadow-2xl rounded-2xl p-4 flex items-start gap-3 transition-all duration-300">
+    <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+        <i class="fas fa-check-circle text-base"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+        <h4 class="font-bold text-slate-900 text-xs">Movement Completed!</h4>
+        <p id="toastMoveSuccessMessage" class="text-xs text-slate-600 mt-0.5">Distributor repositioned successfully. Refreshing tree view...</p>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -1218,6 +1377,11 @@
                     <div class="flex items-center gap-1.5">
                         ${posBadge(position || member.placement_position)}
                         ${dlBadge}
+                        ${(!isTopRoot && member.customer_id !== 'C22020008') ? `
+                            <span class="drag-badge inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-50 text-amber-800 border border-amber-200 cursor-grab active:cursor-grabbing" title="Drag and drop this member onto an open slot to move them">
+                                <i class="fas fa-grip-vertical text-[7px] text-amber-600"></i> Drag
+                            </span>
+                        ` : ''}
                     </div>
                     ${cardStatusBadge}
                 </div>
@@ -1272,26 +1436,110 @@
             </button>
         `;
 
+        if (!isTopRoot && member.customer_id !== 'C22020008') {
+            card.setAttribute('draggable', 'true');
+            card.classList.add('cursor-grab');
+
+            card.addEventListener('dragstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input')) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedMember = member;
+                draggedCard = card;
+                card.classList.add('is-dragging');
+                document.body.classList.add('tree-drag-in-progress');
+                e.dataTransfer.effectAllowed = 'move';
+                try {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ id: member.id, name: member.name, customer_id: member.customer_id }));
+                } catch(err){}
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('is-dragging');
+                document.body.classList.remove('tree-drag-in-progress');
+                document.querySelectorAll('.org-slot-empty').forEach(el => el.classList.remove('slot-drag-hover'));
+                document.querySelectorAll('.org-node-card').forEach(el => el.classList.remove('card-drag-target-hover'));
+                draggedMember = null;
+                draggedCard = null;
+            });
+
+            card.addEventListener('dragover', (e) => {
+                if (!draggedMember || draggedMember.id === member.id) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                card.classList.add('card-drag-target-hover');
+            });
+
+            card.addEventListener('dragleave', () => {
+                card.classList.remove('card-drag-target-hover');
+            });
+
+            card.addEventListener('drop', (e) => {
+                e.preventDefault();
+                card.classList.remove('card-drag-target-hover');
+                if (!draggedMember || draggedMember.id === member.id) return;
+
+                openDragDropModal({
+                    member: draggedMember,
+                    targetParent: member,
+                    targetPosition: null,
+                    targetPositionLabel: null,
+                });
+            });
+        }
+
         return card;
     };
 
     // Render an Empty/Available Slot Card
-    const renderEmptySlot = (position, label) => {
+    const renderEmptySlot = (position, label, parentMember = null) => {
         const slotEl = document.createElement('div');
         const posClass = position === 'left' ? 'slot-left' : (position === 'middle' ? 'slot-middle' : 'slot-right');
         const iconColor = position === 'left' ? 'text-sky-500' : (position === 'middle' ? 'text-amber-500' : 'text-emerald-500');
 
         slotEl.className = `org-slot-empty ${posClass}`;
+        slotEl.dataset.slotPosition = position;
+        slotEl._parentMember = parentMember;
+        slotEl._slotPosition = position;
+        slotEl._slotLabel = label || position;
+
         slotEl.innerHTML = `
-            <div class="empty-box-content">
+            <div class="empty-box-content pointer-events-none">
                 <i class="fas fa-plus-circle ${iconColor} text-base mb-1"></i>
                 <span class="font-bold text-[11px] text-slate-700">${escapeHtml(label || position)} Slot</span>
                 <span class="text-[10px] text-slate-400">Available Slot</span>
             </div>
-            <div class="circle-slot-icon ${iconColor}">
+            <div class="circle-slot-icon ${iconColor} pointer-events-none">
                 <i class="fas fa-plus"></i>
             </div>
         `;
+
+        slotEl.addEventListener('dragover', (e) => {
+            if (!draggedMember) return;
+            if (parentMember && draggedMember.id === parentMember.id) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            slotEl.classList.add('slot-drag-hover');
+        });
+
+        slotEl.addEventListener('dragleave', () => {
+            slotEl.classList.remove('slot-drag-hover');
+        });
+
+        slotEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            slotEl.classList.remove('slot-drag-hover');
+            if (!draggedMember || !parentMember) return;
+
+            openDragDropModal({
+                member: draggedMember,
+                targetParent: parentMember,
+                targetPosition: position,
+                targetPositionLabel: label || position,
+            });
+        });
+
         return slotEl;
     };
 
@@ -1338,6 +1586,7 @@
     // Render slots into branch
     const renderSlots = (branch, slots) => {
         branch._childrenContainer.replaceChildren();
+        const parentMember = branch._card?._memberData;
 
         (slots || []).forEach((slot) => {
             const slotCol = document.createElement('div');
@@ -1347,7 +1596,7 @@
                 const childBranch = renderBranch(slot.member, slot.position);
                 slotCol.append(childBranch);
             } else {
-                const emptySlot = renderEmptySlot(slot.position, slot.position_label);
+                const emptySlot = renderEmptySlot(slot.position, slot.position_label, parentMember);
                 slotCol.append(emptySlot);
             }
 
@@ -2572,7 +2821,7 @@
     let startX, startY, scrollLeft, scrollTop;
 
     viewport.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.org-node-card') || e.target.closest('button') || e.target.closest('a')) return;
+        if (e.target.closest('.org-node-card') || e.target.closest('.org-slot-empty') || e.target.closest('button') || e.target.closest('a')) return;
         isMouseDown = true;
         startX = e.pageX - viewport.offsetLeft;
         startY = e.pageY - viewport.offsetTop;
@@ -2711,6 +2960,166 @@
             const url = btn.dataset.url;
             if (url) window.location.href = url;
         });
+    });
+
+    // Drag & Drop Placement Repositioning Logic
+    let draggedMember = null;
+    let draggedCard = null;
+    let dragDropContext = null;
+
+    const modalDragDrop = document.getElementById('modalDragDropConfirm');
+    const btnCloseDragDrop = document.getElementById('btnCloseDragDropModal');
+    const btnCancelDragDrop = document.getElementById('btnCancelDragDropModal');
+    const btnConfirmDragDrop = document.getElementById('btnConfirmDragDropMove');
+    const btnAdvancedMove = document.getElementById('btnAdvancedMovePreview');
+    const ddMovingName = document.getElementById('ddMovingName');
+    const ddMovingId = document.getElementById('ddMovingId');
+    const ddMovingDownlines = document.getElementById('ddMovingDownlines');
+    const ddTargetName = document.getElementById('ddTargetName');
+    const ddTargetId = document.getElementById('ddTargetId');
+    const ddSlotButtons = document.querySelectorAll('.btn-dd-slot-pick');
+    const ddErrorBox = document.getElementById('ddErrorBox');
+    const inputDragDropReason = document.getElementById('inputDragDropReason');
+    const ddBtnText = document.getElementById('ddBtnText');
+    const toastMoveSuccess = document.getElementById('toastMoveSuccess');
+    const toastMoveSuccessMsg = document.getElementById('toastMoveSuccessMessage');
+
+    const openDragDropModal = (context) => {
+        dragDropContext = context;
+        const { member, targetParent, targetPosition } = context;
+
+        ddMovingName.textContent = member.name || 'Member';
+        ddMovingId.textContent = member.customer_id;
+        ddMovingDownlines.textContent = `${member.downline_count ?? 0} Downlines`;
+
+        ddTargetName.textContent = targetParent.name || 'Parent Member';
+        ddTargetId.textContent = targetParent.customer_id;
+
+        // Reset slot selection
+        let activePos = targetPosition || 'left';
+        dragDropContext.targetPosition = activePos;
+
+        ddSlotButtons.forEach(btn => {
+            const pos = btn.dataset.pos;
+            if (pos === activePos) {
+                btn.classList.add('ring-2', 'ring-offset-1', 'scale-105');
+                if (pos === 'left') btn.classList.add('ring-sky-500');
+                if (pos === 'middle') btn.classList.add('ring-amber-500');
+                if (pos === 'right') btn.classList.add('ring-emerald-500');
+            } else {
+                btn.classList.remove('ring-2', 'ring-offset-1', 'scale-105', 'ring-sky-500', 'ring-amber-500', 'ring-emerald-500');
+            }
+        });
+
+        ddErrorBox.classList.add('hidden');
+        ddErrorBox.textContent = '';
+        inputDragDropReason.value = `Repositioned ${member.name} under ${targetParent.name} via visual drag-and-drop on placement tree`;
+
+        const advancedUrl = `{{ admin_route('mlm.tree.move.form', ':id') }}`.replace(':id', member.id);
+        btnAdvancedMove.href = advancedUrl;
+
+        btnConfirmDragDrop.disabled = false;
+        ddBtnText.textContent = 'Confirm & Move';
+
+        modalDragDrop.classList.remove('hidden');
+    };
+
+    const closeDragDropModal = () => {
+        if (!modalDragDrop) return;
+        modalDragDrop.classList.add('hidden');
+        dragDropContext = null;
+    };
+
+    btnCloseDragDrop?.addEventListener('click', closeDragDropModal);
+    btnCancelDragDrop?.addEventListener('click', closeDragDropModal);
+
+    modalDragDrop?.addEventListener('click', (e) => {
+        if (e.target === modalDragDrop) closeDragDropModal();
+    });
+
+    ddSlotButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!dragDropContext) return;
+            const newPos = btn.dataset.pos;
+            dragDropContext.targetPosition = newPos;
+
+            ddSlotButtons.forEach(b => {
+                b.classList.remove('ring-2', 'ring-offset-1', 'scale-105', 'ring-sky-500', 'ring-amber-500', 'ring-emerald-500');
+            });
+            btn.classList.add('ring-2', 'ring-offset-1', 'scale-105');
+            if (newPos === 'left') btn.classList.add('ring-sky-500');
+            if (newPos === 'middle') btn.classList.add('ring-amber-500');
+            if (newPos === 'right') btn.classList.add('ring-emerald-500');
+        });
+    });
+
+    btnConfirmDragDrop?.addEventListener('click', async () => {
+        if (!dragDropContext) return;
+        const { member, targetParent } = dragDropContext;
+        const selectedPos = dragDropContext.targetPosition || 'left';
+        const reason = inputDragDropReason.value.trim() || 'Repositioned via visual drag and drop on placement tree';
+
+        btnConfirmDragDrop.disabled = true;
+        ddBtnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Moving...';
+        ddErrorBox.classList.add('hidden');
+
+        try {
+            const moveUrlTemplate = viewport.dataset.moveUrl;
+            const moveUrl = moveUrlTemplate.replace('__MEMBER__', member.id);
+            const csrfToken = viewport.dataset.csrf;
+
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const effectiveAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+
+            const resp = await fetch(moveUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({
+                    new_parent_id: targetParent.id,
+                    new_position: selectedPos,
+                    reason: reason,
+                    effective_at: effectiveAt,
+                    confirmed: true,
+                }),
+            });
+
+            const data = await resp.json();
+
+            if (!resp.ok) {
+                let errText = data.message || 'Movement validation failed.';
+                if (data.errors) {
+                    const firstErr = Object.values(data.errors).flat()[0];
+                    if (firstErr) errText = firstErr;
+                }
+                ddErrorBox.textContent = errText;
+                ddErrorBox.classList.remove('hidden');
+                btnConfirmDragDrop.disabled = false;
+                ddBtnText.textContent = 'Confirm & Move';
+                return;
+            }
+
+            // Success!
+            closeDragDropModal();
+
+            if (toastMoveSuccess) {
+                toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot! Reloading tree hierarchy...`;
+                toastMoveSuccess.classList.remove('hidden');
+            }
+
+            setTimeout(() => {
+                window.location.reload();
+            }, 800);
+        } catch (err) {
+            ddErrorBox.textContent = 'Network or server error while executing move. Please try again or use the Advanced Move form.';
+            ddErrorBox.classList.remove('hidden');
+            btnConfirmDragDrop.disabled = false;
+            ddBtnText.textContent = 'Confirm & Move';
+        }
     });
 
     // Initial Mount

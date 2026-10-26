@@ -364,7 +364,7 @@ class MlmMemberController extends Controller
         }
     }
 
-    public function move(MoveMlmMemberRequest $request, Member $member): RedirectResponse
+    public function move(MoveMlmMemberRequest $request, Member $member): RedirectResponse|JsonResponse
     {
         abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
         if (! $request->boolean('confirmed')) {
@@ -373,7 +373,16 @@ class MlmMemberController extends Controller
             ]);
         }
 
-        $this->movementService->move($member, $request->validated(), $request->user());
+        $movement = $this->movementService->move($member, $request->validated(), $request->user());
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Placement subtree moved successfully.',
+                'movement_id' => $movement->id,
+                'target_url' => admin_route('mlm.tree.index', ['root' => $member->id]),
+            ]);
+        }
 
         return redirect()->route('admin.mlm.members.show', $member)
             ->with('success', 'Placement subtree moved successfully.');
