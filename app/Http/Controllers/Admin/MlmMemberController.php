@@ -367,7 +367,7 @@ class MlmMemberController extends Controller
     public function move(MoveMlmMemberRequest $request, Member $member): RedirectResponse|JsonResponse
     {
         abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
-        if (! $request->boolean('confirmed')) {
+        if (! $request->boolean('confirmed') && $request->input('confirmed') != '1') {
             if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
@@ -406,12 +406,14 @@ class MlmMemberController extends Controller
                 'new_position' => $movement->new_position,
                 'path' => $newPath,
                 'member' => $this->treeService->memberPayload($freshMember),
-                'target_url' => admin_route('mlm.tree.index', ['root' => $member->id]),
+                'target_url' => admin_route('mlm.tree.index', ['root' => $movement->new_parent_id ?? $member->id]),
             ]);
         }
 
-        return redirect()->route('admin.mlm.members.show', $member)
-            ->with('success', 'Placement subtree moved successfully.');
+        $newParent = Member::with('user')->find($request->input('new_parent_id'));
+
+        return redirect()->route('admin.mlm.tree.index', ['root' => $newParent?->id ?? $member->id])
+            ->with('success', "Placement subtree for {$member->user?->name} ({$member->customer_id}) was successfully moved to {$newParent?->user?->name} ({$newParent?->customer_id}) / " . ucfirst($request->input('new_position')) . " slot.");
     }
 
     public function create(): View
@@ -714,6 +716,10 @@ class MlmMemberController extends Controller
     private function can(string $permission): bool
     {
         $user = request()->user();
+
+        if ($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->hasRole('Super Admin') || $user->hasRole('super_admin'))) {
+            return true;
+        }
 
         if ($user?->hasPermission($permission)) {
             return true;

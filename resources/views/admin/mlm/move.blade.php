@@ -160,14 +160,22 @@
                     </div>
 
                     <div>
-                        <label for="movementReason" class="block font-semibold text-slate-700 mb-1.5">Mandatory movement reason</label>
-                        <textarea name="reason" id="movementReason" rows="3" maxlength="2000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition @error('reason') border-rose-400 bg-rose-50/30 @enderror" placeholder="State operational reason for relocation..." required>{{ old('reason') }}</textarea>
+                        <label for="movementReason" class="block font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+                            <span>Movement Audit Reason / Note</span>
+                            <span class="text-[11px] font-normal text-slate-400">Pre-filled with audit note</span>
+                        </label>
+                        <textarea name="reason" id="movementReason" rows="2" maxlength="2000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition @error('reason') border-rose-400 bg-rose-50/30 @enderror" placeholder="State operational reason for relocation...">{{ old('reason', 'Administrative placement tree reorganization by Super Admin') }}</textarea>
                         @error('reason')<div class="text-rose-600 text-xs mt-1">{{ $message }}</div>@enderror
                     </div>
 
-                    <button type="button" id="previewButton" class="w-full px-4 py-2.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5">
-                        <i class="fas fa-eye"></i> Preview Movement
-                    </button>
+                    <div class="flex items-center gap-2 pt-1">
+                        <button type="button" id="previewButton" class="flex-1 px-4 py-2.5 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5">
+                            <i class="fas fa-eye"></i> Preview Movement
+                        </button>
+                        <button type="button" id="directMoveButton" class="px-5 py-2.5 font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5 whitespace-nowrap">
+                            <i class="fas fa-arrows-split-up-and-left"></i> Relocate Now &rarr;
+                        </button>
+                    </div>
                     <div id="movementError" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs"></div>
                 </form>
             </div>
@@ -500,16 +508,43 @@
 
     const previewMovement = async () => {
         clearError();
-        if (!parentId.value || !position.value || !document.getElementById('movementReason').value.trim()) {
-            showError('Please select a parent, available position slot, and provide an audit reason before previewing.');
+
+        if (!parentId.value) {
+            showError('Please search and select a Target Placement Parent from the suggestions list.');
+            parentSearch.focus();
             return;
         }
+
+        if (!position.value) {
+            showError('Please select an available placement slot (Left, Middle, or Right).');
+            position.focus();
+            return;
+        }
+
+        const reasonInput = document.getElementById('movementReason');
+        if (!reasonInput.value.trim()) {
+            reasonInput.value = 'Administrative placement tree reorganization by Super Admin';
+        }
+
         previewButton.disabled = true;
+        previewButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Calculating Impact...`;
         try {
             const body = new URLSearchParams(new FormData(form));
-            const response = await fetch(previewUrl, { method: 'POST', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+            const response = await fetch(previewUrl, { 
+                method: 'POST', 
+                headers: { 
+                    'Accept': 'application/json', 
+                    'X-CSRF-TOKEN': csrf, 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded' 
+                }, 
+                body 
+            });
             const payload = await response.json();
-            if (!response.ok) throw new Error(Object.values(payload.errors || {}).flat()[0] || payload.message || 'Movement preview failed.');
+            if (!response.ok) {
+                const errMsg = Object.values(payload.errors || {}).flat()[0] || payload.message || 'Movement preview failed.';
+                throw new Error(errMsg);
+            }
             const data = payload.data;
             document.getElementById('previewCount').textContent = data.affected_subtree_count + ' members';
             document.getElementById('previewDepth').textContent = 'Level ' + data.new_depth;
@@ -519,16 +554,61 @@
             document.getElementById('previewNewPath').innerHTML = renderPath(data.new_path);
             preview.classList.remove('hidden');
             preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } catch (requestError) { showError(requestError.message || 'Movement preview failed.'); }
-        finally { previewButton.disabled = false; }
+        } catch (requestError) { 
+            showError(requestError.message || 'Movement preview failed.'); 
+        } finally { 
+            previewButton.disabled = false; 
+            previewButton.innerHTML = `<i class="fas fa-eye mr-1"></i> Preview Movement`;
+        }
+    };
+
+    const directMove = () => {
+        clearError();
+
+        if (!parentId.value) {
+            showError('Please search and select a Target Placement Parent from the suggestions list.');
+            parentSearch.focus();
+            return;
+        }
+
+        if (!position.value) {
+            showError('Please select an available placement slot (Left, Middle, or Right).');
+            position.focus();
+            return;
+        }
+
+        const reasonInput = document.getElementById('movementReason');
+        if (!reasonInput.value.trim()) {
+            reasonInput.value = 'Administrative placement tree reorganization by Super Admin';
+        }
+
+        const slotName = position.options[position.selectedIndex]?.text || position.value;
+        const parentName = parentSearch.value || 'target parent';
+
+        if (window.confirm(`Are you sure you want to move this member and their complete subtree under ${parentName} into the ${slotName}?`)) {
+            confirmField.value = '1';
+            const directBtn = document.getElementById('directMoveButton');
+            if (directBtn) {
+                directBtn.disabled = true;
+                directBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Relocating...`;
+            }
+            form.submit();
+        }
     };
 
     previewButton.addEventListener('click', previewMovement);
+    document.getElementById('directMoveButton')?.addEventListener('click', directMove);
+
     document.getElementById('finalConfirmButton').addEventListener('click', () => {
-        if (window.confirm('Are you sure you want to relocate this member and their complete subtree?')) {
-            confirmField.value = '1';
-            form.submit();
+        confirmField.value = '1';
+        const reasonInput = document.getElementById('movementReason');
+        if (!reasonInput.value.trim()) {
+            reasonInput.value = 'Administrative placement tree reorganization by Super Admin';
         }
+        const confirmBtn = document.getElementById('finalConfirmButton');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Saving Movement...`;
+        form.submit();
     });
 })();
 </script>

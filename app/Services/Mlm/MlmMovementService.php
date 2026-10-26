@@ -291,10 +291,15 @@ class MlmMovementService
                 return $path;
             }
 
-            $current = Member::query()->find($current->placement_parent_id);
+            $parent = Member::query()->find($current->placement_parent_id);
+            if (! $parent) {
+                return $path;
+            }
+
+            $current = $parent;
         }
 
-        return null;
+        return ! empty($path) ? $path : null;
     }
 
     private function pathPayload(?array $path): array
