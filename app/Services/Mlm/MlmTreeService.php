@@ -423,16 +423,21 @@ class MlmTreeService
             'C25070007','C25070008','C25070009','C25070010',
             'C25070011','C25070012','C25070013','C25070014','C25070015',
         ];
+        $isPgsql = DB::connection()->getDriverName() === 'pgsql';
+        $like = $isPgsql ? 'ilike' : 'like';
+        $lowerTerm = strtolower($term);
 
         return Member::query()
             ->with(['user', 'placementParent.user', 'assignedAppreciationSlots'])
             ->where('is_idle_slot', false)
-            ->whereHas('user', function ($q) use ($term, $idleCodes) {
+            ->whereHas('user', function ($q) use ($term, $idleCodes, $like, $lowerTerm) {
                 $q->whereNotIn('mlm_member_id', $idleCodes)
-                    ->where(function ($sub) use ($term) {
-                        $sub->where('mlm_member_id', 'like', "%{$term}%")
-                            ->orWhere('name', 'like', "%{$term}%")
-                            ->orWhere('phone', 'like', "%{$term}%");
+                    ->where(function ($sub) use ($term, $like, $lowerTerm) {
+                        $sub->where('mlm_member_id', $like, "%{$term}%")
+                            ->orWhere('name', $like, "%{$term}%")
+                            ->orWhere('phone', $like, "%{$term}%")
+                            ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerTerm}%"])
+                            ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerTerm}%"]);
                     });
             })
             ->limit(15)
@@ -458,13 +463,19 @@ class MlmTreeService
 
     public function search(string $term): array
     {
+        $isPgsql = DB::connection()->getDriverName() === 'pgsql';
+        $like = $isPgsql ? 'ilike' : 'like';
+        $lowerTerm = strtolower($term);
+
         return Member::query()
             ->with(['user', 'sponsor.user', 'placementParent.user'])
-            ->whereHas('user', function ($query) use ($term): void {
-                $query->where('mlm_member_id', 'like', "%{$term}%")
-                    ->orWhere('name', 'like', "%{$term}%")
-                    ->orWhere('phone', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
+            ->whereHas('user', function ($query) use ($term, $like, $lowerTerm): void {
+                $query->where('mlm_member_id', $like, "%{$term}%")
+                    ->orWhere('name', $like, "%{$term}%")
+                    ->orWhere('phone', $like, "%{$term}%")
+                    ->orWhere('email', $like, "%{$term}%")
+                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerTerm}%"])
+                    ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerTerm}%"]);
             })
             ->orderBy('id')
             ->limit(25)

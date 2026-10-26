@@ -790,6 +790,19 @@
                 </nav>
             </div>
 
+            <!-- Center: Global Admin Search Bar with Live Suggestions Dropdown -->
+            <div class="relative flex-1 max-w-sm mx-3 hidden lg:block" id="adminGlobalSearchContainer">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="search" id="adminGlobalSearchInput" class="w-full pl-8 pr-8 py-1.5 text-xs bg-slate-100/90 hover:bg-slate-100 focus:bg-white border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-lg outline-none transition" placeholder="Search members, products, orders..." autocomplete="off">
+                    <button type="button" id="adminGlobalSearchClear" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs" title="Clear search">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+                <!-- Instant Live Autocomplete Dropdown -->
+                <div id="adminGlobalSearchResults" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200/90 max-h-96 overflow-y-auto z-50 text-xs divide-y divide-slate-100"></div>
+            </div>
+
             <!-- Right Controls -->
             <div class="flex items-center gap-3">
                 <a href="{{ route('home') }}" target="_blank" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 bg-slate-100/80 hover:bg-slate-200/70 rounded-lg transition">
@@ -1003,6 +1016,161 @@
         if (sidebarToggle) sidebarToggle.addEventListener('click', openMobileSidebar);
         if (sidebarClose) sidebarClose.addEventListener('click', closeMobileSidebar);
         if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeMobileSidebar);
+
+        // Admin Global Search Live Autocomplete Logic
+        (() => {
+            const input = document.getElementById('adminGlobalSearchInput');
+            const clearBtn = document.getElementById('adminGlobalSearchClear');
+            const results = document.getElementById('adminGlobalSearchResults');
+            const searchUrl = @json(admin_route('search'));
+            let debounce = null;
+
+            if (!input || !results) return;
+
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+            })[character]);
+
+            const performGlobalSearch = async () => {
+                const q = input.value.trim();
+                if (!q) {
+                    results.classList.add('hidden');
+                    clearBtn?.classList.add('hidden');
+                    return;
+                }
+
+                clearBtn?.classList.remove('hidden');
+
+                if (q.length < 1) {
+                    results.classList.add('hidden');
+                    return;
+                }
+
+                results.innerHTML = `
+                    <div class="p-3 text-slate-500 text-center flex items-center justify-center gap-2">
+                        <i class="fas fa-spinner fa-spin text-orange-600"></i> Searching platform...
+                    </div>`;
+                results.classList.remove('hidden');
+
+                try {
+                    const response = await fetch(`${searchUrl}?q=${encodeURIComponent(q)}`, {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+                    if (!response.ok) throw new Error('Search request failed');
+                    const data = await response.json();
+                    const res = data.results || {};
+
+                    const members = res.members || [];
+                    const products = res.products || [];
+                    const orders = res.orders || [];
+                    const customers = res.customers || [];
+
+                    const totalCount = members.length + products.length + orders.length + customers.length;
+
+                    if (totalCount === 0) {
+                        results.innerHTML = `<div class="p-4 text-center text-slate-400">No matching members, products, or orders found.</div>`;
+                        results.classList.remove('hidden');
+                        return;
+                    }
+
+                    let html = '';
+
+                    // Members / Distributors
+                    if (members.length > 0) {
+                        html += `<div class="px-3 py-1.5 bg-orange-50/80 text-[10px] font-bold text-orange-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-sitemap text-orange-600"></i> Direct Selling Members (${members.length})</div>`;
+                        members.forEach(m => {
+                            html += `
+                            <a href="${m.url}" class="p-2.5 hover:bg-orange-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                <div>
+                                    <div class="font-bold text-slate-900">${escapeHtml(m.name)}</div>
+                                    <div class="text-[11px] text-slate-500 font-mono"><span class="text-blue-600 font-semibold">${escapeHtml(m.customer_id)}</span> ${m.phone ? `&bull; ${escapeHtml(m.phone)}` : ''}</div>
+                                </div>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">${escapeHtml(m.status || 'Active')}</span>
+                            </a>`;
+                        });
+                    }
+
+                    // Products
+                    if (products.length > 0) {
+                        html += `<div class="px-3 py-1.5 bg-amber-50/80 text-[10px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-boxes-stacked text-amber-600"></i> Products Catalog (${products.length})</div>`;
+                        products.forEach(p => {
+                            html += `
+                            <a href="${p.url}" class="p-2.5 hover:bg-amber-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                <div>
+                                    <div class="font-bold text-slate-900">${escapeHtml(p.name)}</div>
+                                    <div class="text-[11px] text-slate-500">SKU: <span class="font-mono text-slate-700 font-semibold">${escapeHtml(p.sku || 'N/A')}</span> &bull; Stock: ${p.stock_qty ?? 100}</div>
+                                </div>
+                                <span class="font-bold text-slate-900 text-xs">₹${p.price}</span>
+                            </a>`;
+                        });
+                    }
+
+                    // Orders
+                    if (orders.length > 0) {
+                        html += `<div class="px-3 py-1.5 bg-blue-50/80 text-[10px] font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-bag-shopping text-blue-600"></i> Orders (${orders.length})</div>`;
+                        orders.forEach(o => {
+                            html += `
+                            <a href="${o.url}" class="p-2.5 hover:bg-blue-50/50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                <div>
+                                    <div class="font-bold text-slate-900">Order #${escapeHtml(o.order_num)}</div>
+                                    <div class="text-[11px] text-slate-500">${escapeHtml(o.customer_name)} &bull; ${escapeHtml(o.status)}</div>
+                                </div>
+                                <span class="font-bold text-slate-900 text-xs">₹${o.total}</span>
+                            </a>`;
+                        });
+                    }
+
+                    // Customers
+                    if (customers.length > 0) {
+                        html += `<div class="px-3 py-1.5 bg-slate-100 text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5"><i class="fas fa-users text-slate-600"></i> Customers (${customers.length})</div>`;
+                        customers.forEach(c => {
+                            html += `
+                            <a href="${c.url}" class="p-2.5 hover:bg-slate-50 flex items-center justify-between gap-2 text-slate-800 transition no-underline border-b border-slate-50 last:border-0">
+                                <div>
+                                    <div class="font-bold text-slate-900">${escapeHtml(c.name)}</div>
+                                    <div class="text-[11px] text-slate-500">${escapeHtml(c.email || c.phone || '')}</div>
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">${escapeHtml(c.role || 'User')}</span>
+                            </a>`;
+                        });
+                    }
+
+                    results.innerHTML = html;
+                    results.classList.remove('hidden');
+                } catch (err) {
+                    results.innerHTML = `<div class="p-3 text-rose-600 text-center">${escapeHtml(err.message || 'Search failed')}</div>`;
+                    results.classList.remove('hidden');
+                }
+            };
+
+            input.addEventListener('input', () => {
+                if (debounce) clearTimeout(debounce);
+                debounce = setTimeout(performGlobalSearch, 250);
+            });
+
+            clearBtn?.addEventListener('click', () => {
+                input.value = '';
+                clearBtn.classList.add('hidden');
+                results.classList.add('hidden');
+                input.focus();
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (debounce) clearTimeout(debounce);
+                    performGlobalSearch();
+                } else if (e.key === 'Escape') {
+                    results.classList.add('hidden');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!results.contains(e.target) && e.target !== input && e.target !== clearBtn) {
+                    results.classList.add('hidden');
+                }
+            });
+        })();
     </script>
     
     @stack('scripts')

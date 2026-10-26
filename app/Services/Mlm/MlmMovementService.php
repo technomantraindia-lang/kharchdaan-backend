@@ -34,16 +34,21 @@ class MlmMovementService
     public function searchParents(Member $movingMember, string $term): array
     {
         $descendantIds = $this->subtree($movingMember)->pluck('id')->all();
+        $isPgsql = DB::connection()->getDriverName() === 'pgsql';
+        $like = $isPgsql ? 'ilike' : 'like';
+        $lowerTerm = strtolower($term);
 
         return Member::query()
             ->with('user')
             ->where('status', Member::STATUS_ACTIVE)
             ->whereNotIn('id', $descendantIds)
-            ->whereHas('user', function ($query) use ($term): void {
-                $query->where('mlm_member_id', 'like', "%{$term}%")
-                    ->orWhere('name', 'like', "%{$term}%")
-                    ->orWhere('phone', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
+            ->whereHas('user', function ($query) use ($term, $like, $lowerTerm): void {
+                $query->where('mlm_member_id', $like, "%{$term}%")
+                    ->orWhere('name', $like, "%{$term}%")
+                    ->orWhere('phone', $like, "%{$term}%")
+                    ->orWhere('email', $like, "%{$term}%")
+                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerTerm}%"])
+                    ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerTerm}%"]);
             })
             ->orderBy('id')
             ->limit(25)
@@ -52,6 +57,7 @@ class MlmMovementService
                 'id' => $parent->id,
                 'customer_id' => $parent->customer_id,
                 'name' => $parent->user?->name ?? 'Unnamed member',
+                'phone' => $parent->user?->phone ?? '',
                 'status' => $parent->status,
                 'available_positions' => $this->availablePositions($movingMember, $parent),
             ])

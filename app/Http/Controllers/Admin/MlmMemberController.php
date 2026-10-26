@@ -42,15 +42,23 @@ class MlmMemberController extends Controller
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = trim((string) $request->input('search'));
 
-                $query->where(function ($memberQuery) use ($search): void {
-                    $memberQuery->whereHas('user', function ($userQuery) use ($search): void {
-                        $userQuery->where('mlm_member_id', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%")
-                            ->orWhere('phone', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                    })->orWhereHas('sponsor.user', function ($sponsorQuery) use ($search): void {
-                        $sponsorQuery->where('mlm_member_id', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%");
+                $isPgsql = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql';
+                $like = $isPgsql ? 'ilike' : 'like';
+                $lowerSearch = strtolower($search);
+
+                $query->where(function ($memberQuery) use ($search, $like, $lowerSearch): void {
+                    $memberQuery->whereHas('user', function ($userQuery) use ($search, $like, $lowerSearch): void {
+                        $userQuery->where('mlm_member_id', $like, "%{$search}%")
+                            ->orWhere('name', $like, "%{$search}%")
+                            ->orWhere('phone', $like, "%{$search}%")
+                            ->orWhere('email', $like, "%{$search}%")
+                            ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerSearch}%"])
+                            ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerSearch}%"]);
+                    })->orWhereHas('sponsor.user', function ($sponsorQuery) use ($search, $like, $lowerSearch): void {
+                        $sponsorQuery->where('mlm_member_id', $like, "%{$search}%")
+                            ->orWhere('name', $like, "%{$search}%")
+                            ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerSearch}%"])
+                            ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerSearch}%"]);
                     });
                 });
             })
@@ -324,11 +332,19 @@ class MlmMemberController extends Controller
     {
         abort_unless($this->can('mlm.move'), 403, 'Unauthorized action.');
         $validated = $request->validate([
-            'q' => ['required', 'string', 'min:2', 'max:100'],
+            'q' => ['required', 'string', 'min:1', 'max:100'],
         ]);
 
+        $term = trim($validated['q']);
+        $candidates = $this->movementService->searchParents($member, $term);
+        $isRoot = $member->placement_parent_id === null;
+
         return response()->json([
-            'data' => $this->movementService->searchParents($member, trim($validated['q'])),
+            'data' => $candidates,
+            'is_root' => $isRoot,
+            'message' => empty($candidates) && $isRoot
+                ? 'This member is the Top Root Node of the 1:3 matrix. All network members belong to their downline subtree and cannot be selected as a parent without creating a cycle.'
+                : (empty($candidates) ? 'No active placement parent with an open slot was found.' : null),
         ]);
     }
 

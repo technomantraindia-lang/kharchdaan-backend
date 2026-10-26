@@ -18,11 +18,19 @@ class ProductApiController extends Controller
         // 1. Search Query
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhereHas('brand', fn ($bq) => $bq->where('name', 'like', "%{$search}%"));
+            $isPgsql = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql';
+            $like = $isPgsql ? 'ilike' : 'like';
+            $lowerSearch = strtolower($search);
+
+            $query->where(function ($q) use ($search, $like, $lowerSearch) {
+                $q->where('name', $like, "%{$search}%")
+                    ->orWhere('sku', $like, "%{$search}%")
+                    ->orWhere('description', $like, "%{$search}%")
+                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerSearch}%"])
+                    ->orWhereRaw('LOWER(sku) LIKE ?', ["%{$lowerSearch}%"])
+                    ->orWhereHas('brand', fn ($bq) => $bq->where('name', $like, "%{$search}%")->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerSearch}%"]))
+                    ->orWhereHas('category', fn ($cq) => $cq->where('name', $like, "%{$search}%")->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerSearch}%"]))
+                    ->orWhereHas('subCategory', fn ($scq) => $scq->where('name', $like, "%{$search}%")->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerSearch}%"]));
             });
         }
 

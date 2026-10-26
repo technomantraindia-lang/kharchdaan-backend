@@ -401,17 +401,23 @@
             </div>
 
             <div class="lg:col-span-4 relative">
-                <label for="treeMemberSearch" class="block text-xs font-semibold text-slate-700 mb-1.5">Search & Jump to Member</label>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="treeMemberSearch" class="block text-xs font-semibold text-slate-700">Search & Jump to Member</label>
+                    <span class="text-[10px] text-slate-400 font-normal">Live suggestions as you type</span>
+                </div>
                 <div class="flex gap-2">
                     <div class="relative flex-1">
                         <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                        <input id="treeMemberSearch" type="search" class="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" placeholder="Customer ID, name, phone or email">
+                        <input id="treeMemberSearch" type="search" class="w-full pl-8 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" placeholder="Customer ID (e.g. C22...), name, phone..." autocomplete="off">
+                        <button type="button" id="treeSearchClear" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs" title="Clear">
+                            <i class="fas fa-times-circle"></i>
+                        </button>
                     </div>
-                    <button id="treeSearchButton" type="button" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition">
-                        Find
+                    <button id="treeSearchButton" type="button" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition flex items-center gap-1">
+                        <i class="fas fa-search"></i> Find
                     </button>
                 </div>
-                <div id="treeSearchResults" class="tree-search-results hidden bg-white rounded-xl shadow-xl border border-slate-200 mt-1 max-h-60 overflow-y-auto z-40 text-xs absolute w-full left-0"></div>
+                <div id="treeSearchResults" class="tree-search-results hidden bg-white rounded-xl shadow-2xl border border-slate-200 mt-1 max-h-72 overflow-y-auto z-50 text-xs absolute w-full left-0 divide-y divide-slate-100"></div>
             </div>
 
             <div class="lg:col-span-3 text-xs bg-blue-50/60 p-3 rounded-lg border border-blue-100">
@@ -2198,13 +2204,30 @@
         }
     });
 
-    // Search Member
+    // Search Member with Live Suggestions & Debounce
+    const treeSearchClear = document.getElementById('treeSearchClear');
+    let treeSearchDebounce = null;
+
     const executeSearch = async () => {
         const term = searchInput.value.trim();
-        if (term.length < 2) {
+        if (!term) {
+            searchResults.classList.add('hidden');
+            treeSearchClear?.classList.add('hidden');
+            return;
+        }
+
+        treeSearchClear?.classList.remove('hidden');
+
+        if (term.length < 1) {
             searchResults.classList.add('hidden');
             return;
         }
+
+        searchResults.innerHTML = `
+            <div class="p-3 text-slate-500 text-center flex items-center justify-center gap-2">
+                <i class="fas fa-spinner fa-spin text-blue-600"></i> Searching tree network...
+            </div>`;
+        searchResults.classList.remove('hidden');
 
         try {
             const response = await fetch(`${viewport.dataset.searchUrl}?q=${encodeURIComponent(term)}`, {
@@ -2217,7 +2240,7 @@
             searchCache = Array.isArray(results) ? results : [];
 
             if (!searchCache.length) {
-                searchResults.innerHTML = '<div class="p-3 text-slate-400 text-center">No member matches found</div>';
+                searchResults.innerHTML = '<div class="p-4 text-slate-400 text-center font-medium">No matching distributor found in tree</div>';
                 searchResults.classList.remove('hidden');
                 return;
             }
@@ -2226,26 +2249,56 @@
                 const member = item.member || item;
                 const dl = member.downline_count !== undefined ? `${member.downline_count} DL` : '';
                 return `
-                <div class="p-3 hover:bg-orange-50/70 cursor-pointer border-b border-slate-100 last:border-0 transition flex items-center justify-between gap-2" data-result-id="${member.id}">
+                <div class="p-3 hover:bg-orange-50/80 cursor-pointer border-b border-slate-100 last:border-0 transition flex items-center justify-between gap-2" data-result-id="${member.id}">
                     <div class="min-w-0">
                         <div class="font-bold text-slate-900 text-xs truncate">${escapeHtml(member.name)}</div>
-                        <div class="font-mono text-blue-600 text-[11px] truncate">${escapeHtml(member.customer_id)} &bull; ${escapeHtml(member.phone || '')} &bull; ${escapeHtml(member.city || 'Gujarat')}</div>
+                        <div class="font-mono text-blue-600 text-[11px] truncate mt-0.5">
+                            <span class="font-bold">${escapeHtml(member.customer_id)}</span>
+                            ${member.phone ? `&bull; <span class="text-slate-600 font-sans">${escapeHtml(member.phone)}</span>` : ''}
+                            &bull; <span class="text-slate-500 font-sans">${escapeHtml(member.city || 'Active Member')}</span>
+                        </div>
                     </div>
                     <div class="flex-shrink-0 text-right">
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800">
-                            <i class="fas fa-sitemap text-[9px]"></i> ${escapeHtml(dl || 'View Tree')}
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-orange-100 text-orange-900 border border-orange-200 shadow-2xs hover:bg-orange-600 hover:text-white transition">
+                            <i class="fas fa-sitemap text-[9px]"></i> ${escapeHtml(dl || 'Jump & View')}
                         </span>
                     </div>
                 </div>`;
             }).join('');
             searchResults.classList.remove('hidden');
         } catch (error) {
-            showMessage(error.message || 'Search failed.');
+            searchResults.innerHTML = `<div class="p-3 text-rose-600 text-center">${escapeHtml(error.message || 'Search failed.')}</div>`;
+            searchResults.classList.remove('hidden');
         }
     };
 
-    searchButton?.addEventListener('click', executeSearch);
-    searchInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); executeSearch(); } });
+    // Live Debounced Input
+    searchInput?.addEventListener('input', () => {
+        if (treeSearchDebounce) clearTimeout(treeSearchDebounce);
+        treeSearchDebounce = setTimeout(executeSearch, 250);
+    });
+
+    treeSearchClear?.addEventListener('click', () => {
+        searchInput.value = '';
+        treeSearchClear.classList.add('hidden');
+        searchResults.classList.add('hidden');
+        searchInput.focus();
+    });
+
+    searchButton?.addEventListener('click', () => {
+        if (treeSearchDebounce) clearTimeout(treeSearchDebounce);
+        executeSearch();
+    });
+
+    searchInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (treeSearchDebounce) clearTimeout(treeSearchDebounce);
+            executeSearch();
+        } else if (e.key === 'Escape') {
+            searchResults.classList.add('hidden');
+        }
+    });
 
     searchResults?.addEventListener('click', async (event) => {
         const item = event.target.closest('[data-result-id]');
@@ -2259,7 +2312,7 @@
     });
 
     document.addEventListener('click', (e) => {
-        if (!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchButton) {
+        if (!searchResults.contains(e.target) && e.target !== searchInput && e.target !== searchButton && e.target !== treeSearchClear) {
             searchResults.classList.add('hidden');
         }
     });
