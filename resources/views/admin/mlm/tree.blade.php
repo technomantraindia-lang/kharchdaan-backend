@@ -857,11 +857,11 @@
                     <i class="fas fa-bolt text-amber-500"></i> Quick Leader Selection:
                 </div>
                 <div class="flex flex-wrap gap-1.5">
-                    @if(isset($leaderOptions) && count($leaderOptions))
-                        @foreach(array_slice($leaderOptions, 0, 8) as $lead)
+                    @if(!empty($leaderOptions['quick_pills']))
+                        @foreach($leaderOptions['quick_pills'] as $lead)
                             @if(($lead['customer_id'] ?? '') !== 'C22020008')
                                 <button type="button" class="btn-quick-move-chip px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 border border-slate-200 hover:border-amber-300 text-[11px] font-semibold transition" data-id="{{ $lead['id'] }}" data-url="{{ admin_route('mlm.tree.move.form', $lead['id']) }}">
-                                    {{ explode(' ', $lead['name'])[0] }} <span class="font-mono text-[9px] opacity-75">({{ $lead['downline_count'] }} DL)</span>
+                                    {{ explode(' ', $lead['name'] ?? 'Distributor')[0] }} <span class="font-mono text-[9px] opacity-75">({{ $lead['downlines'] ?? 0 }} DL)</span>
                                 </button>
                             @endif
                         @endforeach
