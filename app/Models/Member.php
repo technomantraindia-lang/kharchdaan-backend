@@ -88,6 +88,10 @@ class Member extends Model
         'appreciation_assigned_at',
         'appreciation_expires_at',
         'appreciation_note',
+        'detached_parent_id',
+        'detached_parent_position',
+        'detached_member_id',
+        'detached_child_position',
     ];
 
     protected function casts(): array

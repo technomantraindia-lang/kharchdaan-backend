@@ -194,6 +194,29 @@ class MlmMovementTest extends TestCase
         $this->assertDatabaseMissing('mlm_members', [
             'placement_parent_id' => $member->id,
         ]);
+
+        // 5. Now move member BACK to original place (oldParent, left)
+        $moveBackData = [
+            'new_parent_id' => $oldParent->id,
+            'new_position' => Member::POSITION_LEFT,
+            'move_mode' => 'single',
+            'reason' => 'Move member back to original place',
+            'effective_at' => now()->toDateTimeString(),
+        ];
+
+        $this->actingAs($this->admin)
+            ->post(admin_route('mlm.tree.move', $member), $moveBackData + ['confirmed' => 1])
+            ->assertRedirect(admin_route('mlm.tree.index', ['root' => $oldParent->id]));
+
+        $member = $member->fresh();
+        $this->assertSame($oldParent->id, $member->placement_parent_id);
+        $this->assertSame(Member::POSITION_LEFT, $member->placement_position);
+
+        // 6. When moving back to original place, children are automatically re-attached!
+        $this->assertSame($member->id, $child1->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_LEFT, $child1->fresh()->placement_position);
+        $this->assertSame($member->id, $child2->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_MIDDLE, $child2->fresh()->placement_position);
     }
 
     public function test_failed_history_write_rolls_back_placement_update(): void

@@ -8,6 +8,7 @@ use App\Models\MlmIncomeLedger;
 use App\Support\MlmDecimal;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class MlmTreeService
 {
@@ -18,6 +19,8 @@ class MlmTreeService
         if ($this->downlineCountsCache !== null) {
             return $this->downlineCountsCache;
         }
+
+        $this->autoReconnectOrphanedDownlines();
 
         $all = Member::query()->select('id', 'placement_parent_id')->get();
         $byParent = [];
@@ -139,8 +142,79 @@ class MlmTreeService
         ];
     }
 
+    public function autoReconnectOrphanedDownlines(?Member $member = null): void
+    {
+        // 1. Check if Haresh Patel (C22050015) is at his original slot (under Idle - 9 / C25070011 at 'left')
+        // and restore his master downlines (Darshna Patel, Haneshbhai, Ripal Vora) if they are currently unplaced.
+        $haresh = ($member && $member->customer_id === 'C22050015')
+            ? $member
+            : Member::with(['placementParent.user'])->whereHas('user', fn ($q) => $q->where('mlm_member_id', 'C22050015'))->first();
+
+        if ($haresh) {
+            $parent = $haresh->placementParent;
+            $parentCode = $parent?->customer_id;
+            $pos = $haresh->placement_position;
+
+            // Only reconnect master downlines when Haresh Patel is at his original position (Idle - 9, left)
+            if ($parentCode === 'C25070011' && $pos === 'left') {
+                $masterMap = [
+                    'C23050001' => 'left',   // Darshna Patel
+                    'C22070007' => 'middle', // Haneshbhai - Purohit Parsan
+                    'C22070037' => 'right',  // Ripal Vora
+                ];
+
+                foreach ($masterMap as $code => $slotPos) {
+                    $isOccupied = Member::query()
+                        ->where('placement_parent_id', $haresh->id)
+                        ->where('placement_position', $slotPos)
+                        ->exists();
+
+                    if (! $isOccupied) {
+                        $child = Member::whereHas('user', fn ($q) => $q->where('mlm_member_id', $code))->first();
+                        if ($child && $child->placement_parent_id === null) {
+                            $child->update([
+                                'placement_parent_id' => $haresh->id,
+                                'placement_position' => $slotPos,
+                                'status' => 'active',
+                                'detached_parent_id' => null,
+                                'detached_parent_position' => null,
+                                'detached_member_id' => null,
+                                'detached_child_position' => null,
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Reconnect any detached downlines specifically retained for this slot
+        if ($member && $member->placement_parent_id && $member->placement_position && Schema::hasColumn('mlm_members', 'detached_parent_id')) {
+            $detachedChildren = Member::query()
+                ->where('detached_parent_id', $member->placement_parent_id)
+                ->where('detached_parent_position', $member->placement_position)
+                ->get();
+
+            foreach ($detachedChildren as $detached) {
+                $pos = $detached->detached_child_position ?: $detached->placement_position;
+                if ($pos && ! Member::query()->where('placement_parent_id', $member->id)->where('placement_position', $pos)->exists()) {
+                    $detached->update([
+                        'placement_parent_id' => $member->id,
+                        'placement_position' => $pos,
+                        'status' => 'active',
+                        'detached_parent_id' => null,
+                        'detached_parent_position' => null,
+                        'detached_member_id' => null,
+                        'detached_child_position' => null,
+                    ]);
+                }
+            }
+        }
+    }
+
     public function roots(): Collection
     {
+        $this->autoReconnectOrphanedDownlines();
+
         return Member::query()
             ->with(['user.addresses', 'sponsor.user', 'placementParent.user', 'appreciationMember.user'])
             ->withCount('placementChildren')
@@ -153,6 +227,8 @@ class MlmTreeService
 
     public function children(Member $parent): array
     {
+        $this->autoReconnectOrphanedDownlines($parent);
+
         $children = Member::query()
             ->with(['user.addresses', 'sponsor.user', 'placementParent.user', 'appreciationMember.user'])
             ->withCount('placementChildren')

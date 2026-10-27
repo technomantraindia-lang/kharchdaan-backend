@@ -19,10 +19,11 @@ class MlmTreeTest extends TestCase
     {
         parent::setUp();
 
-        $adminRole = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
+        $adminRole = Role::create(['name' => 'Super Administrator', 'guard_name' => 'web']);
         $customerRole = Role::create(['name' => 'Customer', 'guard_name' => 'web']);
         $permission = Permission::create(['name' => 'mlm.view', 'guard_name' => 'web']);
-        $adminRole->permissions()->sync([$permission->id]);
+        $managePermission = Permission::create(['name' => 'mlm.manage', 'guard_name' => 'web']);
+        $adminRole->permissions()->sync([$permission->id, $managePermission->id]);
 
         $this->admin = User::create([
             'name' => 'Tree Admin',
@@ -44,14 +45,14 @@ class MlmTreeTest extends TestCase
         $right = $this->member('TREE-RIGHT', 'Right Member', '9300000005', $sponsor, $root, Member::POSITION_RIGHT);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.tree.index'))
+            ->get(admin_route('mlm.tree.index'))
             ->assertOk()
             ->assertSee('TREE-ROOT')
             ->assertSee('Move Member')
             ->assertSee('Sponsor Tree and Placement Tree are separate.');
 
         $response = $this->actingAs($this->admin)
-            ->get(route('admin.mlm.tree.children', $root));
+            ->get(admin_route('mlm.tree.children', $root));
 
         $response->assertOk()
             ->assertJsonCount(3, 'slots')
@@ -62,7 +63,7 @@ class MlmTreeTest extends TestCase
             ->assertJsonPath('slots.0.member.sponsor.customer_id', $sponsor->customer_id)
             ->assertJsonPath('slots.0.member.placement_parent.customer_id', $root->customer_id)
             ->assertJsonPath('slots.0.member.level', 1)
-            ->assertJsonPath('slots.0.member.details_url', route('admin.mlm.members.show', $left));
+            ->assertJsonPath('slots.0.member.details_url', admin_route('mlm.members.show', $left));
     }
 
     public function test_empty_positions_are_returned_without_loading_descendants(): void
@@ -71,7 +72,7 @@ class MlmTreeTest extends TestCase
         $left = $this->member('TREE-EMPTY-LEFT', 'Only Left', '9300000011', $root, $root, Member::POSITION_LEFT);
 
         $rootResponse = $this->actingAs($this->admin)
-            ->getJson(route('admin.mlm.tree.children', $root));
+            ->getJson(admin_route('mlm.tree.children', $root));
 
         $rootResponse->assertJsonPath('slots.0.member.customer_id', $left->customer_id)
             ->assertJsonPath('slots.1.member', null)
@@ -85,14 +86,14 @@ class MlmTreeTest extends TestCase
         $grandchild = $this->member('TREE-LAZY-GRAND', 'Lazy Grandchild', '9300000022', $root, $child, Member::POSITION_RIGHT);
 
         $rootResponse = $this->actingAs($this->admin)
-            ->getJson(route('admin.mlm.tree.children', $root));
+            ->getJson(admin_route('mlm.tree.children', $root));
 
         $rootResponse->assertJsonPath('slots.1.member.customer_id', $child->customer_id)
             ->assertJsonPath('slots.1.member.has_children', true)
             ->assertJsonMissing(['customer_id' => $grandchild->customer_id]);
 
         $childResponse = $this->actingAs($this->admin)
-            ->getJson(route('admin.mlm.tree.children', $child));
+            ->getJson(admin_route('mlm.tree.children', $child));
 
         $childResponse->assertJsonPath('slots.2.member.customer_id', $grandchild->customer_id)
             ->assertJsonPath('slots.2.member.level', 2)
@@ -106,7 +107,7 @@ class MlmTreeTest extends TestCase
         $target = $this->member('TREE-TARGET', 'Target Member', '9300000032', $root, $branch, Member::POSITION_RIGHT);
 
         $this->actingAs($this->admin)
-            ->getJson(route('admin.mlm.tree.search', ['q' => 'Target Member']))
+            ->getJson(admin_route('mlm.tree.search', ['q' => 'Target Member']))
             ->assertOk()
             ->assertJsonPath('data.0.member.customer_id', $target->customer_id)
             ->assertJsonPath('data.0.root_id', $root->id)

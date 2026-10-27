@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class MlmMovementService
@@ -157,20 +158,32 @@ class MlmMovementService
                 // Client Requirement:
                 // Move only selected member ID.
                 // Downline members do NOT follow the member into the new parent.
-                // They are detached so under the moved member's new position, downline slots are empty Available Slots.
+                // Retain detachment information so when moving back or when a member occupies this slot, they are restored.
                 if ($existingChildren->isNotEmpty()) {
-                    Member::query()->where('placement_parent_id', $lockedMember->id)->update([
-                        'placement_parent_id' => null,
-                        'placement_position' => null,
-                    ]);
+                    foreach ($existingChildren as $child) {
+                        $updatePayload = [
+                            'placement_parent_id' => null,
+                            'placement_position' => null,
+                        ];
+                        if (Schema::hasColumn('mlm_members', 'detached_parent_id')) {
+                            $updatePayload['detached_parent_id'] = $oldParentId;
+                            $updatePayload['detached_parent_position'] = $oldPosition;
+                            $updatePayload['detached_member_id'] = $lockedMember->id;
+                            $updatePayload['detached_child_position'] = $child->placement_position;
+                        }
+                        $child->update($updatePayload);
+                    }
                 }
 
                 // Move lockedMember to target parent and position.
-                // Old position is now completely empty (Available Slot).
+                // Old position is now an empty Available Slot.
                 $lockedMember->update([
                     'placement_parent_id' => $newParent->id,
                     'placement_position' => $data['new_position'],
                 ]);
+
+                // Check if target position or returning member has waiting downlines
+                $this->reconnectWaitingChildren($lockedMember, $newParent->id, $data['new_position']);
 
                 $subtreeCount = 1;
             } else {
@@ -179,6 +192,10 @@ class MlmMovementService
                     'placement_parent_id' => $newParent->id,
                     'placement_position' => $data['new_position'],
                 ]);
+
+                // Check if target position or returning member has waiting downlines
+                $this->reconnectWaitingChildren($lockedMember, $newParent->id, $data['new_position']);
+
                 $subtreeCount = $this->subtree($lockedMember)->count();
             }
 
@@ -211,6 +228,34 @@ class MlmMovementService
 
             return $movement->fresh(['member.user', 'oldParent.user', 'newParent.user', 'movedBy']);
         });
+    }
+
+    public function reconnectWaitingChildren(Member $occupant, ?int $parentId, ?string $position): void
+    {
+        if (Schema::hasColumn('mlm_members', 'detached_parent_id') && $parentId && $position) {
+            $waiting = Member::query()
+                ->where('detached_parent_id', $parentId)
+                ->where('detached_parent_position', $position)
+                ->get();
+
+            foreach ($waiting as $child) {
+                $childPos = $child->detached_child_position ?: $child->placement_position;
+                if ($childPos && ! Member::query()->where('placement_parent_id', $occupant->id)->where('placement_position', $childPos)->exists()) {
+                    $child->update([
+                        'placement_parent_id' => $occupant->id,
+                        'placement_position' => $childPos,
+                        'status' => Member::STATUS_ACTIVE,
+                        'detached_parent_id' => null,
+                        'detached_parent_position' => null,
+                        'detached_member_id' => null,
+                        'detached_child_position' => null,
+                    ]);
+                }
+            }
+        }
+
+        // Auto-reconnect master downlines via tree service
+        app(MlmTreeService::class)->autoReconnectOrphanedDownlines($occupant);
     }
 
     public function createOrAssignBlankSlot(?int $oldParentId, ?string $oldPosition, Member $movingMember, User $admin): Member
