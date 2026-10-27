@@ -1023,7 +1023,7 @@
                                 <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Recommended</span>
                             </div>
                             <div class="text-slate-600 text-[10px] mt-0.5">
-                                All existing downlines stay in place. A blank select cell (<span class="font-semibold text-amber-900">Vacant Slot</span>) is preserved in their previous position for future use.
+                                Moves only this distributor ID. Downlines will not follow into the new position, and the previous position becomes an empty Available Slot.
                             </div>
                         </div>
                     </label>
@@ -3172,7 +3172,7 @@
             closeDragDropModal();
 
             if (toastMoveSuccess) {
-                const modeMsg = moveMode === 'single' ? ' Previous slot preserved as vacant cell for future use.' : '';
+                const modeMsg = moveMode === 'single' ? ' Previous position is now empty for future placements.' : '';
                 toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot!${modeMsg}`;
                 toastMoveSuccess.classList.remove('hidden');
                 setTimeout(() => {

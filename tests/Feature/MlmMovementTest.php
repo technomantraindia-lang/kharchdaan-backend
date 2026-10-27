@@ -22,7 +22,7 @@ class MlmMovementTest extends TestCase
     {
         parent::setUp();
 
-        $adminRole = Role::create(['name' => 'Admin', 'guard_name' => 'web']);
+        $adminRole = Role::create(['name' => 'Super Administrator', 'guard_name' => 'web']);
         $customerRole = Role::create(['name' => 'Customer', 'guard_name' => 'web']);
         $permissions = collect(['mlm.view', 'mlm.manage', 'mlm.move'])
             ->map(fn (string $name) => Permission::create(['name' => $name, 'guard_name' => 'web']));
@@ -50,26 +50,27 @@ class MlmMovementTest extends TestCase
         $data = [
             'new_parent_id' => $newParent->id,
             'new_position' => Member::POSITION_MIDDLE,
+            'move_mode' => 'subtree',
             'reason' => 'Approved branch consolidation',
             'effective_at' => now()->subMinute()->toDateTimeString(),
         ];
 
         $this->actingAs($this->admin)
-            ->getJson(route('admin.mlm.tree.move.parents.search', [$member, 'q' => 'New Parent']))
+            ->getJson(admin_route('mlm.tree.move.parents.search', [$member, 'q' => 'New Parent']))
             ->assertOk()
             ->assertJsonPath('data.0.customer_id', $newParent->customer_id)
             ->assertJsonPath('data.0.available_positions.0', Member::POSITION_LEFT);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.mlm.tree.move.preview', $member), $data)
+            ->postJson(admin_route('mlm.tree.move.preview', $member), $data)
             ->assertOk()
             ->assertJsonPath('data.affected_subtree_count', 2)
             ->assertJsonPath('data.new_depth', 1)
             ->assertJsonPath('data.new_position', Member::POSITION_MIDDLE);
 
         $this->actingAs($this->admin)
-            ->post(route('admin.mlm.tree.move', $member), $data + ['confirmed' => 1])
-            ->assertRedirect(route('admin.mlm.members.show', $member));
+            ->post(admin_route('mlm.tree.move', $member), $data + ['confirmed' => 1])
+            ->assertRedirect(admin_route('mlm.tree.index', ['root' => $newParent->id]));
 
         $member = $member->fresh(['sponsor', 'placementParent']);
         $this->assertSame($newParent->id, $member->placement_parent_id);
@@ -111,17 +112,17 @@ class MlmMovementTest extends TestCase
         ];
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.mlm.tree.move.preview', $member), $base + ['new_parent_id' => $member->id])
+            ->postJson(admin_route('mlm.tree.move.preview', $member), $base + ['new_parent_id' => $member->id])
             ->assertStatus(422)
             ->assertJsonStructure(['errors' => ['new_parent_id']]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.mlm.tree.move.preview', $member), $base + ['new_parent_id' => $descendant->id])
+            ->postJson(admin_route('mlm.tree.move.preview', $member), $base + ['new_parent_id' => $descendant->id])
             ->assertStatus(422)
             ->assertJsonStructure(['errors' => ['new_parent_id']]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.mlm.tree.move.preview', $member), array_merge($base, [
+            ->postJson(admin_route('mlm.tree.move.preview', $member), array_merge($base, [
                 'new_parent_id' => $occupiedParent->id,
                 'new_position' => Member::POSITION_LEFT,
             ]))
@@ -129,7 +130,7 @@ class MlmMovementTest extends TestCase
             ->assertJsonStructure(['errors' => ['new_position']]);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.mlm.tree.move.preview', $member), $base + ['new_parent_id' => $inactiveParent->id])
+            ->postJson(admin_route('mlm.tree.move.preview', $member), $base + ['new_parent_id' => $inactiveParent->id])
             ->assertStatus(422)
             ->assertJsonStructure(['errors' => ['new_parent_id']]);
 
@@ -141,9 +142,58 @@ class MlmMovementTest extends TestCase
         $this->member('MOVE-DEEP-CHILD', 'Deep Moving Child', '9400000041', null, $movingRoot, Member::POSITION_LEFT);
 
         $this->actingAs($this->admin)
-            ->postJson(route('admin.mlm.tree.move.preview', $movingRoot), $base + ['new_parent_id' => $deepParent->id])
+            ->postJson(admin_route('mlm.tree.move.preview', $movingRoot), $base + ['new_parent_id' => $deepParent->id, 'move_mode' => 'subtree'])
             ->assertStatus(422)
             ->assertJsonStructure(['errors' => ['new_parent_id']]);
+    }
+
+    public function test_move_single_member_leaves_old_slot_empty_and_does_not_move_downlines(): void
+    {
+        $sponsor = $this->member('SINGLE-SPONSOR', 'Sponsor', '9400000081');
+        $oldParent = $this->member('SINGLE-OLD', 'Old Parent', '9400000082');
+        $newParent = $this->member('SINGLE-NEW', 'New Parent', '9400000083');
+        $member = $this->member('SINGLE-MEMBER', 'Moved Member', '9400000084', $sponsor, $oldParent, Member::POSITION_LEFT);
+        $child1 = $this->member('SINGLE-CHILD1', 'Child 1', '9400000085', $sponsor, $member, Member::POSITION_LEFT);
+        $child2 = $this->member('SINGLE-CHILD2', 'Child 2', '9400000086', $sponsor, $member, Member::POSITION_MIDDLE);
+
+        $data = [
+            'new_parent_id' => $newParent->id,
+            'new_position' => Member::POSITION_RIGHT,
+            'move_mode' => 'single',
+            'reason' => 'Move single member as per client requirement',
+            'effective_at' => now()->toDateTimeString(),
+        ];
+
+        $this->actingAs($this->admin)
+            ->postJson(admin_route('mlm.tree.move.preview', $member), $data)
+            ->assertOk()
+            ->assertJsonPath('data.affected_subtree_count', 1);
+
+        $this->actingAs($this->admin)
+            ->post(admin_route('mlm.tree.move', $member), $data + ['confirmed' => 1])
+            ->assertRedirect(admin_route('mlm.tree.index', ['root' => $newParent->id]));
+
+        $member = $member->fresh();
+        // 1. Member is moved to new parent in right position
+        $this->assertSame($newParent->id, $member->placement_parent_id);
+        $this->assertSame(Member::POSITION_RIGHT, $member->placement_position);
+
+        // 2. Old parent's left slot is now completely empty (Available Slot)
+        $this->assertDatabaseMissing('mlm_members', [
+            'placement_parent_id' => $oldParent->id,
+            'placement_position' => Member::POSITION_LEFT,
+        ]);
+
+        // 3. Children do NOT follow the member into new parent; they are detached so member has empty slots
+        $this->assertNull($child1->fresh()->placement_parent_id);
+        $this->assertNull($child1->fresh()->placement_position);
+        $this->assertNull($child2->fresh()->placement_parent_id);
+        $this->assertNull($child2->fresh()->placement_position);
+
+        // 4. Member's new position has no children under them (empty slots)
+        $this->assertDatabaseMissing('mlm_members', [
+            'placement_parent_id' => $member->id,
+        ]);
     }
 
     public function test_failed_history_write_rolls_back_placement_update(): void
@@ -195,11 +245,11 @@ class MlmMovementTest extends TestCase
     {
         $member = $this->member('MOVE-AUTH-MEMBER', 'Auth Member', '9400000060');
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.tree.move.form', $member))
+            ->get(admin_route('mlm.tree.move.form', $member))
             ->assertOk()
-            ->assertSee('Mandatory movement reason')
+            ->assertSee('Movement Scope')
             ->assertSee('Preview Movement')
-            ->assertSee('Confirm and Save Movement');
+            ->assertSee('Relocate Now');
 
         $customerRole = Role::where('name', 'Customer')->firstOrFail();
         $customer = User::create([
@@ -211,7 +261,7 @@ class MlmMovementTest extends TestCase
         ]);
 
         $this->actingAs($customer)
-            ->get(route('admin.mlm.tree.move.form', $member))
+            ->get(admin_route('mlm.tree.move.form', $member))
             ->assertForbidden();
     }
 

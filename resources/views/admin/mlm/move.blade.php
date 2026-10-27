@@ -156,7 +156,7 @@
                                         <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Recommended</span>
                                     </div>
                                     <div class="text-[11px] text-slate-600 mt-0.5">
-                                        Moves only <strong>{{ $member->user?->name }}</strong>. Downlines remain in place attached to an open blank select cell in previous position.
+                                        Moves only <strong>{{ $member->user?->name }}</strong>. Downlines will not follow, and the previous position becomes an empty Available Slot.
                                     </div>
                                 </div>
                             </label>
@@ -706,7 +706,7 @@
         const isSingle = form.querySelector('input[name="move_mode"]:checked')?.value !== 'subtree';
 
         const confirmMsg = isSingle
-            ? `Are you sure you want to move ONLY this member into the ${slotName} of ${parentName}?\n\nTheir existing downlines will stay in place, and their previous position will remain as an open blank cell for future use.`
+            ? `Are you sure you want to move ONLY this member into the ${slotName} of ${parentName}?\n\nTheir existing downlines will not follow, and their previous position will be completely empty (Available Slot) for future placements.`
             : `Are you sure you want to move this member AND their complete downline subtree into the ${slotName} of ${parentName}?`;
 
         if (window.confirm(confirmMsg)) {

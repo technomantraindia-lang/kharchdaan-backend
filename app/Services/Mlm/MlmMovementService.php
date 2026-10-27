@@ -142,23 +142,35 @@ class MlmMovementService
 
             $existingChildren = Member::query()->where('placement_parent_id', $lockedMember->id)->get();
 
+            // Clear any idle slot occupying the target position to prevent duplicate positioning
+            Member::query()
+                ->where('placement_parent_id', $newParent->id)
+                ->where('placement_position', $data['new_position'])
+                ->whereKeyNot($lockedMember->id)
+                ->where('is_idle_slot', true)
+                ->update([
+                    'placement_parent_id' => null,
+                    'placement_position' => null,
+                ]);
+
             if (! $isSubtreeMove) {
-                // Client Requirement: "only selected ID should move & keep blank select cell for future use"
-                // 1. Move lockedMember to target parent and position first (frees up oldParentId, oldPosition)
+                // Client Requirement:
+                // Move only selected member ID.
+                // Downline members do NOT follow the member into the new parent.
+                // They are detached so under the moved member's new position, downline slots are empty Available Slots.
+                if ($existingChildren->isNotEmpty()) {
+                    Member::query()->where('placement_parent_id', $lockedMember->id)->update([
+                        'placement_parent_id' => null,
+                        'placement_position' => null,
+                    ]);
+                }
+
+                // Move lockedMember to target parent and position.
+                // Old position is now completely empty (Available Slot).
                 $lockedMember->update([
                     'placement_parent_id' => $newParent->id,
                     'placement_position' => $data['new_position'],
                 ]);
-
-                // 2. In lockedMember's old position, preserve a Blank / Vacant select cell
-                $blankMember = $this->createOrAssignBlankSlot($oldParentId, $oldPosition, $lockedMember, $admin);
-
-                // 3. Re-parent any existing children of lockedMember to the blankMember so downlines stay in place!
-                if ($existingChildren->isNotEmpty()) {
-                    Member::query()->where('placement_parent_id', $lockedMember->id)->update([
-                        'placement_parent_id' => $blankMember->id,
-                    ]);
-                }
 
                 $subtreeCount = 1;
             } else {
@@ -287,12 +299,12 @@ class MlmMovementService
 
         $newDepth = count($newParentPath);
 
-        if ($isSubtreeMove) {
-            $descendantIds = $this->subtree($member)->pluck('id')->all();
-            if (in_array($newParent->id, $descendantIds, true)) {
-                $this->fail('new_parent_id', 'A member cannot be placed under their own descendant while moving downlines together.');
-            }
+        $descendantIds = $this->subtree($member)->pluck('id')->all();
+        if (in_array($newParent->id, $descendantIds, true)) {
+            $this->fail('new_parent_id', 'A member cannot be placed under their own descendant.');
+        }
 
+        if ($isSubtreeMove) {
             $subtreeDepth = $this->subtreeDepth($member);
             if ($newDepth + $subtreeDepth > self::MAX_LEVEL) {
                 $this->fail('new_parent_id', 'This move would place part of the subtree beyond Level 19.');
