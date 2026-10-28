@@ -178,17 +178,19 @@ class MlmMovementTest extends TestCase
         $this->assertSame($newParent->id, $member->placement_parent_id);
         $this->assertSame(Member::POSITION_RIGHT, $member->placement_position);
 
-        // 2. Old parent's left slot is now completely empty (Available Slot)
-        $this->assertDatabaseMissing('mlm_members', [
-            'placement_parent_id' => $oldParent->id,
-            'placement_position' => Member::POSITION_LEFT,
-        ]);
+        // 2. Old parent's left slot now preserves a blank select cell for future use
+        $blankSlot = Member::query()
+            ->where('placement_parent_id', $oldParent->id)
+            ->where('placement_position', Member::POSITION_LEFT)
+            ->where('is_idle_slot', true)
+            ->first();
+        $this->assertNotNull($blankSlot);
 
-        // 3. Children do NOT follow the member into new parent; they are detached so member has empty slots
-        $this->assertNull($child1->fresh()->placement_parent_id);
-        $this->assertNull($child1->fresh()->placement_position);
-        $this->assertNull($child2->fresh()->placement_parent_id);
-        $this->assertNull($child2->fresh()->placement_position);
+        // 3. Children do NOT follow the member into new parent; they stay attached under the blank select cell
+        $this->assertSame($blankSlot->id, $child1->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_LEFT, $child1->fresh()->placement_position);
+        $this->assertSame($blankSlot->id, $child2->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_MIDDLE, $child2->fresh()->placement_position);
 
         // 4. Member's new position has no children under them (empty slots)
         $this->assertDatabaseMissing('mlm_members', [

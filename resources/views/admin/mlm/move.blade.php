@@ -336,10 +336,17 @@
         selectedParent.classList.remove('hidden');
 
         position.replaceChildren(new Option('Select an available slot', ''));
-        candidate.available_positions.forEach((slot) => {
-            const opt = new Option(slot.charAt(0).toUpperCase() + slot.slice(1) + ' Slot', slot);
-            position.append(opt);
-        });
+        if (candidate.slot_details && candidate.slot_details.length) {
+            candidate.slot_details.forEach((slot) => {
+                const opt = new Option(slot.label, slot.position);
+                position.append(opt);
+            });
+        } else {
+            candidate.available_positions.forEach((slot) => {
+                const opt = new Option(slot.charAt(0).toUpperCase() + slot.slice(1) + ' Slot', slot);
+                position.append(opt);
+            });
+        }
         position.disabled = candidate.available_positions.length === 0;
         if (candidate.available_positions.length > 0) {
             position.value = candidate.available_positions[0];
@@ -403,9 +410,14 @@
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'w-full text-left p-3 hover:bg-blue-50/80 transition flex items-center justify-between gap-3 text-xs';
-                const slotsHtml = candidate.available_positions.map(s => 
-                    `<span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] bg-emerald-100 text-emerald-800 uppercase">${escapeHtml(s)}</span>`
-                ).join(' ');
+                const slotsHtml = (candidate.slot_details && candidate.slot_details.length)
+                    ? candidate.slot_details.map(s => {
+                        const bg = s.is_idle ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+                        return `<span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] ${bg} uppercase">${escapeHtml(s.position)}</span>`;
+                    }).join(' ')
+                    : candidate.available_positions.map(s => 
+                        `<span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-300 uppercase">${escapeHtml(s)}</span>`
+                    ).join(' ');
 
                 button.innerHTML = `
                     <div class="min-w-0 flex-1">
@@ -592,7 +604,11 @@
         previewButton.disabled = true;
         previewButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> Calculating Impact...`;
         try {
-            const body = new URLSearchParams(new FormData(form));
+            const formObj = new FormData(form);
+            formObj.set('new_parent_id', parentId.value);
+            formObj.set('new_position', position.value);
+            formObj.set('move_mode', form.querySelector('input[name="move_mode"]:checked')?.value || 'single');
+            const body = new URLSearchParams(formObj);
             const response = await fetch(previewUrl, { 
                 method: 'POST', 
                 headers: { 
@@ -653,7 +669,11 @@
 
         try {
             const formData = new FormData(form);
+            formData.set('new_parent_id', parentId.value);
+            formData.set('new_position', position.value);
             formData.set('confirmed', '1');
+            formData.set('move_mode', form.querySelector('input[name="move_mode"]:checked')?.value || 'single');
+            formData.set('reason', reasonInput.value.trim() || 'Administrative placement tree reorganization by Super Admin');
 
             const response = await fetch(form.action, {
                 method: 'POST',
@@ -706,7 +726,7 @@
         const isSingle = form.querySelector('input[name="move_mode"]:checked')?.value !== 'subtree';
 
         const confirmMsg = isSingle
-            ? `Are you sure you want to move ONLY this member into the ${slotName} of ${parentName}?\n\nTheir existing downlines will not follow, and their previous position will be completely empty (Available Slot) for future placements.`
+            ? `Are you sure you want to move ONLY this member into the ${slotName} of ${parentName}?\n\nTheir existing downlines will not follow and will remain preserved under a blank select cell kept in their previous position for future use.`
             : `Are you sure you want to move this member AND their complete downline subtree into the ${slotName} of ${parentName}?`;
 
         if (window.confirm(confirmMsg)) {
@@ -714,6 +734,11 @@
             await submitMoveAjax(directBtn, 'Relocating');
         }
     };
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        directMove();
+    });
 
     previewButton.addEventListener('click', previewMovement);
     document.getElementById('directMoveButton')?.addEventListener('click', directMove);

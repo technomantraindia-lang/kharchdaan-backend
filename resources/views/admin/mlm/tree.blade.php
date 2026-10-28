@@ -599,7 +599,7 @@
         </div>
 
         <!-- Scrollable & Grabbable Viewport -->
-        <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}" data-move-url="{{ admin_route('mlm.tree.move', ['member' => '__MEMBER__']) }}" data-csrf="{{ csrf_token() }}">
+        <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}" data-move-url="{{ admin_route('mlm.tree.move', ['member' => '__MEMBER__']) }}" data-move-parent-search-url="{{ admin_route('mlm.tree.move.parents.search', ['member' => '__MEMBER__']) }}" data-csrf="{{ csrf_token() }}">
             <div id="treePanContainer" class="tree-pan-container">
                 @if(!$initialRoot)
                     <div class="text-center text-slate-400 py-16">
@@ -928,7 +928,7 @@
                 <div class="font-bold flex items-center gap-1.5">
                     <i class="fas fa-shield-alt text-blue-600"></i> Controlled & Audited Movement
                 </div>
-                <div>Moving a distributor relocates their entire 1:3 downline placement subtree to the new placement parent and slot. Sponsor relationships remain preserved.</div>
+                <div>Moving a distributor relocates only the selected ID to the target placement parent and slot, while preserving a blank select cell in their previous position for future use. Sponsor relationships remain preserved.</div>
             </div>
         </div>
 
@@ -950,8 +950,8 @@
                     <i class="fas fa-arrows-up-down-left-right text-sm"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-sm leading-tight">Confirm Drag & Drop Move</h3>
-                    <p class="text-[11px] text-amber-100">Review placement position before applying changes</p>
+                    <h3 class="font-bold text-sm leading-tight" id="ddModalTitle">Confirm Drag & Drop Move</h3>
+                    <p class="text-[11px] text-amber-100" id="ddModalSubtitle">Review placement position before applying changes</p>
                 </div>
             </div>
             <button type="button" id="btnCloseDragDropModal" class="w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xs transition">
@@ -961,6 +961,22 @@
 
         <!-- Content -->
         <div class="p-5 space-y-4">
+            <!-- Search Target Placement Parent (Used when moving manually or changing target) -->
+            <div id="ddTargetSearchSection" class="p-3 bg-amber-50/60 rounded-xl border border-amber-200">
+                <label for="ddTargetParentSearchInput" class="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
+                    <span><i class="fas fa-search text-amber-600 mr-1"></i> Search Target Placement Parent:</span>
+                    <span class="text-[10px] font-normal text-slate-500">Search name, Customer ID, or Idle Slot</span>
+                </label>
+                <div class="relative">
+                    <input type="search" id="ddTargetParentSearchInput" class="w-full pl-3 pr-8 py-2 text-xs bg-white border border-slate-300 rounded-lg focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition" placeholder="Type member name, ID (e.g. Idle - 3), or phone..." autocomplete="off">
+                    <button type="button" id="btnClearDdTargetSearch" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 text-xs">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                    <!-- Floating Suggestions List -->
+                    <div id="ddTargetSearchResults" class="hidden absolute left-0 right-0 top-full mt-1.5 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 divide-y divide-slate-100 text-xs"></div>
+                </div>
+            </div>
+
             <!-- Visual Flow Card -->
             <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 flex items-center justify-between gap-3">
                 <!-- Moving Member -->
@@ -981,9 +997,9 @@
                 <!-- Target Parent -->
                 <div class="flex-1 min-w-0 text-right">
                     <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Target Parent</div>
-                    <div id="ddTargetName" class="font-bold text-slate-900 text-xs truncate mt-0.5"></div>
+                    <div id="ddTargetName" class="font-bold text-slate-900 text-xs truncate mt-0.5">Select a parent above</div>
                     <div class="flex items-center justify-end gap-1.5 mt-0.5">
-                        <span id="ddTargetId" class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-200"></span>
+                        <span id="ddTargetId" class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-200">Pending</span>
                     </div>
                 </div>
             </div>
@@ -1023,7 +1039,7 @@
                                 <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Recommended</span>
                             </div>
                             <div class="text-slate-600 text-[10px] mt-0.5">
-                                Moves only this distributor ID. Downlines will not follow into the new position, and the previous position becomes an empty Available Slot.
+                                Moves only this distributor ID. Downlines will remain preserved under a blank select cell kept in their previous position for future use.
                             </div>
                         </div>
                     </label>
@@ -1381,9 +1397,9 @@
                 </div>`;
         } else {
             const moveBtn = (!isTopRoot && member.customer_id !== 'C22020008') ? `
-                <a href="${member.move_url || `/super-admin/mlm/tree/move/${member.id}`}" class="btn-node-move flex-1 py-1 px-2 font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition flex items-center justify-center gap-1 shadow-2xs" title="Change placement position for ${escapeHtml(member.name)}">
+                <button type="button" class="btn-node-move flex-1 py-1 px-2 font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition flex items-center justify-center gap-1 shadow-2xs" data-id="${member.id}" title="Change placement position for ${escapeHtml(member.name)}">
                     <i class="fas fa-arrows-up-down-left-right text-[8px] text-amber-700"></i> <span>Move</span>
-                </a>` : '';
+                </button>` : '';
 
             actionsHtml = `
                 <div class="card-full-actions flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[10px]">
@@ -1506,6 +1522,25 @@
                 e.preventDefault();
                 card.classList.remove('card-drag-target-hover');
                 if (!draggedMember || draggedMember.id === member.id) return;
+
+                if (member.is_idle_slot) {
+                    let targetParent = member.placement_parent;
+                    if (!targetParent && card) {
+                        const parentBranch = card.closest('.org-tree-branch')?.parentElement?.closest('.org-tree-branch');
+                        if (parentBranch && parentBranch._card && parentBranch._card._memberData) {
+                            targetParent = parentBranch._card._memberData;
+                        }
+                    }
+                    if (targetParent) {
+                        openDragDropModal({
+                            member: draggedMember,
+                            targetParent: targetParent,
+                            targetPosition: member.position || member.placement_position,
+                            targetPositionLabel: member.idle_slot_label || member.position_label || member.position,
+                        });
+                        return;
+                    }
+                }
 
                 openDragDropModal({
                     member: draggedMember,
@@ -1960,6 +1995,14 @@
     drawerBackdrop?.addEventListener('click', closeDrawer);
     btnDrawerFocusSubtree?.addEventListener('click', () => {
         if (currentDrawerMember) focusSubtree(currentDrawerMember);
+    });
+    btnDrawerMoveMember?.addEventListener('click', (e) => {
+        if (currentDrawerMember) {
+            e.preventDefault();
+            const m = currentDrawerMember;
+            closeDrawer();
+            openManualMoveModal(m);
+        }
     });
 
     // Jump to node in tree by path with smooth pan & highlight animation
@@ -2444,6 +2487,10 @@
         const moveBtn = event.target.closest('.btn-node-move');
         if (moveBtn) {
             event.stopPropagation();
+            const card = moveBtn.closest('.org-node-card');
+            if (card && card._memberData) {
+                openManualMoveModal(card._memberData);
+            }
             return;
         }
 
@@ -2956,9 +3003,14 @@
                         ${isRoot ? `
                             <span class="px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-[10px] font-bold">Root Leader</span>
                         ` : `
-                            <a href="${moveUrl}" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold text-xs shadow-xs transition flex items-center gap-1 shrink-0">
-                                <span>Move Position</span> <i class="fas fa-arrow-right text-[10px]"></i>
-                            </a>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" class="btn-picker-relocate-modal px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-lg font-bold text-xs shadow-xs transition flex items-center gap-1" data-id="${m.id}" data-name="${escapeHtml(m.name)}" data-customer-id="${escapeHtml(m.customer_id)}" data-downlines="${m.downline_count ?? 0}" title="Relocate directly on tree">
+                                    <i class="fas fa-arrows-up-down-left-right text-[10px]"></i> <span>Relocate</span>
+                                </button>
+                                <a href="${moveUrl}" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold text-xs border border-slate-300 transition" title="Open full movement form">
+                                    <i class="fas fa-external-link-alt text-[10px]"></i>
+                                </a>
+                            </div>
                         `}
                     </div>
                 `;
@@ -2970,6 +3022,19 @@
                 </div>`;
         }
     };
+
+    movePickerResults?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-picker-relocate-modal');
+        if (!btn) return;
+        const memberData = {
+            id: Number(btn.dataset.id),
+            name: btn.dataset.name,
+            customer_id: btn.dataset.customerId,
+            downline_count: Number(btn.dataset.downlines || 0),
+        };
+        closeMovePickerModal();
+        openManualMoveModal(memberData);
+    });
 
     inputMoveMemberSearch?.addEventListener('input', () => {
         if (movePickerDebounce) clearTimeout(movePickerDebounce);
@@ -2984,12 +3049,24 @@
 
     document.querySelectorAll('.btn-quick-move-chip').forEach(btn => {
         btn.addEventListener('click', () => {
+            const memberId = btn.dataset.id;
             const url = btn.dataset.url;
-            if (url) window.location.href = url;
+            if (memberId) {
+                const name = btn.textContent.trim().split('(')[0].trim();
+                const memberData = {
+                    id: Number(memberId),
+                    name: name,
+                    customer_id: 'Leader',
+                    downline_count: 0
+                };
+                openManualMoveModal(memberData);
+            } else if (url) {
+                window.location.href = url;
+            }
         });
     });
 
-    // Drag & Drop Placement Repositioning Logic
+    // Placement Movement & Drag & Drop System
     let draggedMember = null;
     let draggedCard = null;
     let dragDropContext = null;
@@ -3011,48 +3088,99 @@
     const toastMoveSuccess = document.getElementById('toastMoveSuccess');
     const toastMoveSuccessMsg = document.getElementById('toastMoveSuccessMessage');
 
-    const openDragDropModal = (context) => {
-        dragDropContext = context;
-        const { member, targetParent, targetPosition } = context;
+    // Live Target Search elements
+    const ddTargetSearchSection = document.getElementById('ddTargetSearchSection');
+    const ddTargetParentSearchInput = document.getElementById('ddTargetParentSearchInput');
+    const btnClearDdTargetSearch = document.getElementById('btnClearDdTargetSearch');
+    const ddTargetSearchResults = document.getElementById('ddTargetSearchResults');
+    let ddTargetSearchDebounce = null;
 
-        ddMovingName.textContent = member.name || 'Member';
-        ddMovingId.textContent = member.customer_id;
-        ddMovingDownlines.textContent = `${member.downline_count ?? 0} Downlines`;
+    const openManualMoveModal = (member) => {
+        if (!member) return;
+        closeDrawer();
+        closeMovePickerModal();
+        openDragDropModal({
+            member: member,
+            targetParent: null,
+            targetPosition: null,
+            targetPositionLabel: null,
+            isManual: true,
+        });
+    };
 
-        ddTargetName.textContent = targetParent.name || 'Parent Member';
-        ddTargetId.textContent = targetParent.customer_id;
+    const updateTargetSlotButtons = (targetParent, activePos = null) => {
+        if (!targetParent) {
+            ddSlotButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                let statusSpan = btn.querySelector('.slot-status-text');
+                if (statusSpan) statusSpan.textContent = '';
+                btn.classList.remove('ring-2', 'ring-offset-1', 'scale-105', 'ring-sky-500', 'ring-amber-500', 'ring-emerald-500');
+            });
+            btnConfirmDragDrop.disabled = true;
+            ddBtnText.textContent = 'Select a Target Parent';
+            return;
+        }
 
-        // Check which slots of targetParent are already occupied in the visible tree
         const targetBranch = findBranchInDom(targetParent.id);
-        const occupiedSlots = new Set();
-        if (targetBranch && targetBranch._childrenContainer) {
+        const occupiedSlots = new Map();
+
+        if (targetParent.slot_details) {
+            Object.entries(targetParent.slot_details).forEach(([pos, detail]) => {
+                if (!detail.is_available) {
+                    occupiedSlots.set(pos, { isIdle: false, label: detail.status || 'Occupied' });
+                } else if (detail.idle_slot_label) {
+                    occupiedSlots.set(pos, { isIdle: true, label: `Vacant ${detail.idle_slot_label}` });
+                }
+            });
+        } else if (targetBranch && targetBranch._childrenContainer) {
             const childCards = targetBranch._childrenContainer.querySelectorAll(':scope > .org-child-slot > .org-tree-branch > .org-node-wrapper > .org-node-card');
             childCards.forEach(c => {
-                if (c._memberData && c._memberData.id !== member.id) {
+                if (c._memberData && (!dragDropContext?.member || c._memberData.id !== dragDropContext.member.id)) {
                     const pos = c._memberData.placement_position || (c.classList.contains('pos-left') ? 'left' : (c.classList.contains('pos-middle') ? 'middle' : (c.classList.contains('pos-right') ? 'right' : null)));
-                    if (pos) occupiedSlots.add(pos);
+                    if (pos) {
+                        const isIdle = Boolean(c._memberData.is_idle_slot);
+                        occupiedSlots.set(pos, { isIdle, label: isIdle ? `Vacant ${c._memberData.idle_slot_label || 'Idle'}` : 'Occupied' });
+                    }
                 }
             });
         }
 
-        let activePos = targetPosition;
-        if (!activePos) {
+        if (!activePos || (occupiedSlots.has(activePos) && !occupiedSlots.get(activePos).isIdle)) {
             const allPositions = ['left', 'middle', 'right'];
-            activePos = allPositions.find(p => !occupiedSlots.has(p)) || 'left';
+            activePos = allPositions.find(p => !occupiedSlots.has(p) || occupiedSlots.get(p).isIdle) || 'left';
         }
-        dragDropContext.targetPosition = activePos;
+
+        if (dragDropContext) {
+            dragDropContext.targetPosition = activePos;
+        }
 
         ddSlotButtons.forEach(btn => {
             const pos = btn.dataset.pos;
-            const isOcc = occupiedSlots.has(pos);
+            const slotInfo = occupiedSlots.get(pos);
+            const isHardOccupied = slotInfo && !slotInfo.isIdle;
+            const isIdleOccupied = slotInfo && slotInfo.isIdle;
+
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+
             let statusSpan = btn.querySelector('.slot-status-text');
             if (!statusSpan) {
                 statusSpan = document.createElement('span');
                 statusSpan.className = 'slot-status-text text-[9px] font-normal';
                 btn.appendChild(statusSpan);
             }
-            statusSpan.textContent = isOcc ? '(Occupied)' : '(Available)';
-            statusSpan.className = isOcc ? 'slot-status-text text-[9px] font-semibold text-rose-600' : 'slot-status-text text-[9px] font-semibold text-emerald-700';
+
+            if (isHardOccupied) {
+                statusSpan.textContent = '(Occupied)';
+                statusSpan.className = 'slot-status-text text-[9px] font-semibold text-rose-600';
+            } else if (isIdleOccupied) {
+                statusSpan.textContent = `(${slotInfo.label})`;
+                statusSpan.className = 'slot-status-text text-[9px] font-semibold text-amber-700';
+            } else {
+                statusSpan.textContent = '(Available)';
+                statusSpan.className = 'slot-status-text text-[9px] font-semibold text-emerald-700';
+            }
 
             if (pos === activePos) {
                 btn.classList.add('ring-2', 'ring-offset-1', 'scale-105');
@@ -3064,17 +3192,157 @@
             }
         });
 
+        const activeSlotInfo = occupiedSlots.get(activePos);
+        const isCurrentActiveBlocked = activeSlotInfo && !activeSlotInfo.isIdle;
+        btnConfirmDragDrop.disabled = !targetParent || isCurrentActiveBlocked;
+        ddBtnText.textContent = isCurrentActiveBlocked ? 'Position Occupied' : 'Confirm & Move';
+    };
+
+    const searchTargetParents = async () => {
+        if (!dragDropContext?.member) return;
+        const q = ddTargetParentSearchInput.value.trim();
+        if (!q || q.length < 1) {
+            ddTargetSearchResults.classList.add('hidden');
+            ddTargetSearchResults.innerHTML = '';
+            btnClearDdTargetSearch.classList.add('hidden');
+            return;
+        }
+
+        btnClearDdTargetSearch.classList.remove('hidden');
+        ddTargetSearchResults.classList.remove('hidden');
+        ddTargetSearchResults.innerHTML = `
+            <div class="p-3 text-center text-slate-500 text-xs flex items-center justify-center gap-2">
+                <i class="fas fa-spinner fa-spin text-amber-600"></i> Searching potential parents...
+            </div>`;
+
+        try {
+            const memberId = dragDropContext.member.id;
+            const searchUrlTemplate = viewport.dataset.moveParentSearchUrl || `{{ admin_route('mlm.tree.move.parents.search', ':id') }}`;
+            const url = new URL(searchUrlTemplate.replace(':id', memberId).replace('__MEMBER__', memberId), window.location.origin);
+            url.searchParams.set('q', q);
+            const isSubtree = document.querySelector('input[name="dd_move_mode"]:checked')?.value === 'subtree';
+            url.searchParams.set('is_subtree', isSubtree ? '1' : '0');
+
+            const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+            const data = await resp.json();
+            const list = data.data || [];
+
+            if (!list.length) {
+                ddTargetSearchResults.innerHTML = `
+                    <div class="p-3 text-center text-slate-500 text-xs">
+                        ${escapeHtml(data.message || `No active parent found matching "${q}".`)}
+                    </div>`;
+                return;
+            }
+
+            ddTargetSearchResults.innerHTML = list.map(p => {
+                const availableLabels = (p.available_positions || []).map(pos => {
+                    const detail = p.slot_details ? p.slot_details[pos] : null;
+                    if (detail && detail.idle_slot_label) {
+                        return `${pos.toUpperCase()} (${detail.idle_slot_label})`;
+                    }
+                    return pos.toUpperCase();
+                }).join(', ') || 'No open slots';
+
+                const safeJson = escapeHtml(JSON.stringify(p));
+
+                return `
+                    <div class="p-2.5 hover:bg-amber-50 cursor-pointer transition flex items-center justify-between gap-2" data-parent-json="${safeJson}">
+                        <div class="min-w-0 flex-1">
+                            <div class="font-bold text-slate-900 truncate flex items-center gap-1.5">
+                                <span>${escapeHtml(p.name)}</span>
+                                <span class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-1 rounded border border-blue-200">${escapeHtml(p.customer_id)}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">
+                                Slots: <span class="text-emerald-700 font-semibold">${escapeHtml(availableLabels)}</span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded shrink-0">Select</span>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            ddTargetSearchResults.innerHTML = `
+                <div class="p-3 text-center text-rose-600 text-xs">
+                    Failed to search placement parents.
+                </div>`;
+        }
+    };
+
+    ddTargetParentSearchInput?.addEventListener('input', () => {
+        if (ddTargetSearchDebounce) clearTimeout(ddTargetSearchDebounce);
+        ddTargetSearchDebounce = setTimeout(searchTargetParents, 250);
+    });
+
+    btnClearDdTargetSearch?.addEventListener('click', () => {
+        ddTargetParentSearchInput.value = '';
+        ddTargetSearchResults.classList.add('hidden');
+        btnClearDdTargetSearch.classList.add('hidden');
+        ddTargetParentSearchInput.focus();
+    });
+
+    ddTargetSearchResults?.addEventListener('click', (e) => {
+        const item = e.target.closest('[data-parent-json]');
+        if (!item || !dragDropContext) return;
+
+        const parentData = JSON.parse(item.dataset.parentJson);
+        dragDropContext.targetParent = parentData;
+
+        ddTargetName.textContent = parentData.name;
+        ddTargetId.textContent = parentData.customer_id;
+        ddTargetParentSearchInput.value = `${parentData.name} (${parentData.customer_id})`;
+        ddTargetSearchResults.classList.add('hidden');
+        btnClearDdTargetSearch.classList.remove('hidden');
+
+        updateTargetSlotButtons(parentData, null);
+    });
+
+    const openDragDropModal = (context) => {
+        dragDropContext = context;
+        const { member, targetParent, targetPosition, isManual } = context;
+
+        const modalTitle = document.getElementById('ddModalTitle');
+        const modalSubtitle = document.getElementById('ddModalSubtitle');
+        if (modalTitle) {
+            modalTitle.textContent = isManual || !targetParent ? 'Manual Move Member Placement' : 'Confirm Drag & Drop Move';
+        }
+        if (modalSubtitle) {
+            modalSubtitle.textContent = isManual || !targetParent ? 'Select target parent and available slot to relocate member' : 'Review placement position before applying changes';
+        }
+
+        ddMovingName.textContent = member.name || 'Member';
+        ddMovingId.textContent = member.customer_id;
+        ddMovingDownlines.textContent = `${member.downline_count ?? 0} Downlines`;
+
+        ddTargetSearchResults.classList.add('hidden');
+        ddTargetSearchResults.innerHTML = '';
+
+        if (targetParent) {
+            ddTargetName.textContent = targetParent.name || 'Parent Member';
+            ddTargetId.textContent = targetParent.customer_id;
+            ddTargetParentSearchInput.value = `${targetParent.name || ''} (${targetParent.customer_id || ''})`.trim();
+            btnClearDdTargetSearch.classList.remove('hidden');
+        } else {
+            ddTargetName.textContent = 'Select a parent above';
+            ddTargetId.textContent = 'Pending';
+            ddTargetParentSearchInput.value = '';
+            btnClearDdTargetSearch.classList.add('hidden');
+        }
+
+        updateTargetSlotButtons(targetParent, targetPosition);
+
         ddErrorBox.classList.add('hidden');
         ddErrorBox.textContent = '';
-        inputDragDropReason.value = `Repositioned ${member.name} under ${targetParent.name} via visual drag-and-drop on placement tree`;
+        inputDragDropReason.value = `Repositioned ${member.name} under ${targetParent ? targetParent.name : 'new placement parent'} via tree relocation`;
 
         const advancedUrl = `{{ admin_route('mlm.tree.move.form', ':id') }}`.replace(':id', member.id);
         btnAdvancedMove.href = advancedUrl;
 
-        btnConfirmDragDrop.disabled = false;
-        ddBtnText.textContent = 'Confirm & Move';
-
         modalDragDrop.classList.remove('hidden');
+
+        if (!targetParent) {
+            setTimeout(() => ddTargetParentSearchInput.focus(), 150);
+        }
     };
 
     const closeDragDropModal = () => {
@@ -3092,25 +3360,24 @@
 
     ddSlotButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            if (!dragDropContext) return;
+            if (!dragDropContext || !dragDropContext.targetParent) return;
             const newPos = btn.dataset.pos;
-            dragDropContext.targetPosition = newPos;
-
-            ddSlotButtons.forEach(b => {
-                b.classList.remove('ring-2', 'ring-offset-1', 'scale-105', 'ring-sky-500', 'ring-amber-500', 'ring-emerald-500');
-            });
-            btn.classList.add('ring-2', 'ring-offset-1', 'scale-105');
-            if (newPos === 'left') btn.classList.add('ring-sky-500');
-            if (newPos === 'middle') btn.classList.add('ring-amber-500');
-            if (newPos === 'right') btn.classList.add('ring-emerald-500');
+            updateTargetSlotButtons(dragDropContext.targetParent, newPos);
         });
     });
 
     btnConfirmDragDrop?.addEventListener('click', async () => {
         if (!dragDropContext) return;
         const { member, targetParent } = dragDropContext;
+        if (!targetParent || !targetParent.id) {
+            ddErrorBox.textContent = 'Please search and select a Target Placement Parent before moving.';
+            ddErrorBox.classList.remove('hidden');
+            ddTargetParentSearchInput.focus();
+            return;
+        }
+
         const selectedPos = dragDropContext.targetPosition || 'left';
-        const reason = inputDragDropReason.value.trim() || 'Repositioned via visual drag and drop on placement tree';
+        const reason = inputDragDropReason.value.trim() || 'Repositioned via placement tree movement';
 
         btnConfirmDragDrop.disabled = true;
         ddBtnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Moving...';
@@ -3172,7 +3439,7 @@
             closeDragDropModal();
 
             if (toastMoveSuccess) {
-                const modeMsg = moveMode === 'single' ? ' Previous position is now empty for future placements.' : '';
+                const modeMsg = moveMode === 'single' ? ' Previous position is preserved as a blank select cell for future placements.' : '';
                 toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot!${modeMsg}`;
                 toastMoveSuccess.classList.remove('hidden');
                 setTimeout(() => {
@@ -3223,7 +3490,7 @@
                 }
             }, 150);
         } catch (err) {
-            console.error('Drag and drop move error:', err);
+            console.error('Movement execution error:', err);
             ddErrorBox.textContent = err.message && !err.message.includes('<!DOCTYPE')
                 ? err.message
                 : 'Unable to complete move. If this position is occupied or causes a cycle, please select an available slot or use Advanced Move.';

@@ -41,29 +41,76 @@ class MlmMovementService
         $like = $isPgsql ? 'ilike' : 'like';
         $lowerTerm = strtolower($term);
 
-        return Member::query()
-            ->with('user')
+        $candidates = Member::query()
+            ->with(['user', 'placementParent.user'])
             ->where('status', Member::STATUS_ACTIVE)
             ->whereNotIn('id', $descendantIds)
-            ->whereHas('user', function ($query) use ($term, $like, $lowerTerm): void {
-                $query->where('mlm_member_id', $like, "%{$term}%")
-                    ->orWhere('name', $like, "%{$term}%")
-                    ->orWhere('phone', $like, "%{$term}%")
-                    ->orWhere('email', $like, "%{$term}%")
-                    ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerTerm}%"])
-                    ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerTerm}%"]);
+            ->where(function ($q) use ($term, $like, $lowerTerm): void {
+                $q->whereHas('user', function ($query) use ($term, $like, $lowerTerm): void {
+                    $query->where('mlm_member_id', $like, "%{$term}%")
+                        ->orWhere('name', $like, "%{$term}%")
+                        ->orWhere('phone', $like, "%{$term}%")
+                        ->orWhere('email', $like, "%{$term}%")
+                        ->orWhereRaw('LOWER(name) LIKE ?', ["%{$lowerTerm}%"])
+                        ->orWhereRaw('LOWER(mlm_member_id) LIKE ?', ["%{$lowerTerm}%"]);
+                })
+                ->orWhere('idle_slot_label', $like, "%{$term}%");
             })
             ->orderBy('id')
-            ->limit(25)
+            ->limit(30)
+            ->get();
+
+        // Also, if the search term matches an idle slot that is currently a child of another member,
+        // include that child's parent as a candidate parent
+        $matchingIdleParents = Member::query()
+            ->with(['placementParent.user'])
+            ->where('is_idle_slot', true)
+            ->whereNotNull('placement_parent_id')
+            ->where(function ($q) use ($term, $like, $lowerTerm): void {
+                $q->where('idle_slot_label', $like, "%{$term}%")
+                    ->orWhereHas('user', function ($uq) use ($term, $like, $lowerTerm): void {
+                        $uq->where('mlm_member_id', $like, "%{$term}%")
+                            ->orWhere('name', $like, "%{$term}%");
+                    });
+            })
             ->get()
-            ->map(fn (Member $parent): array => [
-                'id' => $parent->id,
-                'customer_id' => $parent->customer_id,
-                'name' => $parent->user?->name ?? 'Unnamed member',
-                'phone' => $parent->user?->phone ?? '',
-                'status' => $parent->status,
-                'available_positions' => $this->availablePositions($movingMember, $parent),
-            ])
+            ->pluck('placementParent')
+            ->filter(fn ($p) => $p && ! in_array($p->id, $descendantIds, true));
+
+        $allCandidates = $candidates->merge($matchingIdleParents)->unique('id');
+
+        return $allCandidates
+            ->map(function (Member $parent) use ($movingMember): array {
+                $available = $this->availablePositions($movingMember, $parent);
+
+                // Slot details (showing which slots are open or vacant idle slots)
+                $slotDetails = [];
+                $children = Member::query()
+                    ->with('user')
+                    ->where('placement_parent_id', $parent->id)
+                    ->get()
+                    ->keyBy('placement_position');
+
+                foreach ($available as $slotPos) {
+                    $child = $children->get($slotPos);
+                    $slotDetails[] = [
+                        'position' => $slotPos,
+                        'is_idle' => $child?->is_idle_slot ?? false,
+                        'label' => ucfirst($slotPos) . ' Slot' . ($child?->is_idle_slot ? ' [Vacant ' . ($child->user?->name ?? 'Idle') . ']' : ' [Open]'),
+                    ];
+                }
+
+                return [
+                    'id' => $parent->id,
+                    'customer_id' => $parent->customer_id,
+                    'name' => $parent->user?->name ?? 'Unnamed member',
+                    'phone' => $parent->user?->phone ?? '',
+                    'status' => $parent->status,
+                    'is_idle' => (bool) $parent->is_idle_slot,
+                    'available_positions' => $available,
+                    'slot_details' => $slotDetails,
+                ];
+            })
             ->filter(fn (array $parent): bool => $parent['available_positions'] !== [])
             ->values()
             ->all();
@@ -74,6 +121,8 @@ class MlmMovementService
         $occupied = Member::query()
             ->where('placement_parent_id', $newParent->id)
             ->whereKeyNot($movingMember->id)
+            ->where('is_idle_slot', false)
+            ->where('status', Member::STATUS_ACTIVE)
             ->pluck('placement_position')
             ->all();
 
@@ -143,40 +192,64 @@ class MlmMovementService
 
             $existingChildren = Member::query()->where('placement_parent_id', $lockedMember->id)->get();
 
-            // Clear any idle slot occupying the target position to prevent duplicate positioning
-            Member::query()
+            // Find any idle slot currently occupying the target position
+            $targetIdleSlot = Member::query()
                 ->where('placement_parent_id', $newParent->id)
                 ->where('placement_position', $data['new_position'])
                 ->whereKeyNot($lockedMember->id)
                 ->where('is_idle_slot', true)
-                ->update([
-                    'placement_parent_id' => null,
-                    'placement_position' => null,
-                ]);
+                ->first();
 
             if (! $isSubtreeMove) {
                 // Client Requirement:
                 // Move only selected member ID.
                 // Downline members do NOT follow the member into the new parent.
-                // Retain detachment information so when moving back or when a member occupies this slot, they are restored.
+                // Keep blank select cell for future use in previous position.
+                // Existing downlines stay attached under this blank select cell!
+
+                // 1. Temporarily vacate lockedMember from old position to satisfy unique (placement_parent_id, placement_position) constraint
+                $lockedMember->update([
+                    'placement_parent_id' => null,
+                    'placement_position' => null,
+                ]);
+
+                // 2. Create or assign blank select cell in the vacated slot for future use
+                $blankSlot = null;
+                if ($oldParentId && $oldPosition) {
+                    $blankSlot = $this->createOrAssignBlankSlot($oldParentId, $oldPosition, $lockedMember, $admin);
+                }
+
+                // 3. Re-parent existing children to the blank slot so downlines stay in place!
                 if ($existingChildren->isNotEmpty()) {
                     foreach ($existingChildren as $child) {
                         $updatePayload = [
-                            'placement_parent_id' => null,
-                            'placement_position' => null,
+                            'placement_parent_id' => $blankSlot ? $blankSlot->id : null,
                         ];
                         if (Schema::hasColumn('mlm_members', 'detached_parent_id')) {
                             $updatePayload['detached_parent_id'] = $oldParentId;
                             $updatePayload['detached_parent_position'] = $oldPosition;
-                            $updatePayload['detached_member_id'] = $lockedMember->id;
+                            $updatePayload['detached_member_id'] = $blankSlot ? $blankSlot->id : $lockedMember->id;
                             $updatePayload['detached_child_position'] = $child->placement_position;
                         }
                         $child->update($updatePayload);
                     }
                 }
 
-                // Move lockedMember to target parent and position.
-                // Old position is now an empty Available Slot.
+                // 4. If target position was occupied by an idle slot with waiting children,
+                // re-parent those children under the newly arriving member
+                if ($targetIdleSlot) {
+                    Member::query()
+                        ->where('placement_parent_id', $targetIdleSlot->id)
+                        ->update(['placement_parent_id' => $lockedMember->id]);
+
+                    $targetIdleSlot->update([
+                        'placement_parent_id' => null,
+                        'placement_position' => null,
+                        'status' => Member::STATUS_INACTIVE,
+                    ]);
+                }
+
+                // 5. Move lockedMember to target parent and position
                 $lockedMember->update([
                     'placement_parent_id' => $newParent->id,
                     'placement_position' => $data['new_position'],
@@ -188,6 +261,14 @@ class MlmMovementService
                 $subtreeCount = 1;
             } else {
                 // Move with complete subtree
+                if ($targetIdleSlot) {
+                    $targetIdleSlot->update([
+                        'placement_parent_id' => null,
+                        'placement_position' => null,
+                        'status' => Member::STATUS_INACTIVE,
+                    ]);
+                }
+
                 $lockedMember->update([
                     'placement_parent_id' => $newParent->id,
                     'placement_position' => $data['new_position'],
@@ -236,6 +317,7 @@ class MlmMovementService
             $waiting = Member::query()
                 ->where('detached_parent_id', $parentId)
                 ->where('detached_parent_position', $position)
+                ->where('id', '!=', $occupant->id)
                 ->get();
 
             foreach ($waiting as $child) {
@@ -258,38 +340,42 @@ class MlmMovementService
         app(MlmTreeService::class)->autoReconnectOrphanedDownlines($occupant);
     }
 
-    public function createOrAssignBlankSlot(?int $oldParentId, ?string $oldPosition, Member $movingMember, User $admin): Member
+    public function createOrAssignBlankSlot(?int $oldParentId, ?string $oldPosition, Member $movingMember, User $admin): ?Member
     {
-        if ($oldParentId) {
-            $existingBlank = Member::query()
-                ->where('placement_parent_id', $oldParentId)
-                ->where('placement_position', $oldPosition)
-                ->where('is_idle_slot', true)
-                ->whereKeyNot($movingMember->id)
-                ->first();
-
-            if ($existingBlank) {
-                return $existingBlank;
-            }
+        if (! $oldParentId || ! $oldPosition) {
+            return null;
         }
 
-        // Generate a clean vacant slot code
-        $seq = Member::query()->where('is_idle_slot', true)->count() + 1;
-        $uniqueCode = 'VACANT_' . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
-        while (User::where('mlm_member_id', $uniqueCode)->exists()) {
-            $seq++;
-            $uniqueCode = 'VACANT_' . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        $existingBlank = Member::query()
+            ->where('placement_parent_id', $oldParentId)
+            ->where('placement_position', $oldPosition)
+            ->where('is_idle_slot', true)
+            ->whereKeyNot($movingMember->id)
+            ->first();
+
+        if ($existingBlank) {
+            $existingBlank->update(['status' => Member::STATUS_ACTIVE]);
+            return $existingBlank;
         }
 
-        $customerRoleId = Role::where('name', 'Customer')->value('id') ?? 4;
+        // Generate sequential unique vacant slot code and label
+        $count = Member::query()->where('is_idle_slot', true)->count() + 1;
+        $uniqueCode = 'C2507' . str_pad((string) $count, 4, '0', STR_PAD_LEFT);
+        while (User::where('mlm_member_id', $uniqueCode)->orWhere('email', strtolower($uniqueCode) . '@kharchdaan.com')->exists()) {
+            $count++;
+            $uniqueCode = 'C2507' . str_pad((string) $count, 4, '0', STR_PAD_LEFT);
+        }
+
+        $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'web']);
+        $slotLabel = 'Idle - ' . $count;
 
         $user = User::create([
-            'name' => 'Vacant Slot',
+            'name' => $slotLabel,
             'email' => strtolower($uniqueCode) . '@kharchdaan.com',
             'password' => Hash::make('password'),
             'plain_password' => 'password',
-            'phone' => '',
-            'role_id' => $customerRoleId,
+            'phone' => null,
+            'role_id' => $customerRole->id,
             'status' => 'active',
             'mlm_member_id' => $uniqueCode,
         ]);
@@ -301,7 +387,7 @@ class MlmMovementService
             'placement_position' => $oldPosition,
             'status' => Member::STATUS_ACTIVE,
             'is_idle_slot' => true,
-            'idle_slot_label' => 'Vacant Slot',
+            'idle_slot_label' => $slotLabel,
             'joined_at' => now(),
             'created_by' => $admin->id,
             'kyc_status' => Member::KYC_APPROVED,
@@ -331,6 +417,7 @@ class MlmMovementService
             ->where('placement_parent_id', $newParent->id)
             ->where('placement_position', $newPosition)
             ->whereKeyNot($member->id)
+            ->where('status', Member::STATUS_ACTIVE)
             ->first();
 
         if ($occupied && ! $occupied->is_idle_slot) {
