@@ -14,6 +14,11 @@ class MlmTreeService
 {
     protected ?array $downlineCountsCache = null;
 
+    public function clearDownlineCountsCache(): void
+    {
+        $this->downlineCountsCache = null;
+    }
+
     public function getDownlineCounts(): array
     {
         if ($this->downlineCountsCache !== null) {
@@ -242,11 +247,17 @@ class MlmTreeService
             'parent' => $this->memberPayload($parent),
             'slots' => collect(Member::POSITIONS)->map(function (string $position) use ($children): array {
                 $child = $children->get($position);
+                $payload = $child ? $this->memberPayload($child) : null;
+
+                // Vacant placeholder with no retained downlines → show as true Available Slot
+                if ($payload && ($payload['is_vacant_slot'] ?? false) && ! ($payload['has_children'] ?? false) && (int) ($payload['downline_count'] ?? 0) === 0) {
+                    $payload = null;
+                }
 
                 return [
                     'position' => $position,
                     'position_label' => ucfirst($position),
-                    'member' => $child ? $this->memberPayload($child) : null,
+                    'member' => $payload,
                 ];
             })->values()->all(),
         ];

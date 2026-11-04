@@ -400,16 +400,38 @@ class MlmMemberController extends Controller
         if ($request->wantsJson() || $request->ajax() || $request->isJson() || $request->expectsJson()) {
             $freshMember = $member->fresh(['user', 'sponsor.user', 'placementParent.user']);
             $newPath = $this->movementService->placementPath($freshMember) ?? [$freshMember->id];
+
+            $vacantSlot = null;
+            $preservedDownlines = 0;
+            if ($isSingle && $movement->old_parent_id && $movement->old_position) {
+                $vacantSlot = Member::query()
+                    ->where('placement_parent_id', $movement->old_parent_id)
+                    ->where('placement_position', $movement->old_position)
+                    ->where('is_idle_slot', true)
+                    ->where('idle_slot_label', 'Empty Slot')
+                    ->first();
+                if ($vacantSlot) {
+                    $preservedDownlines = Member::query()
+                        ->where('placement_parent_id', $vacantSlot->id)
+                        ->count();
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => $isSingle
-                    ? 'Member relocated successfully. Previous position preserved as blank select cell for future use.'
+                    ? ($preservedDownlines > 0
+                        ? 'Member relocated successfully. Previous position is now an Available Slot and downlines stayed in place.'
+                        : 'Member relocated successfully. Previous position is now an Available Slot.')
                     : 'Placement subtree moved successfully.',
                 'movement_id' => $movement->id,
                 'old_parent_id' => $movement->old_parent_id,
+                'old_position' => $movement->old_position,
                 'new_parent_id' => $movement->new_parent_id,
                 'member_id' => $freshMember->id,
                 'new_position' => $movement->new_position,
+                'vacant_slot_id' => $vacantSlot?->id,
+                'preserved_downline_count' => $preservedDownlines,
                 'path' => $newPath,
                 'member' => $this->treeService->memberPayload($freshMember),
                 'target_url' => admin_route('mlm.tree.index', ['root' => $movement->new_parent_id ?? $member->id]),

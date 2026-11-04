@@ -349,6 +349,15 @@
     .density-circle .org-node-card.pos-middle { border-color: #d97706; background: #fffbeb; }
     .density-circle .org-node-card.pos-right { border-color: #059669; background: #ecfdf5; }
     .density-circle .org-node-card.pos-vacant-slot { border-color: #f59e0b; border-style: dashed; background: #fffbeb; }
+    .vacant-available-branch > .org-node-wrapper {
+        min-height: auto;
+    }
+    .vacant-available-branch > .org-node-wrapper .org-slot-empty {
+        margin: 0 auto;
+    }
+    .vacant-available-branch.has-expanded-children > .org-children-wrapper {
+        margin-top: 18px;
+    }
 
     .density-circle .card-box-content {
         display: none !important;
@@ -1047,7 +1056,7 @@
                         <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Protected</span>
                     </div>
                     <div class="text-[11px] text-amber-800 leading-relaxed">
-                        Moves only this distributor ID. Their previous card will remain as an <strong>Empty Slot</strong>, and any downlines under this distributor will <strong>stay exactly as they are</strong> under the empty card.
+                        Moves only this distributor. Their previous position becomes an <strong>Available Slot</strong>, and any people under them <strong>stay exactly where they are</strong> in the tree.
                     </div>
                 </div>
             </div>
@@ -1665,29 +1674,74 @@
         branch._expandButton = card.querySelector('[data-expand]');
 
         if (initialSlots && initialSlots.length > 0) {
-            renderSlots(branch, initialSlots);
+            branch._initialSlotsPromise = renderSlots(branch, initialSlots);
         }
 
         return branch;
     };
 
+    // Vacant placeholder after a single-member move: show Available Slot UI,
+    // and keep retained downlines visible underneath that same position.
+    const renderVacantAvailableBranch = (vacantMember, position, parentMember) => {
+        const branch = document.createElement('div');
+        branch.className = 'org-tree-branch vacant-available-branch';
+        branch.dataset.nodeId = vacantMember.id;
+        branch.dataset.vacantSlot = 'true';
+
+        const nodeWrapper = document.createElement('div');
+        nodeWrapper.className = 'org-node-wrapper';
+
+        const emptySlot = renderEmptySlot(position, vacantMember.position_label || position, parentMember);
+        emptySlot.dataset.vacantMemberId = String(vacantMember.id);
+        emptySlot.title = Number(vacantMember.downline_count || 0) > 0
+            ? `Available Slot — ${vacantMember.downline_count} downline(s) stay here`
+            : 'Available Slot';
+        nodeWrapper.append(emptySlot);
+
+        // Keep a hidden expand control so loadChildren() can reuse the same path
+        const expandBtn = document.createElement('button');
+        expandBtn.type = 'button';
+        expandBtn.className = 'org-expand-btn hidden';
+        expandBtn.setAttribute('data-expand', 'true');
+        expandBtn.setAttribute('aria-expanded', 'false');
+        expandBtn.innerHTML = '<i class="fas fa-plus"></i>';
+        nodeWrapper.append(expandBtn);
+
+        const childrenContainer = document.createElement('div');
+        childrenContainer.className = 'org-children-wrapper hidden';
+        childrenContainer.dataset.loaded = 'false';
+
+        branch.append(nodeWrapper, childrenContainer);
+        branch._card = emptySlot;
+        branch._card._memberData = vacantMember;
+        branch._nodeWrapper = nodeWrapper;
+        branch._childrenContainer = childrenContainer;
+        branch._expandButton = expandBtn;
+
+        return branch;
+    };
+
     // Render slots into branch
-    const renderSlots = (branch, slots) => {
+    const renderSlots = async (branch, slots) => {
         branch._childrenContainer.replaceChildren();
         const parentMember = branch._card?._memberData;
+        const pendingVacantLoads = [];
 
         (slots || []).forEach((slot) => {
             const slotCol = document.createElement('div');
             slotCol.className = 'org-child-slot';
 
-            if (slot.member) {
+            if (slot.member && slot.member.is_vacant_slot) {
+                // Client UX: vacated position looks like Available Slot; downlines stay visible below
+                const vacantBranch = renderVacantAvailableBranch(slot.member, slot.position, parentMember);
+                slotCol.append(vacantBranch);
+
+                if (slot.member.has_children || Number(slot.member.downline_count) > 0) {
+                    pendingVacantLoads.push(loadChildren(vacantBranch, false));
+                }
+            } else if (slot.member) {
                 const childBranch = renderBranch(slot.member, slot.position);
                 slotCol.append(childBranch);
-
-                // If this is an Empty/Vacant slot with downlines, automatically load and expand its children so downlines stay visible!
-                if (slot.member.is_vacant_slot && (slot.member.has_children || Number(slot.member.downline_count) > 0)) {
-                    loadChildren(childBranch, false);
-                }
             } else {
                 const emptySlot = renderEmptySlot(slot.position, slot.position_label, parentMember);
                 slotCol.append(emptySlot);
@@ -1699,44 +1753,69 @@
         branch._childrenContainer.dataset.loaded = 'true';
         branch._childrenContainer.classList.remove('hidden');
         branch.classList.add('has-expanded-children');
-        branch._expandButton.classList.add('is-expanded');
-        branch._expandButton.setAttribute('aria-expanded', 'true');
-        branch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+        if (branch._expandButton) {
+            branch._expandButton.classList.add('is-expanded');
+            branch._expandButton.setAttribute('aria-expanded', 'true');
+            branch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+        }
+
+        if (pendingVacantLoads.length) {
+            await Promise.allSettled(pendingVacantLoads);
+        }
     };
 
     // Load children via AJAX
     const loadChildren = async (branch, toggleIfLoaded = true) => {
+        if (!branch || !branch._childrenContainer) return;
+
         if (branch._childrenContainer.dataset.loaded === 'true') {
             const isHidden = toggleIfLoaded
                 ? branch._childrenContainer.classList.toggle('hidden')
                 : false;
             branch._childrenContainer.classList.toggle('hidden', isHidden);
             branch.classList.toggle('has-expanded-children', !isHidden);
-            branch._expandButton.classList.toggle('is-expanded', !isHidden);
-            branch._expandButton.setAttribute('aria-expanded', String(!isHidden));
-            branch._expandButton.innerHTML = isHidden ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
+            if (branch._expandButton) {
+                branch._expandButton.classList.toggle('is-expanded', !isHidden);
+                branch._expandButton.setAttribute('aria-expanded', String(!isHidden));
+                branch._expandButton.innerHTML = isHidden ? '<i class="fas fa-plus"></i>' : '<i class="fas fa-minus"></i>';
+            }
             return;
         }
 
-        branch._expandButton.disabled = true;
-        branch._expandButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-        try {
-            const url = viewport.dataset.childrenUrl.replace('__MEMBER__', branch.dataset.nodeId);
-            const response = await fetch(url, { headers: { Accept: 'application/json' } });
-            if (!response.ok) throw new Error('Unable to load placement slots.');
-            const payload = await response.json();
-            renderSlots(branch, payload.slots);
-        } catch (error) {
-            showMessage(error.message || 'Unable to load placement slots.');
-            branch._expandButton.innerHTML = '<i class="fas fa-plus"></i>';
-        } finally {
-            branch._expandButton.disabled = false;
+        if (branch._loadingChildren) {
+            return branch._loadingChildren;
         }
+
+        if (branch._expandButton) {
+            branch._expandButton.disabled = true;
+            branch._expandButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        branch._loadingChildren = (async () => {
+            try {
+                const url = viewport.dataset.childrenUrl.replace('__MEMBER__', branch.dataset.nodeId);
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Unable to load placement slots.');
+                const payload = await response.json();
+                await renderSlots(branch, payload.slots);
+            } catch (error) {
+                showMessage(error.message || 'Unable to load placement slots.');
+                if (branch._expandButton) {
+                    branch._expandButton.innerHTML = '<i class="fas fa-plus"></i>';
+                }
+            } finally {
+                if (branch._expandButton) {
+                    branch._expandButton.disabled = false;
+                }
+                branch._loadingChildren = null;
+            }
+        })();
+
+        return branch._loadingChildren;
     };
 
     // Mount Root Tree
-    const mountTree = (rootPayload, isSubtreeFocus = false) => {
+    const mountTree = async (rootPayload, isSubtreeFocus = false) => {
         clearMessage();
         panContainer.replaceChildren();
 
@@ -1755,6 +1834,9 @@
 
         const rootBranch = renderBranch(member, isSubtreeFocus ? 'focused' : 'root', slots);
         panContainer.append(rootBranch);
+        if (rootBranch._initialSlotsPromise) {
+            await rootBranch._initialSlotsPromise;
+        }
 
         renderBreadcrumbs();
         centerTree();
@@ -3470,7 +3552,10 @@
             closeDragDropModal();
 
             if (toastMoveSuccess) {
-                const modeMsg = ' Previous position is now an Empty Slot with downlines preserved.';
+                const kept = Number(data.preserved_downline_count || 0);
+                const modeMsg = kept > 0
+                    ? ` Previous position is now an Available Slot and ${kept} downline(s) stayed in place.`
+                    : ' Previous position is now an Available Slot.';
                 toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot!${modeMsg}`;
                 toastMoveSuccess.classList.remove('hidden');
                 setTimeout(() => {
@@ -3478,7 +3563,7 @@
                 }, 5000);
             }
 
-            // Invalidate and reload old parent branch to clear previous slot and show Empty Slot card
+            // Reload old parent branch so vacated position shows Available Slot + retained downlines
             const oldParentId = data.old_parent_id || member.placement_parent_id;
             if (oldParentId) {
                 const oldParentBranch = findBranchInDom(oldParentId);
@@ -3491,6 +3576,14 @@
                         oldParentBranch._expandButton.classList.add('is-expanded');
                         oldParentBranch._expandButton.setAttribute('aria-expanded', 'true');
                         oldParentBranch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+                    }
+
+                    // Force-expand vacant placeholder so retained downlines are visible immediately
+                    if (data.vacant_slot_id) {
+                        const vacantBranch = findBranchInDom(data.vacant_slot_id);
+                        if (vacantBranch) {
+                            await loadChildren(vacantBranch, false);
+                        }
                     }
                 }
             }

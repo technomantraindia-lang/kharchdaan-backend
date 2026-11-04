@@ -11,7 +11,7 @@
                 <i class="fas fa-arrows-split-up-and-left text-amber-500"></i> Move Member Placement
             </h1>
             <p class="text-sm text-slate-500 mt-1">
-                Relocate this distributor in the 1:3 placement matrix. Only the selected member moves, preserving downlines and keeping an open blank select cell in their previous position for future use.
+                Relocate this distributor in the 1:3 placement matrix. Only the selected member moves; downlines stay in place and the previous position becomes an Available Slot.
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -87,7 +87,7 @@
     <div class="p-4 bg-amber-50/80 border border-amber-200 rounded-xl flex items-start gap-3">
         <i class="fas fa-shield-alt text-amber-600 mt-0.5 text-sm"></i>
         <div class="text-xs text-amber-800">
-            <span class="font-bold">Controlled Audited Movement:</span> Sponsor genealogy relationships remain unchanged. The movement applies strictly to the 1:3 placement matrix and will relocate only this ID while keeping an open blank select cell in their old slot for future use.
+            <span class="font-bold">Controlled Audited Movement:</span> Sponsor genealogy relationships remain unchanged. The movement applies strictly to the 1:3 placement matrix and will relocate only this ID while leaving an Available Slot in their old position.
         </div>
     </div>
 
@@ -152,7 +152,7 @@
                             <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Protected</span>
                         </div>
                         <div class="text-[11px] text-amber-800 leading-relaxed">
-                            Moves only <strong>{{ $member->user?->name }} ({{ $member->customer_id }})</strong>. Their previous card will remain as an <strong>Empty Slot</strong>, and all existing downlines under this distributor will <strong>stay exactly as they are</strong> under that empty card.
+                            Moves only <strong>{{ $member->user?->name }} ({{ $member->customer_id }})</strong>. Their previous position becomes an <strong>Available Slot</strong>, and all existing downlines under this distributor will <strong>stay exactly where they are</strong> in the tree.
                         </div>
                     </div>
 
@@ -710,7 +710,7 @@
         const isSingle = form.querySelector('input[name="move_mode"]:checked')?.value !== 'subtree';
 
         const confirmMsg = isSingle
-            ? `Are you sure you want to move ONLY this member into the ${slotName} of ${parentName}?\n\nTheir existing downlines will not follow and will remain preserved under a blank select cell kept in their previous position for future use.`
+            ? `Are you sure you want to move ONLY this member into the ${slotName} of ${parentName}?\n\nTheir existing downlines will not follow. They stay in place, and the previous position becomes an Available Slot.`
             : `Are you sure you want to move this member AND their complete downline subtree into the ${slotName} of ${parentName}?`;
 
         if (window.confirm(confirmMsg)) {

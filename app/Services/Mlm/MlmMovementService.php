@@ -202,10 +202,11 @@ class MlmMovementService
 
             if (! $isSubtreeMove) {
                 // Client Requirement:
-                // Move only selected member ID.
-                // Downline members do NOT follow the member into the new parent.
-                // Keep blank select cell for future use in previous position.
-                // Existing downlines stay attached under this blank select cell!
+                // Move only the selected member.
+                // Downlines do NOT follow — they stay in the old branch.
+                // Vacated position shows as an Available Slot.
+                // If the mover had children, keep a hidden vacant placeholder so those
+                // downlines remain attached under that same slot position.
 
                 // 1. Temporarily vacate lockedMember from old position to satisfy unique (placement_parent_id, placement_position) constraint
                 $lockedMember->update([
@@ -213,29 +214,34 @@ class MlmMovementService
                     'placement_position' => null,
                 ]);
 
-                // 2. Create or assign blank select cell in the vacated slot for future use
+                // 2. Preserve downlines under a vacant placeholder in the old slot.
+                //    Leaf moves leave a true empty Available Slot (no placeholder).
                 $blankSlot = null;
-                if ($oldParentId && $oldPosition) {
-                    $blankSlot = $this->createOrAssignBlankSlot($oldParentId, $oldPosition, $lockedMember, $admin);
-                }
-
-                // 3. Re-parent existing children to the blank slot so downlines stay in place!
                 if ($existingChildren->isNotEmpty()) {
+                    if (! $oldParentId || ! $oldPosition) {
+                        $this->fail('member', 'Cannot move this member while preserving downlines because the current placement slot is invalid.');
+                    }
+
+                    $blankSlot = $this->createOrAssignBlankSlot($oldParentId, $oldPosition, $lockedMember, $admin);
+                    if (! $blankSlot) {
+                        $this->fail('member', 'Unable to preserve the vacated slot for existing downlines. Move cancelled.');
+                    }
+
                     foreach ($existingChildren as $child) {
                         $updatePayload = [
-                            'placement_parent_id' => $blankSlot ? $blankSlot->id : null,
+                            'placement_parent_id' => $blankSlot->id,
                         ];
                         if (Schema::hasColumn('mlm_members', 'detached_parent_id')) {
                             $updatePayload['detached_parent_id'] = $oldParentId;
                             $updatePayload['detached_parent_position'] = $oldPosition;
-                            $updatePayload['detached_member_id'] = $blankSlot ? $blankSlot->id : $lockedMember->id;
+                            $updatePayload['detached_member_id'] = $blankSlot->id;
                             $updatePayload['detached_child_position'] = $child->placement_position;
                         }
                         $child->update($updatePayload);
                     }
                 }
 
-                // 4. If target position was occupied by an idle slot with waiting children,
+                // 3. If target position was occupied by an idle/vacant slot with waiting children,
                 // re-parent those children under the newly arriving member
                 if ($targetIdleSlot) {
                     Member::query()
@@ -249,7 +255,7 @@ class MlmMovementService
                     ]);
                 }
 
-                // 5. Move lockedMember to target parent and position
+                // 4. Move lockedMember to target parent and position
                 $lockedMember->update([
                     'placement_parent_id' => $newParent->id,
                     'placement_position' => $data['new_position'],
@@ -257,6 +263,8 @@ class MlmMovementService
 
                 // Check if target position or returning member has waiting downlines
                 $this->reconnectWaitingChildren($lockedMember, $newParent->id, $data['new_position']);
+
+                app(MlmTreeService::class)->clearDownlineCountsCache();
 
                 $subtreeCount = 1;
             } else {
@@ -276,6 +284,8 @@ class MlmMovementService
 
                 // Check if target position or returning member has waiting downlines
                 $this->reconnectWaitingChildren($lockedMember, $newParent->id, $data['new_position']);
+
+                app(MlmTreeService::class)->clearDownlineCountsCache();
 
                 $subtreeCount = $this->subtree($lockedMember)->count();
             }
