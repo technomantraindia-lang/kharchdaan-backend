@@ -290,6 +290,89 @@ class MlmMovementTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_moving_distributor_leaves_empty_slot_box_and_preserves_three_downlines_under_it(): void
+    {
+        $root = $this->member('TOP-ROOT', 'Nimesh Jagirdar', '9400000080');
+        $idleParent = $this->member('IDLE-7', 'Idle - 7', '9400000081', $root, $root, Member::POSITION_LEFT);
+        $idleParent->update(['is_idle_slot' => true, 'idle_slot_label' => 'Idle - 7']);
+
+        $haresh = $this->member('HARESH-PATEL', 'Haresh Patel', '9400000082', $root, $idleParent, Member::POSITION_LEFT);
+        $darshna = $this->member('DARSHNA', 'Darshna Patel', '9400000083', $haresh, $haresh, Member::POSITION_LEFT);
+        $kanesh = $this->member('KANESH', 'Kaneshbhai', '9400000084', $haresh, $haresh, Member::POSITION_MIDDLE);
+        $dipal = $this->member('DIPAL', 'Dipal Vora', '9400000085', $haresh, $haresh, Member::POSITION_RIGHT);
+
+        $newParent = $this->member('NEW-TARGET', 'Target Parent', '9400000086', $root, $root, Member::POSITION_MIDDLE);
+
+        // Move Haresh Patel to newParent at RIGHT position
+        $moveData = [
+            'new_parent_id' => $newParent->id,
+            'new_position' => Member::POSITION_RIGHT,
+            'move_mode' => 'single',
+            'reason' => 'Client requirement: move only Haresh Patel, leave empty slot and downlines stay',
+            'confirmed' => 1,
+        ];
+
+        $response = $this->actingAs($this->admin)
+            ->postJson(admin_route('mlm.tree.move', $haresh), $moveData);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+
+        // 1. Haresh Patel moves ALONE to target parent
+        $freshHaresh = $haresh->fresh();
+        $this->assertSame($newParent->id, $freshHaresh->placement_parent_id);
+        $this->assertSame(Member::POSITION_RIGHT, $freshHaresh->placement_position);
+
+        // 2. Haresh has NO children at his new position
+        $this->assertDatabaseMissing('mlm_members', [
+            'placement_parent_id' => $freshHaresh->id,
+        ]);
+
+        // 3. In Haresh's old position (under Idle - 7 at LEFT), an Empty Slot exists
+        $emptySlot = Member::query()
+            ->where('placement_parent_id', $idleParent->id)
+            ->where('placement_position', Member::POSITION_LEFT)
+            ->first();
+
+        $this->assertNotNull($emptySlot);
+        $this->assertTrue((bool) $emptySlot->is_idle_slot);
+        $this->assertSame('Empty Slot', $emptySlot->idle_slot_label);
+
+        // 4. The 3 downlines stay attached under this Empty Slot
+        $this->assertSame($emptySlot->id, $darshna->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_LEFT, $darshna->fresh()->placement_position);
+
+        $this->assertSame($emptySlot->id, $kanesh->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_MIDDLE, $kanesh->fresh()->placement_position);
+
+        $this->assertSame($emptySlot->id, $dipal->fresh()->placement_parent_id);
+        $this->assertSame(Member::POSITION_RIGHT, $dipal->fresh()->placement_position);
+
+        // 5. Query tree children endpoint for Idle - 7: left slot shows Empty Slot with 3 downlines
+        $treeRes = $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', $idleParent));
+
+        $treeRes->assertOk();
+        $leftSlotData = collect($treeRes->json('slots'))->firstWhere('position', Member::POSITION_LEFT);
+        $this->assertNotNull($leftSlotData);
+        $this->assertTrue($leftSlotData['member']['is_vacant_slot']);
+        $this->assertFalse($leftSlotData['member']['is_idle_slot']);
+        $this->assertSame('Empty Slot', $leftSlotData['member']['name']);
+        $this->assertSame('Vacant', $leftSlotData['member']['customer_id']);
+        $this->assertSame(3, $leftSlotData['member']['downline_count']);
+        $this->assertTrue($leftSlotData['member']['has_children']);
+
+        // 6. Query tree children endpoint for the Empty Slot: returns the 3 preserved downlines!
+        $childrenRes = $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', $emptySlot));
+
+        $childrenRes->assertOk();
+        $slots = $childrenRes->json('slots');
+        $this->assertSame('Darshna Patel', $slots[0]['member']['name']);
+        $this->assertSame('Kaneshbhai', $slots[1]['member']['name']);
+        $this->assertSame('Dipal Vora', $slots[2]['member']['name']);
+    }
+
     private function member(
         string $memberId,
         string $name,

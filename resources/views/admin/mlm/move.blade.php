@@ -145,30 +145,14 @@
                     <input type="hidden" name="confirmed" id="movementConfirmed" value="0">
 
                     <!-- Movement Scope Selection -->
-                    <div>
-                        <label class="block font-semibold text-slate-700 mb-1.5">Movement Scope</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <label class="p-3 border rounded-xl flex items-start gap-2.5 cursor-pointer transition bg-amber-50/70 border-amber-300 text-amber-950 shadow-2xs has-[:checked]:bg-amber-50 has-[:checked]:border-amber-400">
-                                <input type="radio" name="move_mode" value="single" class="mt-0.5 text-amber-600 focus:ring-amber-500" checked>
-                                <div>
-                                    <div class="font-bold text-xs flex items-center gap-1.5">
-                                        <span>Only Selected ID</span>
-                                        <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Recommended</span>
-                                    </div>
-                                    <div class="text-[11px] text-slate-600 mt-0.5">
-                                        Moves only <strong>{{ $member->user?->name }}</strong>. Downlines will not follow, and the previous position becomes an empty Available Slot.
-                                    </div>
-                                </div>
-                            </label>
-                            <label class="p-3 border rounded-xl flex items-start gap-2.5 cursor-pointer transition bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100/70">
-                                <input type="radio" name="move_mode" value="subtree" class="mt-0.5 text-amber-600 focus:ring-amber-500">
-                                <div>
-                                    <div class="font-bold text-xs">With All Downlines</div>
-                                    <div class="text-[11px] text-slate-500 mt-0.5">
-                                        Moves this distributor and their complete 1:3 downline team ({{ $subtree_count }} members) together into the target slot.
-                                    </div>
-                                </div>
-                            </label>
+                    <input type="hidden" name="move_mode" value="single">
+                    <div class="p-3.5 border rounded-xl bg-amber-50/80 border-amber-300 text-amber-950 shadow-2xs space-y-1">
+                        <div class="font-bold text-xs flex items-center justify-between">
+                            <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-amber-600"></i> Relocating Single Member ID Only</span>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Protected</span>
+                        </div>
+                        <div class="text-[11px] text-amber-800 leading-relaxed">
+                            Moves only <strong>{{ $member->user?->name }} ({{ $member->customer_id }})</strong>. Their previous card will remain as an <strong>Empty Slot</strong>, and all existing downlines under this distributor will <strong>stay exactly as they are</strong> under that empty card.
                         </div>
                     </div>
 

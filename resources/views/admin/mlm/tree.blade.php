@@ -177,6 +177,18 @@
         background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50px);
         border: 1.5px dashed #fcd34d;
     }
+    .org-node-card.pos-vacant-slot {
+        border-top: 4px dashed #f59e0b;
+        border-left: 2px dashed #fcd34d;
+        border-right: 2px dashed #fcd34d;
+        border-bottom: 2px dashed #fcd34d;
+        background: linear-gradient(180deg, #fffbeb 0%, #ffffff 50px);
+        box-shadow: 0 4px 14px -2px rgba(245, 158, 11, 0.15), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+    }
+    .org-node-card.pos-vacant-slot:hover {
+        border-color: #f59e0b;
+        background: linear-gradient(180deg, #fef3c7 0%, #ffffff 50px);
+    }
     .org-node-card.pos-expired-node {
         border-top: 3.5px solid #f43f5e;
         border-color: #fecdd3;
@@ -336,6 +348,7 @@
     .density-circle .org-node-card.pos-left { border-color: #0284c7; background: #f0f9ff; }
     .density-circle .org-node-card.pos-middle { border-color: #d97706; background: #fffbeb; }
     .density-circle .org-node-card.pos-right { border-color: #059669; background: #ecfdf5; }
+    .density-circle .org-node-card.pos-vacant-slot { border-color: #f59e0b; border-style: dashed; background: #fffbeb; }
 
     .density-circle .card-box-content {
         display: none !important;
@@ -1027,31 +1040,15 @@
 
             <!-- Movement Scope Option -->
             <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5">
-                    Movement Scope:
-                </label>
-                <div class="space-y-1.5">
-                    <label class="p-2.5 rounded-xl border border-amber-300 bg-amber-50/80 flex items-start gap-2 cursor-pointer transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-100/60">
-                        <input type="radio" name="dd_move_mode" value="single" class="mt-0.5 text-amber-600 focus:ring-amber-500" checked>
-                        <div class="text-[11px]">
-                            <div class="font-bold text-slate-900 flex items-center gap-1.5">
-                                <span>Move ONLY This Member ID</span>
-                                <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Recommended</span>
-                            </div>
-                            <div class="text-slate-600 text-[10px] mt-0.5">
-                                Moves only this distributor ID. Downlines will remain preserved under a blank select cell kept in their previous position for future use.
-                            </div>
-                        </div>
-                    </label>
-                    <label class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-start gap-2 cursor-pointer transition hover:bg-slate-100/70 has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50/50">
-                        <input type="radio" name="dd_move_mode" value="subtree" class="mt-0.5 text-amber-600 focus:ring-amber-500">
-                        <div class="text-[11px]">
-                            <div class="font-bold text-slate-900">Move Member with Entire Downline Subtree</div>
-                            <div class="text-slate-500 text-[10px] mt-0.5">
-                                Moves this distributor together with their entire downline network into the target slot.
-                            </div>
-                        </div>
-                    </label>
+                <input type="hidden" name="dd_move_mode" value="single">
+                <div class="p-3 rounded-xl border border-amber-300 bg-amber-50/90 text-amber-950 space-y-1 shadow-2xs">
+                    <div class="font-bold text-xs flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><i class="fas fa-shield-alt text-amber-600"></i> Relocating Single Member ID Only</span>
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-200 text-amber-900 uppercase">Protected</span>
+                    </div>
+                    <div class="text-[11px] text-amber-800 leading-relaxed">
+                        Moves only this distributor ID. Their previous card will remain as an <strong>Empty Slot</strong>, and any downlines under this distributor will <strong>stay exactly as they are</strong> under the empty card.
+                    </div>
                 </div>
             </div>
 
@@ -1181,7 +1178,8 @@
     const renderNodeCard = (member, position = 'root') => {
         const card = document.createElement('div');
         const isTopRoot = member.is_top_root || member.customer_id === 'C22020008' || position === 'root';
-        const isIdle = Boolean(member.is_idle_slot);
+        const isVacant = Boolean(member.is_vacant_slot);
+        const isIdle = Boolean(member.is_idle_slot) && !isVacant;
         const isPillarLeader = ['C22010003', 'C22020001', 'C22030018'].includes(member.customer_id);
         const isPromoted = Boolean(isIdle && (member.is_promoted_acting || (member.promoted_info && !member.promoted_info.is_expired)));
         const isExpired = Boolean(isIdle && (member.is_promoted_expired || (member.promoted_info && member.promoted_info.is_expired)));
@@ -1189,15 +1187,17 @@
 
         const cardClass = isTopRoot 
             ? 'pos-company-root ring-1 ring-amber-400/60' 
-            : (isPromoted
-                ? 'pos-promoted-node ring-1 ring-emerald-400'
-                : (isExpired
-                    ? 'pos-expired-node ring-1 ring-rose-400/70'
-                    : (isIdle
-                        ? 'pos-idle-slot ring-1 ring-amber-400/50'
-                        : (isPillarLeader 
-                            ? 'pos-pillar-node ring-1 ring-orange-300' 
-                            : (posCardClass(position) + (isDualPlaced ? ' ring-1 ring-amber-400/80 shadow-xs' : ''))))));
+            : (isVacant
+                ? 'pos-vacant-slot ring-1 ring-amber-400/60'
+                : (isPromoted
+                    ? 'pos-promoted-node ring-1 ring-emerald-400'
+                    : (isExpired
+                        ? 'pos-expired-node ring-1 ring-rose-400/70'
+                        : (isIdle
+                            ? 'pos-idle-slot ring-1 ring-amber-400/50'
+                            : (isPillarLeader 
+                                ? 'pos-pillar-node ring-1 ring-orange-300' 
+                                : (posCardClass(position) + (isDualPlaced ? ' ring-1 ring-amber-400/80 shadow-xs' : '')))))));
 
         card.className = `org-node-card ${cardClass} p-3.5`;
         card.dataset.nodeCard = 'true';
@@ -1207,6 +1207,8 @@
         let avatarSvg = '';
         if (isTopRoot) {
             avatarSvg = `<svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`;
+        } else if (isVacant) {
+            avatarSvg = `<i class="fas fa-box-open text-amber-700 text-xs"></i>`;
         } else if (isPromoted) {
             const pMon = ((member.name || 'P').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'P';
             avatarSvg = `<span class="font-bold text-[11px] text-white tracking-tight">${escapeHtml(pMon)}</span>`;
@@ -1228,19 +1230,23 @@
 
         const avatarClass = isTopRoot
             ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-xs border-amber-300'
-            : (isPromoted
-                ? 'bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-white shadow-xs border-amber-300 ring-2 ring-amber-300 font-extrabold'
-                : (isIdle
-                    ? 'bg-gradient-to-tr from-amber-400 to-amber-500 text-amber-950 border-amber-300 font-extrabold shadow-xs'
-                    : (isPillarLeader 
-                        ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
-                        : (isDualPlaced
-                            ? 'bg-gradient-to-tr from-amber-50 to-orange-100 text-amber-800 border-amber-300 font-extrabold ring-1 ring-amber-300'
-                            : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold'))));
+            : (isVacant
+                ? 'bg-amber-100 text-amber-800 border-2 border-dashed border-amber-300 shadow-2xs font-extrabold'
+                : (isPromoted
+                    ? 'bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-white shadow-xs border-amber-300 ring-2 ring-amber-300 font-extrabold'
+                    : (isIdle
+                        ? 'bg-gradient-to-tr from-amber-400 to-amber-500 text-amber-950 border-amber-300 font-extrabold shadow-xs'
+                        : (isPillarLeader 
+                            ? 'bg-gradient-to-tr from-orange-100 to-amber-200 text-orange-800 border-orange-300 font-extrabold'
+                            : (isDualPlaced
+                                ? 'bg-gradient-to-tr from-amber-50 to-orange-100 text-amber-800 border-amber-300 font-extrabold ring-1 ring-amber-300'
+                                : 'bg-gradient-to-tr from-blue-50 to-indigo-100 text-blue-700 border-indigo-200 font-extrabold')))));
 
         // Status badge in top right (clean, non-clashing)
         let cardStatusBadge = statusBadge(member.status);
-        if (isPromoted) {
+        if (isVacant) {
+            cardStatusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs"><i class="fas fa-circle-notch text-[8px] text-amber-600"></i> <span>Empty Slot</span></span>`;
+        } else if (isPromoted) {
             cardStatusBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
                 <svg class="w-2.5 h-2.5 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>
                 <span>Promoted</span>
@@ -1330,12 +1336,21 @@
                 </div>`;
         }
 
+        let vacantNotice = '';
+        if (isVacant) {
+            vacantNotice = `
+                <div class="mt-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50/80 border border-amber-200 text-amber-950 text-[10px] font-medium flex items-center justify-between gap-1 shadow-2xs">
+                    <span class="flex items-center gap-1.5 font-bold text-amber-900"><i class="fas fa-box-open text-amber-600 text-[10px] flex-shrink-0"></i> <span>Empty Box &bull; Available</span></span>
+                    ${dlCount > 0 ? `<span class="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300 flex-shrink-0">${dlCount} Downlines Stay Here</span>` : ''}
+                </div>`;
+        }
+
         const rawCompanyLabel = (member.company_label || '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
         const companyBadgeIcon = isTopRoot
             ? `<svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>`
             : `<svg class="w-3 h-3 text-amber-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>`;
 
-        const companyBadge = (rawCompanyLabel && !isPromoted) 
+        const companyBadge = (rawCompanyLabel && !isPromoted && !isVacant) 
             ? `<div class="mt-1 mb-1 px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-800 text-[9px] font-bold truncate flex items-center gap-1.5">
                  ${companyBadgeIcon} <span>${escapeHtml(rawCompanyLabel)}</span>
                </div>`
@@ -1385,6 +1400,16 @@
                         </button>
                     </div>
                 </div>`;
+        } else if (isVacant) {
+            actionsHtml = `
+                <div class="card-full-actions flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[10px]">
+                    <button type="button" class="btn-node-drawer flex-1 py-1 px-2 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center justify-center gap-1">
+                        <i class="fas fa-eye text-[9px]"></i> <span>Info</span>
+                    </button>
+                    <button type="button" class="btn-node-focus flex-1 py-1 px-2 font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition flex items-center justify-center gap-1" title="Focus subtree under this empty slot">
+                        <i class="fas fa-crosshairs text-[9px]"></i> <span>Focus</span>
+                    </button>
+                </div>`;
         } else if (isIdle && !member.promoted_info) {
             actionsHtml = `
                 <div class="card-full-actions flex items-center gap-1.5 pt-2.5 border-t border-slate-100 text-[10px]">
@@ -1420,7 +1445,7 @@
                     <div class="flex items-center gap-1.5">
                         ${posBadge(position || member.placement_position)}
                         ${dlBadge}
-                        ${(!isTopRoot && member.customer_id !== 'C22020008') ? `
+                        ${(!isTopRoot && !isVacant && member.customer_id !== 'C22020008') ? `
                             <span class="drag-badge inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-bold bg-amber-50 text-amber-800 border border-amber-200 cursor-grab active:cursor-grabbing" title="Drag and drop this member onto an open slot to move them">
                                 <i class="fas fa-grip-vertical text-[7px] text-amber-600"></i> Drag
                             </span>
@@ -1450,6 +1475,7 @@
                 ${originalPositionLink}
                 ${dualPlacedBadge}
                 ${vacantIdleNotice}
+                ${vacantNotice}
 
                 <!-- Detailed Card Meta -->
                 <div class="card-full-meta text-[10px] text-slate-500 pt-2 border-t border-slate-100 space-y-1 mb-2.5">
@@ -1523,7 +1549,7 @@
                 card.classList.remove('card-drag-target-hover');
                 if (!draggedMember || draggedMember.id === member.id) return;
 
-                if (member.is_idle_slot) {
+                if (member.is_idle_slot || member.is_vacant_slot) {
                     let targetParent = member.placement_parent;
                     if (!targetParent && card) {
                         const parentBranch = card.closest('.org-tree-branch')?.parentElement?.closest('.org-tree-branch');
@@ -1657,6 +1683,11 @@
             if (slot.member) {
                 const childBranch = renderBranch(slot.member, slot.position);
                 slotCol.append(childBranch);
+
+                // If this is an Empty/Vacant slot with downlines, automatically load and expand its children so downlines stay visible!
+                if (slot.member.is_vacant_slot && (slot.member.has_children || Number(slot.member.downline_count) > 0)) {
+                    loadChildren(childBranch, false);
+                }
             } else {
                 const emptySlot = renderEmptySlot(slot.position, slot.position_label, parentMember);
                 slotCol.append(emptySlot);
@@ -3439,7 +3470,7 @@
             closeDragDropModal();
 
             if (toastMoveSuccess) {
-                const modeMsg = moveMode === 'single' ? ' Previous position is preserved as a blank select cell for future placements.' : '';
+                const modeMsg = ' Previous position is now an Empty Slot with downlines preserved.';
                 toastMoveSuccessMsg.textContent = `Moved ${member.name} (${member.customer_id}) under ${targetParent.name} in the ${selectedPos.toUpperCase()} slot!${modeMsg}`;
                 toastMoveSuccess.classList.remove('hidden');
                 setTimeout(() => {
@@ -3447,13 +3478,20 @@
                 }, 5000);
             }
 
-            // Invalidate and reload old parent branch to clear previous slot
+            // Invalidate and reload old parent branch to clear previous slot and show Empty Slot card
             const oldParentId = data.old_parent_id || member.placement_parent_id;
             if (oldParentId) {
                 const oldParentBranch = findBranchInDom(oldParentId);
                 if (oldParentBranch && oldParentBranch._childrenContainer) {
                     oldParentBranch._childrenContainer.dataset.loaded = 'false';
                     await loadChildren(oldParentBranch, false);
+                    oldParentBranch._childrenContainer.classList.remove('hidden');
+                    oldParentBranch.classList.add('has-expanded-children');
+                    if (oldParentBranch._expandButton) {
+                        oldParentBranch._expandButton.classList.add('is-expanded');
+                        oldParentBranch._expandButton.setAttribute('aria-expanded', 'true');
+                        oldParentBranch._expandButton.innerHTML = '<i class="fas fa-minus"></i>';
+                    }
                 }
             }
 

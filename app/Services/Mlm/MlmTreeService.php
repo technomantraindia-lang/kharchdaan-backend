@@ -192,6 +192,7 @@ class MlmTreeService
             $detachedChildren = Member::query()
                 ->where('detached_parent_id', $member->placement_parent_id)
                 ->where('detached_parent_position', $member->placement_position)
+                ->whereNull('placement_parent_id')
                 ->get();
 
             foreach ($detachedChildren as $detached) {
@@ -306,6 +307,7 @@ class MlmTreeService
         $cid = $member->customer_id;
         $isTopRoot = ($cid === 'C22020008');
         $idleCodes = [
+            'C25070003' => 'Idle - 1',
             'C25070004' => 'Idle - 2',
             'C25070005' => 'Idle - 3',
             'C25070006' => 'Idle - 4',
@@ -319,8 +321,13 @@ class MlmTreeService
             'C25070014' => 'Idle - 12',
             'C25070015' => 'Idle - 13',
         ];
-        $isIdleSlot = (bool) ($member->is_idle_slot || isset($idleCodes[$cid]));
-        $idleLabel = $member->idle_slot_label ?? ($idleCodes[$cid] ?? null);
+
+        $isVacantSlot = ($member->idle_slot_label === 'Empty Slot') 
+            || ($member->user?->name === 'Empty Slot') 
+            || ($member->is_idle_slot && ! $member->appreciation_member_id && ! isset($idleCodes[$cid]) && ! str_starts_with($member->idle_slot_label ?? '', 'Idle'));
+
+        $isIdleSlot = (bool) ($member->is_idle_slot || isset($idleCodes[$cid])) && ! $isVacantSlot;
+        $idleLabel = $member->idle_slot_label ?? ($idleCodes[$cid] ?? ($isVacantSlot ? 'Empty Slot' : null));
 
         $companyLabel = match (true) {
             $isTopRoot => 'Top ID: 1 - Nimesh Jagirdar (Master Root)',
@@ -330,7 +337,7 @@ class MlmTreeService
 
         $appreciationMember = null;
         $promotedInfo = null;
-        if ($member->appreciation_member_id) {
+        if ($isIdleSlot && $member->appreciation_member_id) {
             $appMember = $member->appreciationMember ?? Member::with(['user.addresses'])->find($member->appreciation_member_id);
             if ($appMember) {
                 $isExpired = $member->appreciation_expires_at && $member->appreciation_expires_at->isPast();
@@ -371,23 +378,24 @@ class MlmTreeService
         $address = $member->user?->addresses?->first();
 
         // When a member is promoted to this idle slot, show the promoted member's identity at this card!
-        $displayName = $isTopRoot
-            ? '1 - Nimesh Jagirdar'
-            : ($isIdleSlot
-                ? ($promotedInfo ? $promotedInfo['name'] : ($idleLabel ?? $member->user?->name))
-                : ($member->user?->name ?? 'Unnamed member'));
+        $displayName = match (true) {
+            $isTopRoot => '1 - Nimesh Jagirdar',
+            $isVacantSlot => 'Empty Slot',
+            $isIdleSlot => ($promotedInfo ? $promotedInfo['name'] : ($idleLabel ?? $member->user?->name)),
+            default => ($member->user?->name ?? 'Unnamed member'),
+        };
 
         $displayPhone = ($isIdleSlot && $promotedInfo)
             ? $promotedInfo['phone']
-            : $member->user?->phone;
+            : ($isVacantSlot ? '' : $member->user?->phone);
 
         $displayEmail = ($isIdleSlot && $promotedInfo)
             ? $promotedInfo['email']
-            : $member->user?->email;
+            : ($isVacantSlot ? '' : $member->user?->email);
 
         return [
             'id' => (int) $member->id,
-            'customer_id' => ($isIdleSlot && $promotedInfo) ? $promotedInfo['customer_id'] : $member->customer_id,
+            'customer_id' => $isVacantSlot ? 'Vacant' : (($isIdleSlot && $promotedInfo) ? $promotedInfo['customer_id'] : $member->customer_id),
             'slot_customer_id' => $member->customer_id,
             'name' => $displayName,
             'email' => $displayEmail,
@@ -400,6 +408,7 @@ class MlmTreeService
             'is_company_node' => $isTopRoot || ($isIdleSlot && ! $promotedInfo),
             'is_top_root' => $isTopRoot,
             'is_idle_slot' => $isIdleSlot,
+            'is_vacant_slot' => $isVacantSlot,
             'idle_slot_label' => $idleLabel,
             'company_label' => $companyLabel,
             'appreciation_member' => $appreciationMember,
@@ -410,8 +419,8 @@ class MlmTreeService
             'promotions_held' => $promotionsHeld,
             'is_dual_placed' => count($promotionsHeld) > 0,
             'downline_count' => $downlineCount,
-            'status' => ($isIdleSlot && $promotedInfo) ? ($promotedInfo['status'] ?? 'active') : $member->status,
-            'status_label' => ucfirst(($isIdleSlot && $promotedInfo) ? ($promotedInfo['status'] ?? 'active') : $member->status),
+            'status' => $isVacantSlot ? 'vacant' : (($isIdleSlot && $promotedInfo) ? ($promotedInfo['status'] ?? 'active') : $member->status),
+            'status_label' => $isVacantSlot ? 'Empty Slot' : ucfirst(($isIdleSlot && $promotedInfo) ? ($promotedInfo['status'] ?? 'active') : $member->status),
             'kyc_status' => ($isIdleSlot && $promotedInfo) ? ($promotedInfo['kyc_status'] ?? 'approved') : $member->kyc_status,
             'position' => $member->placement_position,
             'position_label' => $member->placement_position
@@ -459,10 +468,7 @@ class MlmTreeService
 
         $slots = Member::query()
             ->with(['user', 'appreciationMember.user', 'placementParent.user'])
-            ->where(function ($q) use ($idleCodes) {
-                $q->where('is_idle_slot', true)
-                    ->orWhereHas('user', fn ($uq) => $uq->whereIn('mlm_member_id', array_keys($idleCodes)));
-            })
+            ->whereHas('user', fn ($uq) => $uq->whereIn('mlm_member_id', array_keys($idleCodes)))
             ->get();
 
         return $slots->map(function (Member $slot) use ($idleCodes) {

@@ -96,7 +96,7 @@ class MlmMovementService
                     $slotDetails[] = [
                         'position' => $slotPos,
                         'is_idle' => $child?->is_idle_slot ?? false,
-                        'label' => ucfirst($slotPos) . ' Slot' . ($child?->is_idle_slot ? ' [Vacant ' . ($child->user?->name ?? 'Idle') . ']' : ' [Open]'),
+                        'label' => ucfirst($slotPos) . ' Slot' . ($child?->is_idle_slot ? ' [Empty Slot]' : ' [Open]'),
                     ];
                 }
 
@@ -354,7 +354,11 @@ class MlmMovementService
             ->first();
 
         if ($existingBlank) {
-            $existingBlank->update(['status' => Member::STATUS_ACTIVE]);
+            $existingBlank->update([
+                'status' => Member::STATUS_ACTIVE,
+                'idle_slot_label' => 'Empty Slot',
+            ]);
+            $existingBlank->user?->update(['name' => 'Empty Slot']);
             return $existingBlank;
         }
 
@@ -367,7 +371,7 @@ class MlmMovementService
         }
 
         $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'web']);
-        $slotLabel = 'Idle - ' . $count;
+        $slotLabel = 'Empty Slot';
 
         $user = User::create([
             'name' => $slotLabel,
