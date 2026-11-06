@@ -118,13 +118,21 @@ class MlmMovementService
 
     public function availablePositions(Member $movingMember, Member $newParent): array
     {
-        $occupied = Member::query()
+        $children = Member::query()
+            ->with('user')
             ->where('placement_parent_id', $newParent->id)
             ->whereKeyNot($movingMember->id)
-            ->where('is_idle_slot', false)
             ->where('status', Member::STATUS_ACTIVE)
-            ->pluck('placement_position')
-            ->all();
+            ->get();
+
+        $occupied = [];
+        foreach ($children as $child) {
+            // Permanent Idle slots stay reserved for Promote/Copy (dual-place).
+            // Vacant Empty Slot placeholders remain move targets.
+            if ($child->isPermanentIdleSlot() || ! $child->is_idle_slot) {
+                $occupied[] = $child->placement_position;
+            }
+        }
 
         return array_values(array_diff(Member::POSITIONS, $occupied));
     }
@@ -192,13 +200,15 @@ class MlmMovementService
 
             $existingChildren = Member::query()->where('placement_parent_id', $lockedMember->id)->get();
 
-            // Find any idle slot currently occupying the target position
+            // Only replace temporary Empty Slot placeholders — never permanent Idle - N nodes
             $targetIdleSlot = Member::query()
+                ->with('user')
                 ->where('placement_parent_id', $newParent->id)
                 ->where('placement_position', $data['new_position'])
                 ->whereKeyNot($lockedMember->id)
                 ->where('is_idle_slot', true)
-                ->first();
+                ->get()
+                ->first(fn (Member $slot): bool => $slot->isVacantEmptySlot());
 
             if (! $isSubtreeMove) {
                 // Client Requirement:
@@ -426,16 +436,28 @@ class MlmMovementService
             $this->fail('new_position', 'Select a valid placement position.');
         }
 
-        // Slot occupancy check (can replace an unassigned vacant idle slot if needed)
+        // Slot occupancy: permanent Idle slots require Promote/Copy (dual-place), not Move.
+        // Temporary Empty Slot placeholders can still be replaced by relocation.
         $occupied = Member::query()
+            ->with('user')
             ->where('placement_parent_id', $newParent->id)
             ->where('placement_position', $newPosition)
             ->whereKeyNot($member->id)
             ->where('status', Member::STATUS_ACTIVE)
             ->first();
 
-        if ($occupied && ! $occupied->is_idle_slot) {
-            $this->fail('new_position', 'The selected placement position is already occupied by ' . ($occupied->user?->name ?? 'another distributor') . '.');
+        if ($occupied) {
+            if ($occupied->isPermanentIdleSlot()) {
+                $label = $occupied->idle_slot_label ?: ($occupied->customer_id ?: 'Idle Slot');
+                $this->fail(
+                    'new_position',
+                    "{$label} is a permanent Idle position. Use Promote / Copy to Idle so the member stays at their original place and also appears on {$label}."
+                );
+            }
+
+            if (! $occupied->is_idle_slot) {
+                $this->fail('new_position', 'The selected placement position is already occupied by ' . ($occupied->user?->name ?? 'another distributor') . '.');
+            }
         }
 
         $newParentPath = $this->placementPath($newParent);

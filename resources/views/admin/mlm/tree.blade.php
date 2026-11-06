@@ -1425,8 +1425,8 @@
                     <button type="button" class="btn-node-drawer flex-1 py-1 px-2 font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition flex items-center justify-center gap-1">
                         <i class="fas fa-eye text-[9px]"></i> <span>Info</span>
                     </button>
-                    <button type="button" class="btn-open-promote-modal flex-1 py-1 px-2 font-extrabold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-500 rounded-md border border-amber-400 shadow-2xs transition flex items-center justify-center gap-1 active:scale-95" data-id="${member.id}" data-label="${escapeHtml(member.idle_slot_label || 'Idle Slot')}" data-code="${escapeHtml(member.slot_customer_id || member.customer_id)}" title="Promote an existing member to this idle slot">
-                        <i class="fas fa-crown text-[8px] text-amber-900"></i> <span>+ Promote</span>
+                    <button type="button" class="btn-open-promote-modal flex-1 py-1 px-2 font-extrabold text-amber-950 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 hover:from-amber-400 hover:to-amber-500 rounded-md border border-amber-400 shadow-2xs transition flex items-center justify-center gap-1 active:scale-95" data-id="${member.id}" data-label="${escapeHtml(member.idle_slot_label || 'Idle Slot')}" data-code="${escapeHtml(member.slot_customer_id || member.customer_id)}" title="Copy / promote a member here — they stay in their original position too">
+                        <i class="fas fa-crown text-[8px] text-amber-900"></i> <span>+ Copy</span>
                     </button>
                 </div>`;
         } else {
@@ -1545,7 +1545,8 @@
             card.addEventListener('dragover', (e) => {
                 if (!draggedMember || draggedMember.id === member.id) return;
                 e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
+                // Idle slots copy (dual-place); everything else relocates
+                e.dataTransfer.dropEffect = (member.is_idle_slot && !member.is_vacant_slot) ? 'copy' : 'move';
                 card.classList.add('card-drag-target-hover');
             });
 
@@ -1558,7 +1559,19 @@
                 card.classList.remove('card-drag-target-hover');
                 if (!draggedMember || draggedMember.id === member.id) return;
 
-                if (member.is_idle_slot || member.is_vacant_slot) {
+                // Permanent Idle - N: COPY / dual-place (member stays in original position too)
+                if (member.is_idle_slot && !member.is_vacant_slot) {
+                    openPromoteModal(
+                        member.id,
+                        member.idle_slot_label || 'Idle Slot',
+                        member.slot_customer_id || member.customer_id,
+                        draggedMember
+                    );
+                    return;
+                }
+
+                // Temporary Empty Slot / Available Slot placeholders: normal MOVE relocation
+                if (member.is_vacant_slot) {
                     let targetParent = member.placement_parent;
                     if (!targetParent && card) {
                         const parentBranch = card.closest('.org-tree-branch')?.parentElement?.closest('.org-tree-branch');
