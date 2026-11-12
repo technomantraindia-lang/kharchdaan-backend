@@ -409,12 +409,13 @@ class MlmMovementService
             'sponsor_member_id' => $movingMember->sponsor_member_id,
             'placement_parent_id' => $oldParentId,
             'placement_position' => $oldPosition,
-            'status' => Member::STATUS_ACTIVE,
+            // Inactive + idle: tree can still show vacant node; Members Directory excludes these
+            'status' => Member::STATUS_INACTIVE,
             'is_idle_slot' => true,
             'idle_slot_label' => $slotLabel,
             'joined_at' => now(),
             'created_by' => $admin->id,
-            'kyc_status' => Member::KYC_APPROVED,
+            'kyc_status' => Member::KYC_PENDING,
         ]);
     }
 

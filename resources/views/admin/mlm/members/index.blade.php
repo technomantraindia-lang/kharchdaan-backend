@@ -32,7 +32,7 @@
 
     <!-- Search & Filter Card -->
     <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
-        <form method="GET" action="{{ admin_route('mlm.members.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <form method="GET" action="{{ admin_route('mlm.members.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
             <div class="lg:col-span-2">
                 <label class="block text-xs font-semibold text-slate-600 mb-1.5">Search</label>
                 <div class="relative" id="memberSearchWrapper">
@@ -44,6 +44,11 @@
                     <!-- Auto-suggest Suggestions Dropdown -->
                     <div id="memberSearchDropdown" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200/90 max-h-80 overflow-y-auto z-50 text-xs divide-y divide-slate-100"></div>
                 </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1.5">Sponsor Member ID</label>
+                <input type="text" name="sponsor_customer_id" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" value="{{ request('sponsor_customer_id') }}" placeholder="e.g. C22020013" autocomplete="off">
             </div>
 
             <div>

@@ -114,7 +114,7 @@
             <div class="card-body">
                 <div class="text-muted small fw-bold text-uppercase">Up to 100% Cashback Purchases</div>
                 <h3 class="fw-bold text-warning mt-1 mb-0">{{ count($cashbacks) }} <small class="fs-6 text-muted">Records</small></h3>
-                <div class="small text-muted mt-1">₹{{ number_format($cashbacks->sum('eligible_amount'), 2) }} eligible volume</div>
+                <div class="small text-muted mt-1">₹{{ number_format($cashbacks->sum('current_eligible_amount'), 2) }} eligible volume</div>
             </div>
         </div>
     </div>

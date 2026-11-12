@@ -6,19 +6,29 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CustomerResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Mlm\MlmCustomerNetworkService;
+use App\Services\Mlm\MlmMemberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class CustomerAuthApiController extends Controller
 {
+    public function __construct(
+        private readonly MlmMemberService $memberService,
+        private readonly MlmCustomerNetworkService $networkService,
+    ) {}
+
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:6',
+            'password' => 'required|string|min:6|confirmed',
             'phone' => 'nullable|string|max:20',
+            'referral_code' => 'nullable|string|max:40',
+            'sponsor_customer_id' => 'nullable|string|max:40',
         ]);
 
         if ($validator->fails()) {
@@ -29,24 +39,29 @@ class CustomerAuthApiController extends Controller
             ], 422);
         }
 
-        // Resolve Customer role
-        $customerRole = Role::firstOrCreate(['name' => 'Customer'], ['guard_name' => 'web']);
+        try {
+            $member = $this->memberService->registerFromStorefront([
+                'name' => $request->input('name'),
+                'email' => $request->input('email'),
+                'password' => $request->input('password'),
+                'phone' => $request->input('phone'),
+                'referral_code' => $request->input('referral_code') ?: $request->input('sponsor_customer_id'),
+                'sponsor_customer_id' => $request->input('sponsor_customer_id') ?: $request->input('referral_code'),
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => collect($e->errors())->flatten()->first() ?: 'Registration failed.',
+                'errors' => $e->errors(),
+            ], 422);
+        }
 
-        $user = new User();
-        $user->name = trim($request->name);
-        $user->email = strtolower(trim($request->email));
-        $user->password = $request->password; // Handled by Eloquent hashed cast or direct
-        $user->plain_password = $request->password;
-        $user->phone = $request->phone;
-        $user->role_id = $customerRole->id;
-        $user->status = 'active';
-        $user->save();
-
+        $user = $member->user()->with(['role', 'mlmMember.sponsor.user'])->first();
         $tokenObj = $user->createToken('customer_api_token');
 
         return response()->json([
             'success' => true,
-            'message' => 'Customer registered successfully.',
+            'message' => 'Customer registered successfully as MLM member '.$member->customer_id.'.',
             'data' => [
                 'user' => new CustomerResource($user),
                 'access_token' => $tokenObj->plainTextToken,
@@ -111,6 +126,7 @@ class CustomerAuthApiController extends Controller
             ], 403);
         }
 
+        $user->load(['role', 'mlmMember.sponsor.user']);
         $tokenObj = $user->createToken('customer_api_token');
 
         return response()->json([
@@ -140,9 +156,37 @@ class CustomerAuthApiController extends Controller
 
     public function me(Request $request)
     {
+        $user = auth()->user();
+        $user?->load(['role', 'mlmMember.sponsor.user', 'mlmMember.sponsoredMembers']);
+
         return response()->json([
             'success' => true,
-            'data' => new CustomerResource(auth()->user()),
+            'data' => new CustomerResource($user),
+        ]);
+    }
+
+    /**
+     * Sponsor dashboard: list users registered under the authenticated customer.
+     */
+    public function myReferrals(Request $request)
+    {
+        $user = auth()->user();
+
+        if (! $user?->mlmMember) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No MLM membership is linked to this account yet.',
+                'data' => [
+                    'sponsor' => null,
+                    'direct_referral_count' => 0,
+                    'referrals' => [],
+                ],
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $this->networkService->directReferrals($user),
         ]);
     }
 
@@ -164,6 +208,7 @@ class CustomerAuthApiController extends Controller
         }
 
         $user->update($request->only(['name', 'phone']));
+        $user->load(['role', 'mlmMember.sponsor.user']);
 
         return response()->json([
             'success' => true,

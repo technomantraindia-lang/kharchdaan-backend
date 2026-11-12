@@ -50,17 +50,35 @@ return new class extends Migration
 
             foreach ($childrenMap as $code => $position) {
                 $child = Member::whereHas('user', fn ($q) => $q->where('mlm_member_id', $code))->first();
-                if ($child) {
-                    DB::table('mlm_members')->where('id', $child->id)->update([
-                        'placement_parent_id' => $haresh->id,
-                        'placement_position' => $position,
-                        'status' => 'active',
-                        'detached_parent_id' => null,
-                        'detached_parent_position' => null,
-                        'detached_member_id' => null,
-                        'detached_child_position' => null,
-                    ]);
+                if (! $child) {
+                    continue;
                 }
+
+                // Free target slot if occupied by a different member (detach only — never delete).
+                DB::table('mlm_members')
+                    ->where('placement_parent_id', $haresh->id)
+                    ->where('placement_position', $position)
+                    ->where('id', '!=', $child->id)
+                    ->update([
+                        'placement_parent_id' => null,
+                        'placement_position' => null,
+                    ]);
+
+                // Clear child's previous slot, then place under Haresh.
+                DB::table('mlm_members')->where('id', $child->id)->update([
+                    'placement_parent_id' => null,
+                    'placement_position' => null,
+                ]);
+
+                DB::table('mlm_members')->where('id', $child->id)->update([
+                    'placement_parent_id' => $haresh->id,
+                    'placement_position' => $position,
+                    'status' => 'active',
+                    'detached_parent_id' => null,
+                    'detached_parent_position' => null,
+                    'detached_member_id' => null,
+                    'detached_child_position' => null,
+                ]);
             }
         }
     }

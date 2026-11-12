@@ -48,6 +48,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/logout', [CustomerAuthApiController::class, 'logout']);
         Route::get('/me', [CustomerAuthApiController::class, 'me']);
         Route::put('/me', [CustomerAuthApiController::class, 'updateProfile']);
+        Route::get('/me/referrals', [CustomerAuthApiController::class, 'myReferrals']);
 
         Route::get('/orders', [CustomerOrderApiController::class, 'index']);
         Route::get('/orders/{id}', [CustomerOrderApiController::class, 'show']);

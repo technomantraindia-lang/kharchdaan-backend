@@ -37,8 +37,48 @@ class MlmCustomerNetworkService
             'placement_network_count' => $placementMembers->count(),
             'visible_level' => $this->maxPlacementLevel($member, $placementMembers),
             'placement_assignment_note' => $member->placement_parent_id === null
-                ? 'Automatic 1:3 placement is a separate pending feature.'
+                ? 'This member is not yet assigned on the 1:3 placement tree. Contact admin if placement is expected.'
                 : null,
+        ];
+    }
+
+    /**
+     * Flat list of direct sponsored members for customer sponsor dashboard / API.
+     */
+    public function directReferrals(User $user): array
+    {
+        $member = $this->ownedMember($user);
+
+        $referrals = Member::query()
+            ->realDistributors()
+            ->with(['user', 'sponsor.user'])
+            ->where('sponsor_member_id', $member->id)
+            ->orderByDesc('joined_at')
+            ->orderByDesc('id')
+            ->get();
+
+        return [
+            'sponsor' => [
+                'id' => $member->id,
+                'customer_id' => $member->customer_id,
+                'name' => $member->user?->name,
+                'phone' => $member->user?->phone,
+                'status' => $member->status,
+            ],
+            'direct_referral_count' => $referrals->count(),
+            'referrals' => $referrals->map(fn (Member $ref): array => [
+                'id' => $ref->id,
+                'customer_id' => $ref->customer_id,
+                'name' => $ref->user?->name,
+                'email' => $ref->user?->email,
+                'phone' => $ref->user?->phone,
+                'status' => $ref->status,
+                'kyc_status' => $ref->kyc_status,
+                'joined_at' => $ref->joined_at?->toDateString(),
+                'joined_at_label' => $ref->joined_at?->format('d M Y'),
+                'placement_position' => $ref->placement_position,
+                'has_placement' => $ref->placement_parent_id !== null,
+            ])->values()->all(),
         ];
     }
 

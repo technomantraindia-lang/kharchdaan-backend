@@ -240,6 +240,24 @@ class Member extends Model
         return $query->where('status', self::STATUS_ACTIVE);
     }
 
+    /**
+     * Real distributors only — excludes permanent Idle - N nodes and temporary Empty Slot placeholders.
+     */
+    public function scopeRealDistributors(Builder $query): Builder
+    {
+        return $query
+            ->where(function (Builder $q): void {
+                $q->where('is_idle_slot', false)->orWhereNull('is_idle_slot');
+            })
+            ->where(function (Builder $q): void {
+                $q->whereNull('idle_slot_label')
+                    ->orWhere('idle_slot_label', '!=', 'Empty Slot');
+            })
+            ->whereDoesntHave('user', function ($userQuery): void {
+                $userQuery->where('name', 'Empty Slot');
+            });
+    }
+
     public function getCustomerIdAttribute(): ?string
     {
         return $this->user?->mlm_member_id;

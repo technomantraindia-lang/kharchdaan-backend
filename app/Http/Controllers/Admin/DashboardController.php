@@ -21,16 +21,16 @@ class DashboardController extends Controller
         $currentWeekEnd = now()->endOfWeek(Carbon::SUNDAY)->toDateString();
         $currentCycle = MlmPayoutCycle::whereDate('period_start', $currentWeekStart)->first();
 
-        $totalMembers = Member::count();
-        $activeMembers = Member::where('status', Member::STATUS_ACTIVE)->count();
-        $pendingMembers = Member::where('status', Member::STATUS_PENDING)->count();
-        $blockedMembers = Member::where('status', Member::STATUS_BLOCKED)->count();
-        $inactiveMembers = Member::where('status', Member::STATUS_INACTIVE)->count();
+        $totalMembers = Member::realDistributors()->count();
+        $activeMembers = Member::realDistributors()->where('status', Member::STATUS_ACTIVE)->count();
+        $pendingMembers = Member::realDistributors()->where('status', Member::STATUS_PENDING)->count();
+        $blockedMembers = Member::realDistributors()->where('status', Member::STATUS_BLOCKED)->count();
+        $inactiveMembers = Member::realDistributors()->where('status', Member::STATUS_INACTIVE)->count();
 
-        $kycPending = Member::where('kyc_status', Member::KYC_PENDING)->count();
-        $kycUnderReview = Member::where('kyc_status', Member::KYC_UNDER_REVIEW)->count();
-        $kycApproved = Member::where('kyc_status', Member::KYC_APPROVED)->count();
-        $kycRejected = Member::where('kyc_status', Member::KYC_REJECTED)->count();
+        $kycPending = Member::realDistributors()->where('kyc_status', Member::KYC_PENDING)->count();
+        $kycUnderReview = Member::realDistributors()->where('kyc_status', Member::KYC_UNDER_REVIEW)->count();
+        $kycApproved = Member::realDistributors()->where('kyc_status', Member::KYC_APPROVED)->count();
+        $kycRejected = Member::realDistributors()->where('kyc_status', Member::KYC_REJECTED)->count();
 
         $totalPv = (float) MlmIncomeLedger::where('status', '!=', MlmIncomeLedger::STATUS_FAILED)->sum('pv');
         $totalDirectSellingIncome = (float) MlmIncomeLedger::where('status', '!=', MlmIncomeLedger::STATUS_FAILED)->sum('calculated_amount');
@@ -39,10 +39,17 @@ class DashboardController extends Controller
         $approvedPayout = (float) MlmPayoutCycle::where('status', MlmPayoutCycle::STATUS_APPROVED)->sum('net_payable');
         $paidPayout = (float) MlmPayoutCycle::where('status', MlmPayoutCycle::STATUS_PAID)->sum('net_payable');
 
+        // cashback_eligibilities uses current/final/original amounts — there is no eligible_amount column.
         $cashbackEligibleCount = CashbackEligibility::count();
-        $cashbackEligibleAmount = (float) CashbackEligibility::sum('eligible_amount');
-        $cashbackPendingAmount = (float) CashbackEligibility::where('status', 'eligible_awaiting_profit')->sum('eligible_amount');
-        $cashbackPaidAmount = (float) CashbackEligibility::where('status', 'paid')->sum('eligible_amount');
+        $cashbackEligibleAmount = (float) CashbackEligibility::sum('current_eligible_amount');
+        $cashbackPendingAmount = (float) CashbackEligibility::where(
+            'status',
+            CashbackEligibility::STATUS_ELIGIBLE_AWAITING_COMPANY_PROFIT
+        )->sum('current_eligible_amount');
+        $cashbackPaidAmount = (float) CashbackEligibility::where(
+            'status',
+            CashbackEligibility::STATUS_PAID
+        )->sum('current_eligible_amount');
 
         $stats = [
             'total_members' => $totalMembers,
@@ -159,7 +166,10 @@ class DashboardController extends Controller
         $pendingActions = [
             'kyc_pending_count' => $kycPending + $kycUnderReview,
             'payout_approval_pending' => MlmPayoutCycle::where('status', MlmPayoutCycle::STATUS_PENDING_APPROVAL)->count(),
-            'cashback_awaiting_profit_count' => CashbackEligibility::where('status', 'eligible_awaiting_profit')->count(),
+            'cashback_awaiting_profit_count' => CashbackEligibility::where(
+                'status',
+                CashbackEligibility::STATUS_ELIGIBLE_AWAITING_COMPANY_PROFIT
+            )->count(),
             'reconciliation_issues_count' => Order::where('pay_status', 'paid')->whereDoesntHave('mlmCalculationRuns')->whereHas('user.mlmMember')->count(),
         ];
 

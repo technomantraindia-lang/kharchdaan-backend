@@ -21,6 +21,60 @@ class MlmMemberService
         private readonly MlmKycService $kycService,
     ) {}
 
+    /**
+     * Storefront / API customer registration → creates User + real MLM Member.
+     * Optional referral_code / sponsor_customer_id attaches sponsor and places on 1:3 tree.
+     */
+    public function registerFromStorefront(array $data): Member
+    {
+        return DB::transaction(function () use ($data): Member {
+            $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'web']);
+            $joiningDate = now();
+            $memberId = $this->idGenerator->next($joiningDate);
+
+            $sponsor = $this->resolveStorefrontSponsor($data['referral_code'] ?? $data['sponsor_customer_id'] ?? null);
+
+            $user = User::create([
+                'name' => trim((string) $data['name']),
+                'email' => strtolower(trim((string) $data['email'])),
+                'password' => $data['password'],
+                'plain_password' => $data['password'],
+                'phone' => trim((string) ($data['phone'] ?? '')),
+                'role_id' => $customerRole->id,
+                'status' => 'active',
+                'mlm_member_id' => $memberId,
+            ]);
+
+            $member = Member::create([
+                'user_id' => $user->id,
+                'sponsor_member_id' => $sponsor?->id,
+                'status' => Member::STATUS_ACTIVE,
+                'joined_at' => $joiningDate,
+                'created_by' => null,
+                'sponsor_name_snapshot' => $sponsor?->user?->name,
+                'sponsor_relationship_status' => $sponsor ? 'active' : null,
+                'sponsor_assigned_at' => $sponsor ? now() : null,
+                'kyc_status' => Member::KYC_PENDING,
+            ]);
+
+            if ($sponsor) {
+                $this->autoPlaceUnderSponsor($member, $sponsor);
+            }
+
+            ActivityLogService::log(
+                'create',
+                'mlm_members',
+                "Storefront registered MLM member {$member->customer_id} for {$user->name}"
+                    .($sponsor ? " under sponsor {$sponsor->customer_id}" : ''),
+                $member,
+                null,
+                $this->snapshot($member->load('user'))
+            );
+
+            return $member->fresh(['user', 'sponsor.user', 'placementParent.user']);
+        });
+    }
+
     public function create(
         array $data,
         User $admin,
@@ -353,6 +407,116 @@ class MlmMemberService
         }
 
         return $user;
+    }
+
+    private function resolveStorefrontSponsor(?string $referralCode): ?Member
+    {
+        $raw = trim((string) $referralCode);
+        $referralCode = strtoupper($raw);
+
+        // Strip legacy marketing invite prefixes (BG-...) — those are not MLM member IDs
+        if (str_starts_with($referralCode, 'BG-')) {
+            throw ValidationException::withMessages([
+                'referral_code' => 'Please use a valid Sponsor Member ID (for example C22020013), not the old marketing invite code.',
+            ]);
+        }
+
+        if ($referralCode !== '') {
+            $sponsor = Member::query()
+                ->realDistributors()
+                ->with('user')
+                ->whereHas('user', fn ($q) => $q->where('mlm_member_id', $referralCode))
+                ->first();
+
+            if (! $sponsor) {
+                throw ValidationException::withMessages([
+                    'referral_code' => "Sponsor Member ID {$referralCode} was not found. Please verify the ID with your sponsor.",
+                ]);
+            }
+
+            if ($sponsor->status === Member::STATUS_BLOCKED) {
+                throw ValidationException::withMessages([
+                    'referral_code' => "Sponsor {$referralCode} is blocked and cannot refer new members.",
+                ]);
+            }
+
+            if ($sponsor->status === Member::STATUS_INACTIVE) {
+                throw ValidationException::withMessages([
+                    'referral_code' => "Sponsor {$referralCode} is inactive and cannot refer new members.",
+                ]);
+            }
+
+            return $sponsor;
+        }
+
+        // No referral provided → default company root so signup still creates a real MLM member
+        return Member::query()
+            ->realDistributors()
+            ->with('user')
+            ->whereHas('user', fn ($q) => $q->where('mlm_member_id', 'C22020008'))
+            ->where('status', Member::STATUS_ACTIVE)
+            ->first()
+            ?? Member::query()
+                ->realDistributors()
+                ->with('user')
+                ->whereNull('placement_parent_id')
+                ->where('status', Member::STATUS_ACTIVE)
+                ->orderBy('id')
+                ->first();
+    }
+
+    /**
+     * Place a newly registered member in the first open LEFT/MIDDLE/RIGHT slot
+     * under the sponsor's placement subtree (BFS). Replaces temporary Empty Slots.
+     */
+    private function autoPlaceUnderSponsor(Member $member, Member $sponsor): void
+    {
+        $queue = collect([$sponsor]);
+        $visited = [];
+
+        while ($queue->isNotEmpty() && count($visited) < 400) {
+            /** @var Member $parent */
+            $parent = $queue->shift();
+            if (isset($visited[$parent->id])) {
+                continue;
+            }
+            $visited[$parent->id] = true;
+
+            $children = Member::query()
+                ->with('user')
+                ->where('placement_parent_id', $parent->id)
+                ->get()
+                ->keyBy('placement_position');
+
+            foreach (Member::POSITIONS as $position) {
+                $occupant = $children->get($position);
+
+                if ($occupant && ! $occupant->isVacantEmptySlot()) {
+                    $queue->push($occupant);
+                    continue;
+                }
+
+                if ($occupant && $occupant->isVacantEmptySlot()) {
+                    // Inherit any downlines that were hanging under the empty placeholder
+                    Member::query()
+                        ->where('placement_parent_id', $occupant->id)
+                        ->update(['placement_parent_id' => $member->id]);
+
+                    $occupant->update([
+                        'placement_parent_id' => null,
+                        'placement_position' => null,
+                        'status' => Member::STATUS_INACTIVE,
+                    ]);
+                }
+
+                $member->update([
+                    'placement_parent_id' => $parent->id,
+                    'placement_position' => $position,
+                ]);
+
+                return;
+            }
+        }
     }
 
     private function storeProfilePhoto(Member $member, ?UploadedFile $profilePhoto): void

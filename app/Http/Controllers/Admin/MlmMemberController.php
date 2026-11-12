@@ -38,6 +38,7 @@ class MlmMemberController extends Controller
     public function index(Request $request): View
     {
         $members = Member::query()
+            ->realDistributors()
             ->with(['user', 'sponsor.user', 'placementParent.user'])
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = trim((string) $request->input('search'));
@@ -107,7 +108,7 @@ class MlmMemberController extends Controller
         }
 
         $networkData = $root ? $this->treeService->getSponsorNetwork($root) : null;
-        $allMembers = Member::with('user')->get()->sortBy(fn ($m) => $m->customer_id === 'C22020008' ? -1 : (int) $m->id)->values();
+        $allMembers = Member::realDistributors()->with('user')->get()->sortBy(fn ($m) => $m->customer_id === 'C22020008' ? -1 : (int) $m->id)->values();
 
         return view('admin.mlm.sponsor_network', compact('root', 'networkData', 'allMembers', 'search'));
     }
@@ -135,7 +136,7 @@ class MlmMemberController extends Controller
 
         $genealogyData = $root ? $this->treeService->getGenealogy($root) : null;
         $roots = $this->treeService->roots();
-        $allMembers = Member::with('user')->get()->sortBy(fn ($m) => $m->customer_id === 'C22020008' ? -1 : (int) $m->id)->values();
+        $allMembers = Member::realDistributors()->with('user')->get()->sortBy(fn ($m) => $m->customer_id === 'C22020008' ? -1 : (int) $m->id)->values();
 
         return view('admin.mlm.genealogy', compact('root', 'genealogyData', 'roots', 'allMembers'));
     }
@@ -149,7 +150,7 @@ class MlmMemberController extends Controller
         $simMember = $simMemberId ? Member::with('user')->find($simMemberId) : null;
 
         $simulation = $this->treeService->simulateLevelIncome($simAmount > 0 ? $simAmount : 1000.0, $simMember);
-        $members = Member::with('user')->orderBy('id')->get();
+        $members = Member::realDistributors()->with('user')->orderBy('id')->get();
 
         return view('admin.mlm.levels', compact('levelStats', 'simulation', 'simAmount', 'simMember', 'members'));
     }
@@ -766,6 +767,7 @@ class MlmMemberController extends Controller
     private function sponsorOptions(?Member $exclude = null)
     {
         return Member::query()
+            ->realDistributors()
             ->with('user')
             ->where('status', '!=', Member::STATUS_BLOCKED)
             ->when($exclude, fn ($query) => $query->whereKeyNot($exclude->id))

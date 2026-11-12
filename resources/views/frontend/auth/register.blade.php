@@ -53,6 +53,15 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="referral_code" class="form-label">Sponsor / Referral Member ID <span class="text-muted">(Optional)</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-user-friends text-muted"></i></span>
+                            <input type="text" class="form-control bg-light border-start-0 @error('referral_code') is-invalid @enderror" id="referral_code" name="referral_code" value="{{ old('referral_code', request('ref')) }}" placeholder="e.g. C22020013">
+                        </div>
+                        @error('referral_code')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                    </div>
+
+                    <div class="mb-3">
                         <label for="password" class="form-label">Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="fas fa-lock text-muted"></i></span>

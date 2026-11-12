@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\Mlm\MlmMemberService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
+    public function __construct(
+        private readonly MlmMemberService $memberService,
+    ) {}
+
     /**
      * Show the customer registration form.
      */
@@ -19,59 +23,40 @@ class RegisterController extends Controller
     }
 
     /**
-     * Register a new customer.
+     * Register a new customer as a real MLM member (aligned with API storefront flow).
      */
     public function register(Request $request)
     {
-        // Validate the registration form.
         $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                'unique:users,email',
-            ],
-            'phone' => [
-                'required',
-                'string',
-                'max:20',
-            ],
-            'password' => [
-                'required',
-                'string',
-                'min:6',
-                'confirmed',
-            ],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:20'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'referral_code' => ['nullable', 'string', 'max:40'],
+            'sponsor_customer_id' => ['nullable', 'string', 'max:40'],
         ]);
 
-        $customerRoleId = \App\Models\Role::where('name', 'Customer')->value('id');
+        try {
+            $member = $this->memberService->registerFromStorefront([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'password' => $validated['password'],
+                'referral_code' => $validated['referral_code'] ?? $validated['sponsor_customer_id'] ?? null,
+                'sponsor_customer_id' => $validated['sponsor_customer_id'] ?? $validated['referral_code'] ?? null,
+            ]);
+        } catch (ValidationException $e) {
+            throw $e;
+        }
 
-        // Create the new customer in the users table.
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'role_id' => $customerRoleId,
-            'status' => 'active',
-        ]);
-
-        // Automatically log in the new customer.
-        Auth::login($user);
-
-        // Create a fresh secure login session.
+        Auth::login($member->user);
         $request->session()->regenerate();
 
         return redirect()
             ->route('home')
             ->with(
                 'success',
-                'Registration successful! Welcome to MadhavFood.'
+                'Registration successful! Your Member ID is '.$member->customer_id.'. Welcome to KharchDaan.'
             );
     }
 }

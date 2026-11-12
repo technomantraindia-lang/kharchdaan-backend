@@ -42,6 +42,7 @@ class GlobalSearchController extends Controller
         if ($type === 'all' || $type === 'members') {
             if ($isSuperAdmin || ($user && $user->hasPermission('mlm.view'))) {
                 $members = \App\Models\Member::with(['user', 'sponsor.user'])
+                    ->realDistributors()
                     ->where(function ($mq) use ($query, $like, $lowerQuery) {
                         $mq->where('id', $query)
                             ->orWhereHas('user', function ($uq) use ($query, $like, $lowerQuery) {
