@@ -173,7 +173,8 @@ class MlmMemberController extends Controller
         
         $initialRoot = null;
         if ($root) {
-            $childrenData = $this->treeService->children($root);
+            // Levels are relative to the selected/displayed tree root (self = Level 1).
+            $childrenData = $this->treeService->children($root, $root);
             $initialRoot = [
                 'member' => $childrenData['parent'],
                 'slots' => $childrenData['slots'],
@@ -183,7 +184,7 @@ class MlmMemberController extends Controller
         $leaderOptions = $this->treeService->leaderOptions();
 
         $rootPayloads = collect([$root])->filter()->map(function (Member $rootMember): array {
-            $childrenData = $this->treeService->children($rootMember);
+            $childrenData = $this->treeService->children($rootMember, $rootMember);
             return [
                 'member' => $childrenData['parent'],
                 'slots' => $childrenData['slots'],
@@ -193,9 +194,17 @@ class MlmMemberController extends Controller
         return view('admin.mlm.tree', compact('roots', 'initialRoot', 'rootPayloads', 'root', 'leaderOptions'));
     }
 
-    public function treeChildren(Member $member): JsonResponse
+    public function treeChildren(Request $request, Member $member): JsonResponse
     {
-        return response()->json($this->treeService->children($member));
+        // When view_root is provided (admin tree UI), levels are relative to that
+        // selected/focused member (self = Level 1). Without it, keep global levels.
+        $viewRoot = null;
+        $viewRootId = $request->integer('view_root');
+        if ($viewRootId > 0) {
+            $viewRoot = Member::query()->find($viewRootId);
+        }
+
+        return response()->json($this->treeService->children($member, $viewRoot));
     }
 
     public function treeSearch(Request $request): JsonResponse

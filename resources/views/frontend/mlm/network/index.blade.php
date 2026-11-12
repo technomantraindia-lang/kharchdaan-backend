@@ -77,7 +77,7 @@
 <div class="tab-content">
     <div class="tab-pane fade show active" id="placementPanel" role="tabpanel">
         <div class="card shadow-sm border-0"><div class="card-body p-4">
-            <p class="text-muted small mb-3"><strong>Placement Tree</strong> displays physical Left, Middle, and Right positions where Direct Selling Level PV income is calculated across Levels 0–19.</p>
+            <p class="text-muted small mb-3"><strong>Placement Tree</strong> displays physical Left, Middle, and Right positions. Hierarchy levels are shown relative to you (you are Level 1). Direct Selling Level PV income is still calculated across commission tiers 0–19.</p>
             <div id="placementRoot"></div>
         </div></div>
     </div>

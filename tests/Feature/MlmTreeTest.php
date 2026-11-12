@@ -100,6 +100,40 @@ class MlmTreeTest extends TestCase
             ->assertJsonPath('slots.2.member.placement_parent.customer_id', $child->customer_id);
     }
 
+    public function test_tree_children_levels_are_relative_to_selected_view_root(): void
+    {
+        $root = $this->member('TREE-VIEW-ROOT', 'View Root', '9300000040');
+        $mid = $this->member('TREE-VIEW-MID', 'Om Style Mid', '9300000041', $root, $root, Member::POSITION_LEFT);
+        $child = $this->member('TREE-VIEW-CHILD', 'View Child', '9300000042', $mid, $mid, Member::POSITION_MIDDLE);
+        $grand = $this->member('TREE-VIEW-GRAND', 'View Grand', '9300000043', $mid, $child, Member::POSITION_RIGHT);
+
+        // Without view_root: global levels remain (mid=1, child=2).
+        $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', $mid))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 1)
+            ->assertJsonPath('slots.1.member.level', 2);
+
+        // With view_root=mid: selected member = Level 1, direct child = Level 2.
+        $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', ['member' => $mid, 'view_root' => $mid->id]))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 1)
+            ->assertJsonPath('parent.global_level', 1)
+            ->assertJsonPath('slots.1.member.customer_id', $child->customer_id)
+            ->assertJsonPath('slots.1.member.level', 2)
+            ->assertJsonPath('slots.1.member.global_level', 2);
+
+        // Expanding deeper while keeping view_root=mid → grandchild Level 3.
+        $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', ['member' => $child, 'view_root' => $mid->id]))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 2)
+            ->assertJsonPath('slots.2.member.customer_id', $grand->customer_id)
+            ->assertJsonPath('slots.2.member.level', 3)
+            ->assertJsonPath('slots.2.member.global_level', 3);
+    }
+
     public function test_search_returns_root_and_placement_path_for_open_location(): void
     {
         $root = $this->member('TREE-SEARCH-ROOT', 'Search Root', '9300000030');

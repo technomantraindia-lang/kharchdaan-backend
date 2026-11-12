@@ -1140,8 +1140,17 @@
     const canManage = @json(auth()->user()?->hasPermission('mlm.manage') ?? false);
     
     let activeTopRoot = initialRoot;
+    // Levels are relative to the currently displayed tree top (selected/focused member = Level 1).
+    let displayRootId = initialRoot?.member?.id ?? initialRoot?.id ?? null;
     let focusHistory = []; // Stack of { id, name, customer_id }
     let searchCache = [];
+
+    const childrenUrlFor = (memberId, viewRootId = displayRootId) => {
+        const base = viewport.dataset.childrenUrl.replace('__MEMBER__', memberId);
+        if (!viewRootId) return base;
+        const join = base.includes('?') ? '&' : '?';
+        return `${base}${join}view_root=${encodeURIComponent(viewRootId)}`;
+    };
     let zoomScale = 1.0;
     let currentDrawerMember = null;
 
@@ -1806,7 +1815,7 @@
 
         branch._loadingChildren = (async () => {
             try {
-                const url = viewport.dataset.childrenUrl.replace('__MEMBER__', branch.dataset.nodeId);
+                const url = childrenUrlFor(branch.dataset.nodeId, displayRootId);
                 const response = await fetch(url, { headers: { Accept: 'application/json' } });
                 if (!response.ok) throw new Error('Unable to load placement slots.');
                 const payload = await response.json();
@@ -1845,6 +1854,7 @@
             return;
         }
 
+        displayRootId = member.id;
         const rootBranch = renderBranch(member, isSubtreeFocus ? 'focused' : 'root', slots);
         panContainer.append(rootBranch);
         if (rootBranch._initialSlotsPromise) {
@@ -1888,7 +1898,8 @@
         }
 
         try {
-            const url = viewport.dataset.childrenUrl.replace('__MEMBER__', member.id);
+            // Focused member becomes the new Level-1 root for relative display.
+            const url = childrenUrlFor(member.id, member.id);
             const response = await fetch(url, { headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error('Unable to focus member subtree.');
             const payload = await response.json();
@@ -2548,9 +2559,10 @@
 
     // Reload active tree
     const reloadActiveTree = async () => {
-        const rootId = (activeTopRoot && activeTopRoot.member) ? activeTopRoot.member.id : (activeTopRoot?.id || 1);
+        const rootId = displayRootId
+            || ((activeTopRoot && activeTopRoot.member) ? activeTopRoot.member.id : (activeTopRoot?.id || 1));
         try {
-            const url = viewport.dataset.childrenUrl.replace('__MEMBER__', rootId);
+            const url = childrenUrlFor(rootId, rootId);
             const res = await fetch(url, { headers: { Accept: 'application/json' } });
             if (res.ok) {
                 const payload = await res.json();
@@ -2710,7 +2722,8 @@
     const loadMemberTree = async (memberId, isSubtreeFocus = false) => {
         try {
             clearMessage();
-            const url = viewport.dataset.childrenUrl.replace('__MEMBER__', memberId);
+            // Selected member is always Level 1 in this view.
+            const url = childrenUrlFor(memberId, memberId);
             const response = await fetch(url, { headers: { Accept: 'application/json' } });
             if (!response.ok) throw new Error('Failed to load member hierarchy.');
             const payload = await response.json();

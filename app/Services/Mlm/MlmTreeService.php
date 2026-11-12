@@ -231,7 +231,7 @@ class MlmTreeService
             ->get();
     }
 
-    public function children(Member $parent): array
+    public function children(Member $parent, ?Member $viewRoot = null): array
     {
         $this->autoReconnectOrphanedDownlines($parent);
 
@@ -244,10 +244,10 @@ class MlmTreeService
             ->keyBy('placement_position');
 
         return [
-            'parent' => $this->memberPayload($parent),
-            'slots' => collect(Member::POSITIONS)->map(function (string $position) use ($children): array {
+            'parent' => $this->memberPayload($parent, $viewRoot),
+            'slots' => collect(Member::POSITIONS)->map(function (string $position) use ($children, $viewRoot): array {
                 $child = $children->get($position);
-                $payload = $child ? $this->memberPayload($child) : null;
+                $payload = $child ? $this->memberPayload($child, $viewRoot) : null;
 
                 // Vacant placeholder with no retained downlines → show as true Available Slot
                 if ($payload && ($payload['is_vacant_slot'] ?? false) && ! ($payload['has_children'] ?? false) && (int) ($payload['downline_count'] ?? 0) === 0) {
@@ -263,12 +263,15 @@ class MlmTreeService
         ];
     }
 
-    public function memberPayload(Member $member): array
+    public function memberPayload(Member $member, ?Member $viewRoot = null): array
     {
         $hasChildren = isset($member->placement_children_count)
             ? (int) $member->placement_children_count > 0
             : Member::query()->where('placement_parent_id', $member->id)->exists();
-        $level = $this->level($member);
+        $globalLevel = $this->level($member);
+        $level = $viewRoot
+            ? ($this->relativeLevel($member, $viewRoot) ?? max($globalLevel - $this->level($viewRoot) + 1, 1))
+            : $globalLevel;
         $downlineCount = $this->getDownlineCount($member->id);
 
         $totalIncome = (float) MlmIncomeLedger::query()
@@ -439,6 +442,8 @@ class MlmTreeService
                 : 'Root',
             'level' => $level,
             'level_label' => $level > 19 ? '20+' : (string) $level,
+            'global_level' => $globalLevel,
+            'global_level_label' => $globalLevel > 19 ? '20+' : (string) $globalLevel,
             'total_income' => (int) round($combinedIncome),
             'total_income_formatted' => '₹'.number_format(round($combinedIncome)),
             'slot_income_formatted' => '₹'.number_format(round($totalIncome)),
@@ -598,6 +603,35 @@ class MlmTreeService
         $path = $this->placementPath($member);
 
         return $path === null ? 0 : max(count($path) - 1, 0);
+    }
+
+    /**
+     * Viewer/selected-root relative display level.
+     * Selected root = Level 1; each placement hop down increments by 1.
+     * Returns null when $member is not under $viewRoot's placement subtree.
+     */
+    public function relativeLevel(Member $member, Member $viewRoot): ?int
+    {
+        if ((int) $member->id === (int) $viewRoot->id) {
+            return 1;
+        }
+
+        $depthFromViewer = 0;
+        $currentId = $member->placement_parent_id;
+        $visited = [];
+
+        while ($currentId !== null && ! isset($visited[$currentId]) && $depthFromViewer < 20) {
+            $depthFromViewer++;
+
+            if ((int) $currentId === (int) $viewRoot->id) {
+                return $depthFromViewer + 1;
+            }
+
+            $visited[$currentId] = true;
+            $currentId = Member::query()->whereKey($currentId)->value('placement_parent_id');
+        }
+
+        return null;
     }
 
     public function placementPath(Member $member): ?array

@@ -31,11 +31,11 @@ class MlmCustomerNetworkService
 
         return [
             'member' => $this->memberPayload($member, includeSponsor: true),
-            'sponsor_root' => $this->memberPayload($member, includeSponsor: true, tree: 'sponsor'),
-            'placement_root' => $this->memberPayload($member, includeSponsor: true, tree: 'placement'),
+            'sponsor_root' => $this->memberPayload($member, includeSponsor: true, tree: 'sponsor', viewerRoot: $member),
+            'placement_root' => $this->memberPayload($member, includeSponsor: true, tree: 'placement', viewerRoot: $member),
             'direct_referral_count' => $member->sponsoredMembers()->count(),
             'placement_network_count' => $placementMembers->count(),
-            'visible_level' => $this->maxPlacementLevel($member, $placementMembers),
+            'visible_level' => $this->maxRelativePlacementLevel($member, $placementMembers),
             'placement_assignment_note' => $member->placement_parent_id === null
                 ? 'This member is not yet assigned on the 1:3 placement tree. Contact admin if placement is expected.'
                 : null,
@@ -95,13 +95,13 @@ class MlmCustomerNetworkService
                 ->where('sponsor_member_id', $parent->id)
                 ->orderBy('id')
                 ->get()
-                ->map(fn (Member $member): array => $this->memberPayload($member, tree: 'sponsor'))
+                ->map(fn (Member $member): array => $this->memberPayload($member, tree: 'sponsor', viewerRoot: $root))
                 ->values()
                 ->all();
 
             return [
                 'tree' => 'sponsor',
-                'parent' => $this->memberPayload($parent, tree: 'sponsor'),
+                'parent' => $this->memberPayload($parent, tree: 'sponsor', viewerRoot: $root),
                 'children' => $children,
             ];
         }
@@ -116,13 +116,13 @@ class MlmCustomerNetworkService
 
         return [
             'tree' => 'placement',
-            'parent' => $this->memberPayload($parent, tree: 'placement'),
+            'parent' => $this->memberPayload($parent, tree: 'placement', viewerRoot: $root),
             'slots' => collect(Member::POSITIONS)
                 ->map(fn (string $position): array => [
                     'position' => $position,
                     'position_label' => ucfirst($position),
                     'member' => isset($children[$position])
-                        ? $this->memberPayload($children[$position], tree: 'placement')
+                        ? $this->memberPayload($children[$position], tree: 'placement', viewerRoot: $root)
                         : null,
                 ])
                 ->all(),
@@ -225,37 +225,30 @@ class MlmCustomerNetworkService
         return $members;
     }
 
-    private function maxPlacementLevel(Member $root, Collection $members): int
+    /**
+     * Deepest viewer-relative placement level in the logged-in member's subtree.
+     * Self = Level 1; direct children = Level 2; etc.
+     */
+    private function maxRelativePlacementLevel(Member $root, Collection $members): int
     {
-        $maximum = 0;
+        $maximum = 1;
 
         foreach ($members as $member) {
-            $level = 0;
-            $currentId = $member->placement_parent_id;
-            $visited = [];
-
-            while ($currentId !== null && ! isset($visited[$currentId])) {
-                if ($currentId === $root->id) {
-                    $maximum = max($maximum, $level + 1);
-                    break;
-                }
-
-                $visited[$currentId] = true;
-                $parent = $members->firstWhere('id', $currentId);
-                if (! $parent) {
-                    break;
-                }
-
-                $level++;
-                $currentId = $parent->placement_parent_id;
+            $relative = $this->relativePlacementLevel($member, $root);
+            if ($relative !== null) {
+                $maximum = max($maximum, $relative);
             }
         }
 
-        return min($maximum, 19);
+        return min($maximum, 20);
     }
 
-    private function memberPayload(Member $member, bool $includeSponsor = false, ?string $tree = null): array
-    {
+    private function memberPayload(
+        Member $member,
+        bool $includeSponsor = false,
+        ?string $tree = null,
+        ?Member $viewerRoot = null,
+    ): array {
         $member->loadMissing('user');
 
         $payload = [
@@ -275,8 +268,22 @@ class MlmCustomerNetworkService
         ];
 
         if ($tree === 'placement') {
-            $payload['level'] = $this->placementLevel($member);
-            $payload['level_label'] = 'Level '.$payload['level'];
+            // Global depth is computed for reference only — never written back to the DB.
+            $globalLevel = $this->globalPlacementLevel($member);
+            $payload['global_level'] = $globalLevel;
+
+            // Personal dashboard always uses viewer-relative levels (self = Level 1).
+            // level_label is numeric only; the UI prefixes "Level ".
+            if ($viewerRoot !== null) {
+                $relative = $this->relativePlacementLevel($member, $viewerRoot);
+                abort_if($relative === null, 403);
+
+                $payload['level'] = $relative;
+                $payload['level_label'] = (string) $relative;
+            } else {
+                $payload['level'] = $globalLevel;
+                $payload['level_label'] = (string) $globalLevel;
+            }
         }
 
         if ($includeSponsor && $member->sponsor) {
@@ -291,7 +298,11 @@ class MlmCustomerNetworkService
         return $payload;
     }
 
-    private function placementLevel(Member $member): int
+    /**
+     * Global placement depth from the matrix root (unchanged admin semantics).
+     * Root member = 0; each placement hop down increments by 1.
+     */
+    private function globalPlacementLevel(Member $member): int
     {
         $level = 0;
         $currentId = $member->placement_parent_id;
@@ -304,6 +315,35 @@ class MlmCustomerNetworkService
         }
 
         return min($level, 19);
+    }
+
+    /**
+     * Viewer-relative display level: displayLevel = depthFromLoggedInMember + 1.
+     * Logged-in member = Level 1; direct placement children = Level 2; etc.
+     * Returns null when $member is not in $viewerRoot's placement subtree.
+     */
+    private function relativePlacementLevel(Member $member, Member $viewerRoot): ?int
+    {
+        if ($member->id === $viewerRoot->id) {
+            return 1;
+        }
+
+        $depthFromViewer = 0;
+        $currentId = $member->placement_parent_id;
+        $visited = [];
+
+        while ($currentId !== null && ! isset($visited[$currentId]) && $depthFromViewer < 20) {
+            $depthFromViewer++;
+
+            if ($currentId === $viewerRoot->id) {
+                return $depthFromViewer + 1;
+            }
+
+            $visited[$currentId] = true;
+            $currentId = Member::query()->whereKey($currentId)->value('placement_parent_id');
+        }
+
+        return null;
     }
 
     private function levelMeaning(int $level): string

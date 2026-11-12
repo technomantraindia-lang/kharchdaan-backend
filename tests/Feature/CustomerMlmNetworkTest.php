@@ -96,7 +96,79 @@ class CustomerMlmNetworkTest extends TestCase
             ->assertJsonPath('slots.1.position', Member::POSITION_MIDDLE)
             ->assertJsonPath('slots.2.position', Member::POSITION_RIGHT)
             ->assertJsonPath('slots.2.member', null)
-            ->assertJsonPath('slots.0.member.level', 1);
+            // Viewer-relative: logged-in root = Level 1, direct children = Level 2.
+            ->assertJsonPath('slots.0.member.level', 2)
+            ->assertJsonPath('slots.0.member.global_level', 1);
+    }
+
+    public function test_customer_placement_levels_are_relative_to_logged_in_member(): void
+    {
+        $globalRoot = $this->member('REL-GLOBAL-ROOT', 'Global Root', '9411111160');
+        $nachiket = $this->member('REL-NACHIKET', 'Nachiket Chawda', '9411111161', $globalRoot, $globalRoot, Member::POSITION_LEFT);
+        $devarshi = $this->member('REL-DEVARSHI', 'Devarshi Patel', '9411111162', $nachiket, $nachiket, Member::POSITION_LEFT);
+        $nikul = $this->member('REL-NIKUL', 'Nikul Gohil', '9411111163', $nachiket, $nachiket, Member::POSITION_MIDDLE);
+        $devarshiChild = $this->member('REL-DEV-CHILD', 'Devarshi Child', '9411111164', $devarshi, $devarshi, Member::POSITION_RIGHT);
+
+        // Admin continues to see global placement depth (root=0, Nachiket=1, children=2, grandchild=3).
+        $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', $nachiket))
+            ->assertOk()
+            ->assertJsonPath('slots.0.member.level', 2)
+            ->assertJsonPath('slots.1.member.level', 2);
+
+        $this->actingAs($this->admin)
+            ->getJson(admin_route('mlm.tree.children', $devarshi))
+            ->assertOk()
+            ->assertJsonPath('slots.2.member.level', 3);
+
+        // Nachiket's personal dashboard: self = Level 1, directs = Level 2.
+        $this->actingAs($nachiket->user)
+            ->get(route('network.index'))
+            ->assertOk()
+            ->assertSee('Level 1', false);
+
+        $this->actingAs($nachiket->user)
+            ->getJson(route('network.children', ['member' => $nachiket, 'tree' => 'placement']))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 1)
+            ->assertJsonPath('parent.global_level', 1)
+            ->assertJsonPath('slots.0.member.customer_id', $devarshi->customer_id)
+            ->assertJsonPath('slots.0.member.level', 2)
+            ->assertJsonPath('slots.0.member.global_level', 2)
+            ->assertJsonPath('slots.1.member.customer_id', $nikul->customer_id)
+            ->assertJsonPath('slots.1.member.level', 2);
+
+        $this->actingAs($nachiket->user)
+            ->getJson(route('network.children', ['member' => $devarshi, 'tree' => 'placement']))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 2)
+            ->assertJsonPath('slots.2.member.level', 3)
+            ->assertJsonPath('slots.2.member.global_level', 3);
+
+        // Devarshi's personal dashboard: self = Level 1, his child = Level 2.
+        $this->actingAs($devarshi->user)
+            ->getJson(route('network.children', ['member' => $devarshi, 'tree' => 'placement']))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 1)
+            ->assertJsonPath('parent.global_level', 2)
+            ->assertJsonPath('slots.2.member.customer_id', $devarshiChild->customer_id)
+            ->assertJsonPath('slots.2.member.level', 2)
+            ->assertJsonPath('slots.2.member.global_level', 3);
+
+        // Member without descendants still works (self = Level 1).
+        $lonely = $this->member('REL-LONELY', 'Lonely Member', '9411111165', $globalRoot, $globalRoot, Member::POSITION_RIGHT);
+        $this->actingAs($lonely->user)
+            ->getJson(route('network.children', ['member' => $lonely, 'tree' => 'placement']))
+            ->assertOk()
+            ->assertJsonPath('parent.level', 1)
+            ->assertJsonPath('slots.0.member', null)
+            ->assertJsonPath('slots.1.member', null)
+            ->assertJsonPath('slots.2.member', null);
+
+        // Security: Devarshi cannot load Nachiket's sibling branch outside his subtree.
+        $this->actingAs($devarshi->user)
+            ->getJson(route('network.children', ['member' => $nikul, 'tree' => 'placement']))
+            ->assertForbidden();
     }
 
     public function test_customer_cannot_open_another_members_branch_or_admin_move_endpoint(): void
