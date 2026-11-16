@@ -7,8 +7,8 @@
     <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Referral Income Eligibility</h1>
         <p class="text-sm text-slate-500 mt-1">
-            Structure-only weekly list. Payout % rates are not applied until the client rate sheet is provided.
-            Month gate: sponsor needs ≥ ₹{{ $threshold }} qualifying purchase.
+            Weekly eligibility list per client rules (pt 2 / 20 / 21): CashBack &amp; Referral depend on Sanstha's profit;
+            sponsor needs ≥ ₹{{ $threshold }} qualifying purchase in the month. Rupee payout % is not listed on the 38-point sheet — enter % when client provides it.
         </p>
     </div>
 

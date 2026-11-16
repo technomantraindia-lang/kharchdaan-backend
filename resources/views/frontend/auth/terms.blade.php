@@ -38,7 +38,7 @@
                     <p>Sponsor and placement relationships are managed as per KharchDaan Direct Selling rules (1:3 matrix). Placement may be arranged by admin/sponsor as per policy. Commission and PV benefits follow published Direct Selling criteria.</p>
 
                     <h3>3. Cashback &amp; Referral Benefits</h3>
-                    <p>Cashback and Referral Income benefits are conditional and may be paid based on organisation profit and eligibility criteria (including minimum purchase rules). Benefits shown as pending are not guaranteed until marked paid.</p>
+                    <p>CashBack and Referral Income depend on Sanstha's profit and system criteria (client requirement). Eligibility includes minimum ₹200 transaction rules and other published criteria. Benefits shown as pending are not guaranteed until marked Paid after profit availability and admin settlement.</p>
 
                     <h3>4. Orders &amp; Delivery</h3>
                     <p>Orders are accepted within the serviceable delivery area (primarily Ahmedabad and surrounding pincodes). Delivery status will be updated on your order. Cancellation follows company process.</p>
