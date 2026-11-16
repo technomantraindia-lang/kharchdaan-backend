@@ -8,9 +8,10 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\Mlm\MlmCustomerNetworkService;
 use App\Services\Mlm\MlmMemberService;
+use App\Support\CustomerLogin;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class CustomerAuthApiController extends Controller
@@ -26,7 +27,7 @@ class CustomerAuthApiController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')],
             'referral_code' => 'nullable|string|max:40',
             'sponsor_customer_id' => 'nullable|string|max:40',
         ]);
@@ -57,7 +58,7 @@ class CustomerAuthApiController extends Controller
         }
 
         $user = $member->user()->with(['role', 'mlmMember.sponsor.user'])->first();
-        $tokenObj = $user->createToken('customer_api_token');
+        $tokenObj = $this->issueCustomerToken($user);
 
         return response()->json([
             'success' => true,
@@ -66,6 +67,7 @@ class CustomerAuthApiController extends Controller
                 'user' => new CustomerResource($user),
                 'access_token' => $tokenObj->plainTextToken,
                 'token_type' => 'Bearer',
+                'terms_required' => ! $user->terms_accepted_at,
             ],
         ], 201);
     }
@@ -73,7 +75,8 @@ class CustomerAuthApiController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email',
+            'login' => 'nullable|string|max:255',
+            'email' => 'nullable|string|max:255',
             'password' => 'required|string',
         ]);
 
@@ -85,34 +88,26 @@ class CustomerAuthApiController extends Controller
             ], 422);
         }
 
-        $email = strtolower(trim($request->email));
-        $user = User::whereRaw('LOWER(TRIM(email)) = ?', [$email])->first();
-
-        if (! $user) {
+        $identifier = trim((string) ($request->input('login') ?: $request->input('email') ?: ''));
+        if ($identifier === '') {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid email or password credentials.',
+                'message' => 'Please enter Customer ID, Mobile, or Email.',
+                'errors' => ['login' => ['Please enter Customer ID, Mobile, or Email.']],
+            ], 422);
+        }
+
+        $user = CustomerLogin::findCustomerByIdentifier($identifier);
+
+        if (! $user || ! CustomerLogin::passwordMatches($user, $request->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid Customer ID / Mobile / Email or password.',
             ], 401);
         }
 
-        // Verify password using Hash::check with fallback for plain_password
-        $passwordMatches = Hash::check($request->password, $user->password)
-            || (! empty($user->plain_password) && $user->plain_password === $request->password);
+        CustomerLogin::ensurePasswordHashed($user, $request->password);
 
-        if (! $passwordMatches) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid email or password credentials.',
-            ], 401);
-        }
-
-        // If user has plain_password match but hashed password mismatch, update to proper hash
-        if ($user->plain_password === $request->password && ! Hash::check($request->password, $user->password)) {
-            $user->password = $request->password;
-            $user->save();
-        }
-
-        // Ensure role exists
         if (! $user->role_id) {
             $customerRole = Role::firstOrCreate(['name' => 'Customer'], ['guard_name' => 'web']);
             $user->role_id = $customerRole->id;
@@ -127,7 +122,7 @@ class CustomerAuthApiController extends Controller
         }
 
         $user->load(['role', 'mlmMember.sponsor.user']);
-        $tokenObj = $user->createToken('customer_api_token');
+        $tokenObj = $this->issueCustomerToken($user);
 
         return response()->json([
             'success' => true,
@@ -136,7 +131,53 @@ class CustomerAuthApiController extends Controller
                 'user' => new CustomerResource($user),
                 'access_token' => $tokenObj->plainTextToken,
                 'token_type' => 'Bearer',
+                'terms_required' => ! $user->terms_accepted_at,
             ],
+        ]);
+    }
+
+    private function issueCustomerToken(User $user): object
+    {
+        $tokenObj = $user->createToken('customer_api_token');
+        $minutes = (int) config('auth.api_token_expiration', 525600);
+        if ($minutes > 0 && isset($tokenObj->accessToken)) {
+            $tokenObj->accessToken->forceFill([
+                'expires_at' => now()->addMinutes($minutes),
+            ])->save();
+        }
+
+        return $tokenObj;
+    }
+
+    public function acceptTerms(Request $request)
+    {
+        $user = auth()->user();
+        abort_unless($user && $user->isCustomer(), 403);
+
+        $validator = Validator::make($request->all(), [
+            'accept_terms' => ['accepted'],
+        ], [
+            'accept_terms.accepted' => 'You must accept the Terms & Conditions to continue.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        if (! $user->terms_accepted_at) {
+            $user->forceFill(['terms_accepted_at' => now()])->save();
+        }
+
+        $user->load(['role', 'mlmMember.sponsor.user']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Terms & Conditions accepted.',
+            'data' => new CustomerResource($user),
         ]);
     }
 
@@ -162,12 +203,10 @@ class CustomerAuthApiController extends Controller
         return response()->json([
             'success' => true,
             'data' => new CustomerResource($user),
+            'terms_required' => $user ? ! $user->terms_accepted_at : false,
         ]);
     }
 
-    /**
-     * Sponsor dashboard: list users registered under the authenticated customer.
-     */
     public function myReferrals(Request $request)
     {
         $user = auth()->user();
@@ -196,7 +235,7 @@ class CustomerAuthApiController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($user->id)],
         ]);
 
         if ($validator->fails()) {
@@ -207,7 +246,17 @@ class CustomerAuthApiController extends Controller
             ], 422);
         }
 
-        $user->update($request->only(['name', 'phone']));
+        // Phone changes should remain admin-controlled when possible; still enforce uniqueness if sent.
+        $data = $request->only(['name']);
+        if ($request->filled('phone') && $request->input('phone') !== $user->phone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mobile number can only be changed by admin on request.',
+                'errors' => ['phone' => ['Mobile number can only be changed by admin on request.']],
+            ], 422);
+        }
+
+        $user->update($data);
         $user->load(['role', 'mlmMember.sponsor.user']);
 
         return response()->json([

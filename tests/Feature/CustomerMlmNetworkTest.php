@@ -190,7 +190,7 @@ class CustomerMlmNetworkTest extends TestCase
         $this->member('ADMIN-TREE-ROOT', 'Admin Tree Root', '9411111150');
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.tree.index'))
+            ->get(admin_route('mlm.tree.index'))
             ->assertOk()
             ->assertSee('Placement Tree');
     }
@@ -212,6 +212,7 @@ class CustomerMlmNetworkTest extends TestCase
             'role_id' => $role->id,
             'status' => 'active',
             'mlm_member_id' => $memberId,
+            'terms_accepted_at' => now(),
         ]);
 
         return Member::create([

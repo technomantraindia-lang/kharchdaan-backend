@@ -19,6 +19,10 @@ class OrderResource extends JsonResource
             'shipping_charge' => (float) $this->ship_charge,
             'discount' => (float) $this->discount,
             'currency' => $this->currency ?? 'INR',
+            'order_channel' => $this->order_channel ?? 'online',
+            'special_instruction' => $this->special_instruction,
+            'offline_remark' => $this->offline_remark,
+            'offline_document_path' => $this->offline_document_path,
             'created_at' => $this->created_at ? $this->created_at->toIso8601String() : null,
             'items' => $this->items->map(function ($item) {
                 return [

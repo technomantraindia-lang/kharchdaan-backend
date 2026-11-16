@@ -30,7 +30,7 @@ class RegisterController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'referral_code' => ['nullable', 'string', 'max:40'],
             'sponsor_customer_id' => ['nullable', 'string', 'max:40'],

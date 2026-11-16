@@ -9,7 +9,7 @@
             <div class="card-body p-5">
                 <div class="text-center mb-4">
                     <h2 class="fw-bold text-gradient" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome Back</h2>
-                    <p class="text-muted">Login to manage your orders and profile</p>
+                    <p class="text-muted">Login with Customer ID, Mobile, or Email</p>
                 </div>
 
                 @if ($errors->any())
@@ -26,12 +26,12 @@
                     @csrf
 
                     <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
+                        <label for="login" class="form-label">Customer ID / Mobile / Email</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-envelope text-muted"></i></span>
-                            <input type="email" class="form-control bg-light border-start-0 @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="john@example.com" required autofocus>
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
+                            <input type="text" class="form-control bg-light border-start-0 @error('login') is-invalid @enderror" id="login" name="login" value="{{ old('login', old('email')) }}" placeholder="C25070002 / 98XXXXXXXX / email" required autofocus>
                         </div>
-                        @error('email')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
+                        @error('login')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
                     </div>
 
                     <div class="mb-4">

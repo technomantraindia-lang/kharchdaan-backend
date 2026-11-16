@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CashbackController;
+use App\Http\Controllers\Admin\MlmReferralEligibilityController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FailedJobController;
@@ -134,6 +135,10 @@ Route::middleware('admin')->group(function () {
         Route::post('/preview', [MlmCalculationController::class, 'preview'])->middleware('permission:mlm.manage')->name('preview');
         Route::post('/', [MlmCalculationController::class, 'store'])->middleware('permission:mlm.manage')->name('store');
     });
+
+    Route::get('/mlm/referral-eligibility', [MlmReferralEligibilityController::class, 'index'])
+        ->middleware('permission:mlm.view')
+        ->name('mlm.referral-eligibility.index');
 
     Route::prefix('mlm/reconciliation')->name('mlm.reconciliation.')->group(function (): void {
         Route::get('/', [MlmReconciliationController::class, 'index'])->middleware('permission:mlm.view')->name('index');

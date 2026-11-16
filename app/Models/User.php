@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'staff_code', 'password', 'plain_password', 'phone', 'role_id', 'status', 'woocommerce_customer_id', 'mlm_member_id'])]
+#[Fillable(['name', 'email', 'staff_code', 'password', 'plain_password', 'phone', 'role_id', 'status', 'terms_accepted_at', 'woocommerce_customer_id', 'mlm_member_id'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -24,8 +24,14 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function hasAcceptedTerms(): bool
+    {
+        return $this->terms_accepted_at !== null;
     }
 
     public function role(): BelongsTo

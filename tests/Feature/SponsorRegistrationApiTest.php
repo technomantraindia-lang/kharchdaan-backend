@@ -70,6 +70,7 @@ class SponsorRegistrationApiTest extends TestCase
             'email' => 'badsponsor@example.com',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
+            'phone' => '9876501099',
             'referral_code' => 'C99999999',
         ]);
 
@@ -81,12 +82,14 @@ class SponsorRegistrationApiTest extends TestCase
 
     public function test_multiple_users_under_same_sponsor_and_referrals_api(): void
     {
-        foreach (['one@example.com', 'two@example.com'] as $email) {
+        $phones = ['9876501001', '9876501002'];
+        foreach (['one@example.com', 'two@example.com'] as $i => $email) {
             $this->postJson('/api/v1/register', [
                 'name' => 'Child '.$email,
                 'email' => $email,
                 'password' => 'secret123',
                 'password_confirmation' => 'secret123',
+                'phone' => $phones[$i],
                 'referral_code' => 'C22029999',
             ])->assertStatus(201);
         }
@@ -116,6 +119,7 @@ class SponsorRegistrationApiTest extends TestCase
             'email' => 'blocked-child@example.com',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
+            'phone' => '9876501003',
             'referral_code' => 'C22029999',
         ])->assertStatus(422);
     }

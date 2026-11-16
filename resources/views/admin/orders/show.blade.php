@@ -16,7 +16,22 @@
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
                 <i class="fas fa-bag-shopping text-blue-600"></i> Order #{{ $order->order_num }}
             </h1>
-            <p class="text-sm text-slate-500 mt-1">Placed on {{ $order->created_at->format('l, F d, Y \a\t h:i A') }}</p>
+            <p class="text-sm text-slate-500 mt-1">
+                Placed on {{ $order->created_at->format('l, F d, Y \a\t h:i A') }}
+                · Channel:
+                <span class="font-semibold {{ ($order->order_channel ?? 'online') === 'offline' ? 'text-amber-700' : 'text-sky-700' }}">
+                    {{ ucfirst($order->order_channel ?? 'online') }}
+                </span>
+            </p>
+            @if($order->special_instruction)
+                <p class="text-xs text-slate-600 mt-1"><span class="font-semibold">Special Instruction:</span> {{ $order->special_instruction }}</p>
+            @endif
+            @if(($order->order_channel ?? '') === 'offline')
+                <p class="text-xs text-amber-800 mt-1"><span class="font-semibold">Offline Remark:</span> {{ $order->offline_remark ?? '—' }}</p>
+                @if($order->offline_document_path)
+                    <a class="text-xs text-blue-600 font-semibold" href="{{ asset('storage/'.$order->offline_document_path) }}" target="_blank" rel="noopener">View offline attachment</a>
+                @endif
+            @endif
         </div>
         <div class="flex items-center gap-2 flex-wrap">
             @if($order->invoice)

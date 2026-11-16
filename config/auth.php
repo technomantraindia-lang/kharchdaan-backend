@@ -114,5 +114,6 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
-    'api_token_expiration' => env('AUTH_API_TOKEN_EXPIRATION', 43200),
+    // Long-lived API tokens (1 year). Client req: avoid aggressive auto-logout.
+    'api_token_expiration' => env('AUTH_API_TOKEN_EXPIRATION', 525600),
 ];

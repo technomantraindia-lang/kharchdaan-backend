@@ -9,9 +9,12 @@ use App\Http\Controllers\Frontend\CategoryController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\RegisterController;
 use App\Http\Controllers\Frontend\LoginController;
+use App\Http\Controllers\Frontend\TermsController;
 use App\Http\Controllers\Frontend\CashbackController;
 use App\Http\Controllers\Frontend\MlmNetworkController;
 use App\Http\Controllers\Frontend\MlmPayoutController;
+use App\Http\Controllers\Frontend\CustomerTransactionController;
+use App\Http\Controllers\Frontend\SponsorPlacementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -136,32 +139,46 @@ Route::middleware('guest')->group(function () {
 */
 
 Route::middleware('auth')->group(function () {
-    Route::get('/my-account', function () {
-        return view('frontend.account', [
-            'user' => auth()->user(),
-        ]);
-    })->name('account');
-
-    Route::get('/my-account/cashback', [CashbackController::class, 'index'])
-        ->name('cashback.index');
-    Route::get('/my-account/cashback/{cashback}', [CashbackController::class, 'show'])
-        ->name('cashback.show');
-    Route::get('/my-account/cashback/{cashback}/payment-proof', [CashbackController::class, 'paymentProof'])
-        ->name('cashback.payment-proof');
-
-    Route::get('/my-account/network', [MlmNetworkController::class, 'index'])
-        ->name('network.index');
-    Route::get('/my-account/network/levels', [MlmNetworkController::class, 'levels'])
-        ->name('network.levels');
-    Route::get('/my-account/network/children/{member}', [MlmNetworkController::class, 'children'])
-        ->name('network.children');
-    Route::get('/my-account/mlm-payouts', [MlmPayoutController::class, 'index'])
-        ->name('mlm-payouts.index');
-    Route::get('/my-account/mlm-payouts/{cycle}/payment-proof', [MlmPayoutController::class, 'paymentProof'])
-        ->name('mlm-payouts.payment-proof');
+    Route::get('/terms', [TermsController::class, 'show'])->name('terms.show');
+    Route::post('/terms/accept', [TermsController::class, 'accept'])->name('terms.accept');
 
     Route::post('/logout', [LoginController::class, 'logout'])
         ->name('logout');
+
+    Route::middleware('customer.terms')->group(function () {
+        Route::get('/my-account', function () {
+            return view('frontend.account', [
+                'user' => auth()->user(),
+            ]);
+        })->name('account');
+
+        Route::get('/my-account/transactions', [CustomerTransactionController::class, 'index'])
+            ->name('transactions.index');
+
+        Route::get('/my-account/cashback', [CashbackController::class, 'index'])
+            ->name('cashback.index');
+        Route::get('/my-account/cashback/{cashback}', [CashbackController::class, 'show'])
+            ->name('cashback.show');
+        Route::get('/my-account/cashback/{cashback}/payment-proof', [CashbackController::class, 'paymentProof'])
+            ->name('cashback.payment-proof');
+
+        Route::get('/my-account/network', [MlmNetworkController::class, 'index'])
+            ->name('network.index');
+        Route::get('/my-account/network/levels', [MlmNetworkController::class, 'levels'])
+            ->name('network.levels');
+        Route::get('/my-account/network/referrals', [MlmNetworkController::class, 'referrals'])
+            ->name('network.referrals');
+        Route::get('/my-account/network/children/{member}', [MlmNetworkController::class, 'children'])
+            ->name('network.children');
+        Route::get('/my-account/network/placement', [SponsorPlacementController::class, 'index'])
+            ->name('network.placement');
+        Route::post('/my-account/network/placement', [SponsorPlacementController::class, 'store'])
+            ->name('network.placement.store');
+        Route::get('/my-account/mlm-payouts', [MlmPayoutController::class, 'index'])
+            ->name('mlm-payouts.index');
+        Route::get('/my-account/mlm-payouts/{cycle}/payment-proof', [MlmPayoutController::class, 'paymentProof'])
+            ->name('mlm-payouts.payment-proof');
+    });
 });
 
 /*

@@ -547,6 +547,10 @@
                         <i class="fas fa-calculator w-4 text-center text-sm {{ request()->routeIs('*.mlm.calculations.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>PV Calculation Engine</span>
                     </a>
+                    <a href="{{ admin_route('mlm.referral-eligibility.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.referral-eligibility.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-handshake w-4 text-center text-sm {{ request()->routeIs('*.mlm.referral-eligibility.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Referral Eligibility (Structure)</span>
+                    </a>
                     <a href="{{ admin_route('mlm.reconciliation.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.reconciliation.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-check-double w-4 text-center text-sm {{ request()->routeIs('*.mlm.reconciliation.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Order Commission Audit</span>

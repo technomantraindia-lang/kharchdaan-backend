@@ -37,22 +37,132 @@
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="small text-muted text-uppercase fw-bold">Direct Referrals</div>
-                <div class="fw-bold fs-5">{{ $direct_referral_count }}</div>
+                <a href="{{ route('network.referrals') }}" class="fw-bold fs-5 text-decoration-none d-inline-flex align-items-center gap-1">
+                    {{ $direct_referral_count }}
+                    <span class="small text-primary">view contacts →</span>
+                </a>
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="small text-muted text-uppercase fw-bold">Placement Network</div>
                 <div class="fw-bold fs-5 text-success">{{ $placement_network_count }} Members</div>
             </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="small text-muted text-uppercase fw-bold">Own Month Volume</div>
+                <div class="fw-bold fs-5">₹{{ number_format((float) ($own_month_volume ?? 0), 2) }}</div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="small text-muted text-uppercase fw-bold">Downline Month Volume</div>
+                <div class="fw-bold fs-5">₹{{ number_format((float) ($downline_month_volume ?? 0), 2) }}</div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="small text-muted text-uppercase fw-bold">DS / Referral Status</div>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                    <span class="badge {{ !empty($ds_eligible) ? 'bg-success' : 'bg-danger' }}">{{ !empty($ds_eligible) ? 'DS Eligible' : 'DS Not Eligible' }}</span>
+                    <span class="badge {{ !empty($referral_month_eligible) ? 'bg-success' : 'bg-danger' }}">{{ !empty($referral_month_eligible) ? 'Referral Eligible' : 'Referral Not Eligible' }}</span>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="small text-muted text-uppercase fw-bold">Sponsor Team Month Total</div>
+                <div class="fw-bold fs-5">₹{{ number_format((float) ($sponsor_team_month_total ?? 0), 2) }}</div>
+            </div>
         </div>
-        <div class="small text-muted mt-3 pt-3 border-top">
-            Direct Sponsor: <strong>{{ $member['sponsor']['name'] ?? 'Root / None' }}</strong>
-            @if(!empty($member['sponsor']['customer_id'])) <span class="font-monospace text-primary">({{ $member['sponsor']['customer_id'] }})</span>@endif
+        <div class="small text-muted mt-3 pt-3 border-top d-flex flex-wrap justify-content-between gap-2">
+            <div>
+                Direct Sponsor: <strong>{{ $member['sponsor']['name'] ?? 'Root / None' }}</strong>
+                @if(!empty($member['sponsor']['customer_id'])) <span class="font-monospace text-primary">({{ $member['sponsor']['customer_id'] }})</span>@endif
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('network.placement') }}" class="btn btn-sm btn-outline-primary">Place Joinees</a>
+                <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-secondary">My Transactions</a>
+            </div>
         </div>
         @if($placement_assignment_note)
             <div class="alert alert-warning mt-3 mb-0 py-2"><i class="fas fa-info-circle me-1"></i>{{ $placement_assignment_note }}</div>
         @endif
     </div>
 </div>
+
+@if(!empty($performance_chart))
+@php
+    $ownMax = max(1, max($performance_chart['own']));
+    $downMax = max(1, max($performance_chart['downline']));
+@endphp
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Performance — Past vs Current Month</div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="small text-muted text-uppercase fw-bold mb-2">Own Volume</div>
+                @foreach ($performance_chart['labels'] as $i => $label)
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small"><span>{{ $label }}</span><strong>₹{{ number_format($performance_chart['own'][$i], 2) }}</strong></div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-warning" style="width: {{ min(100, ($performance_chart['own'][$i] / $ownMax) * 100) }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="col-md-4">
+                <div class="small text-muted text-uppercase fw-bold mb-2">Downline Volume</div>
+                @foreach ($performance_chart['labels'] as $i => $label)
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small"><span>{{ $label }}</span><strong>₹{{ number_format($performance_chart['downline'][$i], 2) }}</strong></div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-success" style="width: {{ min(100, ($performance_chart['downline'][$i] / $downMax) * 100) }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="col-md-4">
+                <div class="small text-muted text-uppercase fw-bold mb-2">New Direct Referrals</div>
+                @foreach ($performance_chart['labels'] as $i => $label)
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small"><span>{{ $label }}</span><strong>{{ $performance_chart['direct_referrals'][$i] }}</strong></div>
+                        <div class="progress" style="height:10px;">
+                            <div class="progress-bar bg-primary" style="width: {{ min(100, ($performance_chart['direct_referrals'][$i] / max(1, max($performance_chart['direct_referrals']))) * 100) }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        <div class="small text-muted mt-2">Downline count (placement network): <strong>{{ $downline_count ?? $placement_network_count }}</strong></div>
+    </div>
+</div>
+@endif
+
+@if(!empty($sponsor_team_monthly))
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold">Sponsor Team — Monthly Status</div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Phone</th>
+                    <th>Month Volume</th>
+                    <th>Eligibility</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($sponsor_team_monthly as $row)
+                    <tr class="{{ !empty($row['highlight_red']) ? 'table-danger' : '' }}">
+                        <td>
+                            <div class="fw-semibold">{{ $row['name'] }}</div>
+                            <div class="font-monospace small text-primary">{{ $row['customer_id'] }}</div>
+                        </td>
+                        <td>{{ $row['phone'] ?? '—' }}</td>
+                        <td>₹{{ number_format((float) $row['month_volume'], 2) }}</td>
+                        <td class="d-flex flex-wrap gap-1">
+                            <span class="badge {{ $row['ds_eligible'] ? 'bg-success' : 'bg-danger' }}">{{ $row['status_badges']['ds'] }}</span>
+                            <span class="badge {{ $row['referral_eligible'] ? 'bg-success' : 'bg-danger' }}">{{ $row['status_badges']['referral'] }}</span>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
 
 <div id="networkMessage" class="alert d-none" role="status"></div>
 <div class="mb-3">

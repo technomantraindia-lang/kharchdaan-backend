@@ -31,4 +31,9 @@ class MlmNetworkController extends Controller
     {
         return view('frontend.mlm.network.levels', $this->networkService->levels($request->user()));
     }
+
+    public function referrals(Request $request): View
+    {
+        return view('frontend.mlm.network.referrals', $this->networkService->directReferrals($request->user()));
+    }
 }

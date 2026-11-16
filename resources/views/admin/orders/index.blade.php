@@ -87,6 +87,14 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label class="block font-semibold text-slate-600 mb-1">Billing Channel</label>
+                <select name="order_channel" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition">
+                    <option value="">All (Online + Offline)</option>
+                    <option value="online" @selected(request('order_channel')==='online')>Online</option>
+                    <option value="offline" @selected(request('order_channel')==='offline')>Offline</option>
+                </select>
+            </div>
             <div class="flex items-end gap-2">
                 <button class="flex-1 px-4 py-2 font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-xs">
                     <i class="fas fa-filter mr-1"></i> Filter
@@ -110,6 +118,7 @@
                 <thead>
                     <tr class="border-b border-slate-200/80 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         <th class="py-3 px-4">Order #</th>
+                        <th class="py-3 px-4">Channel</th>
                         <th class="py-3 px-4">Customer</th>
                         <th class="py-3 px-4 text-center">Items</th>
                         <th class="py-3 px-4 text-right">Total Amount</th>
@@ -126,6 +135,12 @@
                                 <a href="{{ admin_route('orders.show', $order) }}" class="font-bold text-blue-600 hover:underline">
                                     {{ $order->order_num }}
                                 </a>
+                            </td>
+                            <td class="py-3 px-4">
+                                @php $channel = $order->order_channel ?? 'online'; @endphp
+                                <span class="inline-flex px-2 py-0.5 rounded text-[11px] font-semibold {{ $channel === 'offline' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-sky-50 text-sky-700 border border-sky-200' }}">
+                                    {{ ucfirst($channel) }}
+                                </span>
                             </td>
                             <td class="py-3 px-4">
                                 <div class="font-semibold text-slate-800">{{ $order->user?->name ?? 'Guest' }}</div>
@@ -158,7 +173,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="py-12 text-center text-slate-400">
+                            <td colspan="9" class="py-12 text-center text-slate-400">
                                 <i class="fas fa-cart-shopping text-3xl mb-2 text-slate-300 block"></i>
                                 No orders found.
                             </td>

@@ -47,10 +47,14 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::middleware(\App\Http\Middleware\AuthenticateApiToken::class)->group(function () {
         Route::post('/logout', [CustomerAuthApiController::class, 'logout']);
         Route::get('/me', [CustomerAuthApiController::class, 'me']);
+        Route::post('/me/accept-terms', [CustomerAuthApiController::class, 'acceptTerms']);
         Route::put('/me', [CustomerAuthApiController::class, 'updateProfile']);
         Route::get('/me/referrals', [CustomerAuthApiController::class, 'myReferrals']);
 
-        Route::get('/orders', [CustomerOrderApiController::class, 'index']);
-        Route::get('/orders/{id}', [CustomerOrderApiController::class, 'show']);
+        Route::middleware('customer.terms')->group(function () {
+            Route::get('/orders', [CustomerOrderApiController::class, 'index']);
+            Route::get('/orders/{id}', [CustomerOrderApiController::class, 'show']);
+            Route::get('/me/transactions', [\App\Http\Controllers\Api\V1\CustomerTransactionApiController::class, 'index']);
+        });
     });
 });

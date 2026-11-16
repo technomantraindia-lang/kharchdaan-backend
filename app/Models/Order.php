@@ -13,6 +13,7 @@ class Order extends Model
         'order_num', 'user_id', 'subtotal', 'discount', 'gst_amt', 'ship_charge', 'total',
         'coupon_id', 'ship_id', 'status', 'pay_status', 'tracking_num', 'courier', 'admin_note', 'bill_addr', 'ship_addr',
         'woocommerce_id', 'woocommerce_synced_at', 'currency', 'payment_method', 'txn_id',
+        'order_channel', 'special_instruction', 'offline_remark', 'offline_document_path',
         'seller_state', 'customer_state', 'cgst_amt', 'sgst_amt', 'igst_amt',
         'mlm_processing_status', 'mlm_eligible_amount', 'mlm_pv_processing_status',
         'mlm_formula_version', 'mlm_integration_reference', 'mlm_reversal_status',

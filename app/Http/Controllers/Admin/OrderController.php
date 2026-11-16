@@ -60,6 +60,9 @@ class OrderController extends Controller
         if ($request->filled('payment_method')) {
             $query->where('payment_method', $request->payment_method);
         }
+        if ($request->filled('order_channel')) {
+            $query->where('order_channel', $request->order_channel);
+        }
         if ($request->filled('courier')) {
             $query->where('courier', 'like', '%' . trim($request->courier) . '%');
         }

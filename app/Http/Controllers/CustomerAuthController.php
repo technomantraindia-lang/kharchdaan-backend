@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Support\CustomerLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class CustomerAuthController extends Controller
 {
@@ -20,7 +22,7 @@ class CustomerAuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
@@ -51,32 +53,35 @@ class CustomerAuthController extends Controller
     public function login(Request $request)
     {
         $validated = $request->validate([
-            'email' => ['required', 'email'],
+            'login' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
         ]);
 
-        $credentials = [
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-        ];
+        $user = CustomerLogin::findCustomerByIdentifier($validated['login']);
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            if ($user && $user->role && $user->role->name === 'Customer' && $user->status === 'active') {
-                $request->session()->regenerate();
-
-                return redirect()->route('customer.account');
+        if ($user && CustomerLogin::passwordMatches($user, $validated['password'])) {
+            if ($user->status !== 'active') {
+                return redirect()
+                    ->back()
+                    ->withInput($request->only('login'))
+                    ->with('error', 'Your account is not active. Please contact support.');
             }
 
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            CustomerLogin::ensurePasswordHashed($user, $validated['password']);
+            Auth::login($user, true);
+            $request->session()->regenerate();
+
+            if (! $user->terms_accepted_at) {
+                return redirect()->route('terms.show');
+            }
+
+            return redirect()->route('customer.account');
         }
 
         return redirect()
             ->back()
-            ->withInput($request->only('email'))
-            ->with('error', 'Invalid customer login details.');
+            ->withInput($request->only('login'))
+            ->with('error', 'Invalid Customer ID / Mobile / Email or password.');
     }
 
     public function account()

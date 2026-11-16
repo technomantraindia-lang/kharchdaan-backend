@@ -18,6 +18,8 @@ class CustomerResource extends JsonResource
             'phone' => $this->phone,
             'role' => $this->role?->name ?? 'Customer',
             'status' => $this->status ?? 'active',
+            'terms_accepted_at' => $this->terms_accepted_at?->toIso8601String(),
+            'terms_accepted' => (bool) $this->terms_accepted_at,
             'mlm_member_id' => $this->mlm_member_id ?? $member?->customer_id,
             'member_status' => $member?->status,
             'kyc_status' => $member?->kyc_status,

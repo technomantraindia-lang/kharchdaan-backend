@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Customer;
 use App\Models\InventoryLog;
@@ -20,10 +21,11 @@ class ExportService
      */
     public function exportCsv(string $module, array $range, array $filters = []): StreamedResponse
     {
-        $filename = "export_{$module}_" . date('Y-m-d_His') . ".csv";
+        // Excel-friendly CSV (opens directly in Excel). Real .xlsx needs PhpSpreadsheet.
+        $filename = "export_{$module}_" . date('Y-m-d_His') . ".xls";
 
         $headers = [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
@@ -32,8 +34,19 @@ class ExportService
 
         $callback = function () use ($module, $range, $filters) {
             $handle = fopen('php://output', 'w');
+            // UTF-8 BOM so Excel reads Indian characters correctly
+            fwrite($handle, "\xEF\xBB\xBF");
 
-            switch ($module) {
+            // Client req 33 aliases: Transactions / Items / Customers / Vendors
+            $normalized = match ($module) {
+                'transactions', 'transaction' => 'orders',
+                'items', 'item', 'products', 'product' => 'products',
+                'customers', 'customer' => 'customers',
+                'vendors', 'vendor', 'suppliers', 'supplier' => 'vendors',
+                default => $module,
+            };
+
+            switch ($normalized) {
                 case 'orders':
                     $this->streamOrders($handle, $range, $filters);
                     break;
@@ -44,6 +57,10 @@ class ExportService
 
                 case 'customers':
                     $this->streamCustomers($handle, $range, $filters);
+                    break;
+
+                case 'vendors':
+                    $this->streamVendors($handle, $filters);
                     break;
 
                 case 'inventory':
@@ -281,5 +298,30 @@ class ExportService
                 $row['revenue'],
             ]);
         }
+    }
+
+    /**
+     * Vendors module: brands are the closest vendor entity in this catalog.
+     */
+    private function streamVendors($handle, array $filters): void
+    {
+        fputcsv($handle, ['ID', 'Vendor/Brand Name', 'Slug', 'Status', 'Product Count', 'Description']);
+
+        Brand::query()
+            ->withCount('products')
+            ->when(! empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
+            ->orderBy('name')
+            ->chunk(100, function ($brands) use ($handle) {
+                foreach ($brands as $brand) {
+                    fputcsv($handle, [
+                        $brand->id,
+                        $brand->name,
+                        $brand->slug,
+                        $brand->status ?? 'active',
+                        $brand->products_count,
+                        $brand->description,
+                    ]);
+                }
+            });
     }
 }

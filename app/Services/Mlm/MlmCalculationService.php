@@ -362,6 +362,11 @@ class MlmCalculationService
                 continue;
             }
 
+            // Client req 22/32: upline needs monthly min ₹1000 purchase to earn DS level income.
+            if ($level > 0 && ! app(PurchaseEligibilityService::class)->isDirectSellingEligible($beneficiary, $date)) {
+                continue;
+            }
+
             $pvRate = $level >= $rule->high_level_start && $level <= $rule->high_level_end
                 ? (string) $rule->high_pv_rate
                 : (string) $rule->low_pv_rate;

@@ -10,6 +10,8 @@ use Illuminate\Support\Collection;
 
 class MlmCustomerNetworkService
 {
+    public function __construct(private readonly PurchaseEligibilityService $eligibility) {}
+
     public function ownedMember(User $user): Member
     {
         abort_unless($user->isCustomer(), 403);
@@ -28,6 +30,54 @@ class MlmCustomerNetworkService
     {
         $member = $this->ownedMember($user);
         $placementMembers = $this->descendants($member, 'placement');
+        $sponsorTeam = $this->descendants($member, 'sponsor');
+
+        $currentMonth = now()->startOfMonth();
+        $previousMonth = now()->copy()->subMonthNoOverflow()->startOfMonth();
+
+        $ownVolume = $this->eligibility->memberMonthlyPurchaseTotal($member, $currentMonth);
+        $ownVolumePrev = $this->eligibility->memberMonthlyPurchaseTotal($member, $previousMonth);
+        $dsEligible = $this->eligibility->isDirectSellingEligible($member, $currentMonth);
+        $referralEligible = $this->eligibility->isReferralMonthEligible($member, $currentMonth);
+
+        $downlineVolume = $placementMembers
+            ->filter(fn (Member $m) => ! empty($m->user_id))
+            ->reduce(function (string $sum, Member $downline) use ($currentMonth): string {
+                return MlmDecimal::add($sum, $this->eligibility->memberMonthlyPurchaseTotal($downline, $currentMonth));
+            }, MlmDecimal::normalize('0'));
+
+        $downlineVolumePrev = $placementMembers
+            ->filter(fn (Member $m) => ! empty($m->user_id))
+            ->reduce(function (string $sum, Member $downline) use ($previousMonth): string {
+                return MlmDecimal::add($sum, $this->eligibility->memberMonthlyPurchaseTotal($downline, $previousMonth));
+            }, MlmDecimal::normalize('0'));
+
+        $teamMonthly = $sponsorTeam->map(function (Member $ref) {
+            $ref->loadMissing('user');
+            $total = $this->eligibility->memberMonthlyPurchaseTotal($ref);
+            $ds = $this->eligibility->isDirectSellingEligible($ref);
+            $referral = $this->eligibility->isReferralMonthEligible($ref);
+
+            return [
+                'id' => $ref->id,
+                'customer_id' => $ref->customer_id,
+                'name' => $ref->user?->name,
+                'phone' => $ref->user?->phone,
+                'month_volume' => $total,
+                'ds_eligible' => $ds,
+                'referral_eligible' => $referral,
+                'status_badges' => [
+                    'ds' => $ds ? 'DS Eligible' : 'DS Not Eligible',
+                    'referral' => $referral ? 'Referral Eligible' : 'Referral Not Eligible',
+                ],
+                'highlight_red' => ! $ds || ! $referral,
+            ];
+        })->values()->all();
+
+        $teamMonthTotal = collect($teamMonthly)->reduce(
+            fn (string $sum, array $row): string => MlmDecimal::add($sum, (string) $row['month_volume']),
+            MlmDecimal::normalize('0')
+        );
 
         return [
             'member' => $this->memberPayload($member, includeSponsor: true),
@@ -36,6 +86,31 @@ class MlmCustomerNetworkService
             'direct_referral_count' => $member->sponsoredMembers()->count(),
             'placement_network_count' => $placementMembers->count(),
             'visible_level' => $this->maxRelativePlacementLevel($member, $placementMembers),
+            'own_month_volume' => $ownVolume,
+            'own_prev_month_volume' => $ownVolumePrev,
+            'downline_month_volume' => $downlineVolume,
+            'downline_prev_month_volume' => $downlineVolumePrev,
+            'downline_count' => $placementMembers->count(),
+            'performance_chart' => [
+                'labels' => [
+                    $previousMonth->format('M Y'),
+                    $currentMonth->format('M Y'),
+                ],
+                'own' => [(float) $ownVolumePrev, (float) $ownVolume],
+                'downline' => [(float) $downlineVolumePrev, (float) $downlineVolume],
+                'direct_referrals' => [
+                    (int) $member->sponsoredMembers()
+                        ->whereBetween('joined_at', [$previousMonth->copy()->startOfMonth(), $previousMonth->copy()->endOfMonth()])
+                        ->count(),
+                    (int) $member->sponsoredMembers()
+                        ->whereBetween('joined_at', [$currentMonth->copy()->startOfMonth(), $currentMonth->copy()->endOfMonth()])
+                        ->count(),
+                ],
+            ],
+            'ds_eligible' => $dsEligible,
+            'referral_month_eligible' => $referralEligible,
+            'sponsor_team_month_total' => $teamMonthTotal,
+            'sponsor_team_monthly' => $teamMonthly,
             'placement_assignment_note' => $member->placement_parent_id === null
                 ? 'This member is not yet assigned on the 1:3 placement tree. Contact admin if placement is expected.'
                 : null,

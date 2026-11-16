@@ -71,4 +71,21 @@ final class MlmDecimal
     {
         return bccomp($value, '0', $scale) < 0 ? self::negate($value, $scale) : $value;
     }
+
+    /**
+     * Round up to the next multiple of 10 (831 -> 840). Exact multiples stay unchanged.
+     */
+    public static function roundUpToNextTen(string $value): string
+    {
+        $normalized = self::normalize($value, 2);
+        $whole = explode('.', $normalized)[0];
+        $remainder = (int) bcmod($whole, '10');
+        if ($remainder === 0 && bccomp($normalized, $whole, 2) === 0) {
+            return self::normalize($whole, 2);
+        }
+
+        $rounded = bcadd($whole, (string) (10 - $remainder), 0);
+
+        return self::normalize($rounded, 2);
+    }
 }

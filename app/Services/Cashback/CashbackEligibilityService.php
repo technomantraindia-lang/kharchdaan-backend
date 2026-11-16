@@ -177,9 +177,11 @@ class CashbackEligibilityService
         }
 
         $rule = $run->ruleVersion;
-        $amount = MlmDecimal::normalize((string) $run->eligible_amount);
+        $rawAmount = MlmDecimal::normalize((string) $run->eligible_amount);
         $threshold = MlmDecimal::normalize(self::THRESHOLD);
-        $eligible = bccomp($amount, $threshold, MlmDecimal::SCALE) >= 0;
+        $eligible = bccomp($rawAmount, $threshold, MlmDecimal::SCALE) >= 0;
+        // Client req: round up to next zero/ten (831 -> 840) for eligible cashback display/payout cap.
+        $amount = $eligible ? MlmDecimal::roundUpToNextTen($rawAmount) : $rawAmount;
         $maximum = $eligible ? $amount : MlmDecimal::normalize('0');
         $status = $eligible
             ? CashbackEligibility::STATUS_ELIGIBLE_AWAITING_COMPANY_PROFIT
@@ -187,6 +189,8 @@ class CashbackEligibilityService
         $reason = $eligible ? null : ($notEligibleReason ?? 'Final eligible amount is below ₹200.');
         $formulaVersion = $rule?->version;
         $snapshot = $this->snapshot($order, $run, $amount, $threshold, $maximum, $eligible, $formulaVersion);
+        $snapshot['raw_eligible_amount'] = $rawAmount;
+        $snapshot['rounded_up_to_next_ten'] = $eligible;
 
         return CashbackEligibility::create([
             'order_id' => $order->id,
@@ -221,10 +225,14 @@ class CashbackEligibilityService
         }
 
         $rule = $run->ruleVersion;
-        $amount = MlmDecimal::normalize((string) $run->eligible_amount);
+        $rawAmount = MlmDecimal::normalize((string) $run->eligible_amount);
         $threshold = MlmDecimal::normalize(self::THRESHOLD);
-        $eligible = bccomp($amount, $threshold, MlmDecimal::SCALE) >= 0;
+        $eligible = bccomp($rawAmount, $threshold, MlmDecimal::SCALE) >= 0;
+        $amount = $eligible ? MlmDecimal::roundUpToNextTen($rawAmount) : $rawAmount;
         $maximum = $eligible ? $amount : MlmDecimal::normalize('0');
+        $snapshot = $this->snapshot($order, $run, $amount, $threshold, $maximum, $eligible, $rule?->version);
+        $snapshot['raw_eligible_amount'] = $rawAmount;
+        $snapshot['rounded_up_to_next_ten'] = $eligible;
 
         $cashback->update([
             'member_id' => $member->id,
@@ -241,7 +249,7 @@ class CashbackEligibilityService
                 : CashbackEligibility::STATUS_NOT_ELIGIBLE,
             'ineligibility_reason' => $eligible ? null : ($notEligibleReason ?? 'Final eligible amount is below ₹200.'),
             'eligibility_date' => now(),
-            'eligibility_snapshot' => $this->snapshot($order, $run, $amount, $threshold, $maximum, $eligible, $rule?->version),
+            'eligibility_snapshot' => $snapshot,
         ]);
     }
 
