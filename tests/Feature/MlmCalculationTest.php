@@ -96,30 +96,16 @@ class MlmCalculationTest extends TestCase
         $this->assertSame($this->rule->id, MlmIncomeLedger::firstOrFail()->rule_version_id);
     }
 
-    public function test_manual_admin_screen_previews_and_saves_without_order_integration(): void
+    public function test_calculation_engine_page_is_formula_and_history_only(): void
     {
-        [, $purchasing] = $this->chain(1);
-        $data = [
-            'purchasing_member_id' => $purchasing->id,
-            'eligible_amount' => '1000.00',
-            'transaction_reference' => 'MANUAL-SCREEN-001',
-            'transaction_date' => now()->format('Y-m-d H:i:s'),
-            'rule_version_id' => $this->rule->id,
-        ];
-
         $this->actingAs($this->admin)
             ->get(route('admin.mlm.calculations.index'))
             ->assertOk()
-            ->assertSee('Manual test transaction');
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.mlm.calculations.preview'), $data)
-            ->assertOk()
-            ->assertSee('4.5000');
-
-        $this->actingAs($this->admin)
-            ->post(route('admin.mlm.calculations.store'), $data + ['confirmed' => 1])
-            ->assertRedirect(route('admin.mlm.calculations.index'));
+            ->assertSee('Automatic 20-level PV')
+            ->assertSee('How income is calculated')
+            ->assertSee('Calculation History')
+            ->assertDontSee('Manual test transaction')
+            ->assertDontSee('Commit Calculation to Ledger');
     }
 
     public function test_historical_transaction_uses_old_placement_path_snapshot(): void

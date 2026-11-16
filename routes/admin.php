@@ -129,11 +129,9 @@ Route::middleware('admin')->group(function () {
         Route::post('/{member}/unassign-appreciation', [MlmMemberController::class, 'unassignAppreciation'])->middleware('permission:mlm.manage')->name('unassign-appreciation');
     });
 
-    // MLM Calculation Engine (manual only; no live order integration)
+    // MLM Calculation Engine — formula reference + automatic order audit history
     Route::prefix('mlm/calculations')->name('mlm.calculations.')->group(function (): void {
         Route::get('/', [MlmCalculationController::class, 'index'])->middleware('permission:mlm.view')->name('index');
-        Route::post('/preview', [MlmCalculationController::class, 'preview'])->middleware('permission:mlm.manage')->name('preview');
-        Route::post('/', [MlmCalculationController::class, 'store'])->middleware('permission:mlm.manage')->name('store');
     });
 
     Route::get('/mlm/referral-eligibility', [MlmReferralEligibilityController::class, 'index'])
