@@ -494,8 +494,16 @@ class MlmMemberController extends Controller
             ->pluck('mlm_members.id', 'users.mlm_member_id')
             ->all();
 
-        // If members are missing (fresh/empty Render DB), rebuild from master JSON first.
-        if (count($memberMap) < 5 && ! empty($customers)) {
+        // Empty / broken DB (common on fresh Render): rebuild full master tree before placement reset.
+        // force_seed=1 from the empty-state Sync button always reloads master Excel members.
+        $needsSeed = ! empty($customers)
+            && (
+                $request->boolean('force_seed')
+                || count($memberMap) < 5
+                || empty($memberMap['C22020008'])
+            );
+
+        if ($needsSeed) {
             try {
                 Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\MlmSampleDataSeeder', '--force' => true]);
                 $memberMap = Member::query()
@@ -504,7 +512,16 @@ class MlmMemberController extends Controller
                     ->pluck('mlm_members.id', 'users.mlm_member_id')
                     ->all();
             } catch (\Throwable $seedError) {
-                $msg = 'Placement members are missing and auto-seed failed: '.$seedError->getMessage();
+                report($seedError);
+                $msg = 'Could not restore master Excel members: '.$seedError->getMessage();
+
+                return $request->wantsJson() || $request->ajax()
+                    ? response()->json(['success' => false, 'message' => $msg], 500)
+                    : back()->with('error', $msg);
+            }
+
+            if (count($memberMap) < 5 || empty($memberMap['C22020008'])) {
+                $msg = 'Master Excel seed finished but the placement root (C22020008) is still missing.';
 
                 return $request->wantsJson() || $request->ajax()
                     ? response()->json(['success' => false, 'message' => $msg], 500)

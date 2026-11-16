@@ -3682,11 +3682,17 @@
             return;
         }
 
-        const buttons = [document.getElementById('btnResetToExcel'), document.getElementById('btnResetToExcelToolbar')].filter(Boolean);
+        const buttons = [
+            document.getElementById('btnResetToExcel'),
+            document.getElementById('btnResetToExcelToolbar'),
+            document.getElementById('btnResetToExcelEmpty'),
+        ].filter(Boolean);
         buttons.forEach(b => {
             b.disabled = true;
             b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing with Excel...';
         });
+
+        const forceSeed = !document.getElementById('treePanContainer')?.querySelector('.org-tree-branch');
 
         try {
             const res = await fetch(@json(admin_route('mlm.tree.reset-excel')), {
@@ -3697,7 +3703,7 @@
                     'X-CSRF-TOKEN': @json(csrf_token()),
                     'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({ force_seed: forceSeed })
             });
 
             const raw = await res.text();

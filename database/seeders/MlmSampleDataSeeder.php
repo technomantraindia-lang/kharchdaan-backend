@@ -124,6 +124,14 @@ class MlmSampleDataSeeder extends Seeder
         $defaultPassword = Hash::make('password');
         $userMap = [];
         $memberMap = [];
+        // Master Excel reuses a few mobiles (idle slots + historical duplicates).
+        // users.phone is unique — keep first occurrence, uniquify the rest for login/DB integrity.
+        $usedPhones = User::query()
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->pluck('phone')
+            ->flip()
+            ->all();
 
         DB::beginTransaction();
 
@@ -151,7 +159,15 @@ class MlmSampleDataSeeder extends Seeder
             $isIdle = $idleLabel !== null;
 
             $name = $isIdle ? $idleLabel : (! empty($c['name']) ? $c['name'] : 'Customer '.$code);
-            $phone = ! empty($c['mobile']) ? $c['mobile'] : '98000'.str_pad((string) ($idx + 1), 5, '0', STR_PAD_LEFT);
+            $rawMobile = preg_replace('/\D+/', '', (string) ($c['mobile'] ?? '')) ?: '';
+            $contactPhone = $rawMobile !== ''
+                ? $rawMobile
+                : '98000'.str_pad((string) ($idx + 1), 5, '0', STR_PAD_LEFT);
+            $phone = $contactPhone;
+            if (isset($usedPhones[$phone])) {
+                $phone = $contactPhone.'-'.preg_replace('/\W+/', '', $code);
+            }
+            $usedPhones[$phone] = true;
             $email = strtolower($code).'@kharchdaan.com';
             $regDate = Carbon::parse($c['reg_date'])->setTime(10, 0, 0);
 
@@ -184,7 +200,7 @@ class MlmSampleDataSeeder extends Seeder
                 'state' => ! empty($c['state']) ? $c['state'] : 'Gujarat',
                 'zip' => ! empty($c['pincode']) ? $c['pincode'] : '380001',
                 'country' => 'India',
-                'phone' => $phone,
+                'phone' => $contactPhone,
                 'default' => true,
                 'created_at' => $regDate,
                 'updated_at' => $regDate,
