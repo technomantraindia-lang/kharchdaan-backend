@@ -21,6 +21,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -159,18 +161,30 @@ class MlmMemberController extends Controller
     {
         $roots = $this->treeService->roots();
         $requestedRoot = $request->integer('root');
-        
-        $root = $requestedRoot 
-            ? Member::with(['user.addresses', 'sponsor.user', 'placementParent.user'])->find($requestedRoot) 
+
+        $root = $requestedRoot
+            ? Member::with(['user.addresses', 'sponsor.user', 'placementParent.user'])->find($requestedRoot)
             : null;
-        if (!$root) {
+
+        if (! $root) {
             $root = Member::query()
                 ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
                 ->whereHas('user', fn ($q) => $q->where('mlm_member_id', 'C22020008'))
                 ->first()
                 ?? $roots->first();
         }
-        
+
+        // Last-resort fallback: any active real distributor so the tree never goes blank
+        // when root flags/placement pointers are inconsistent after a deploy.
+        if (! $root) {
+            $root = Member::query()
+                ->realDistributors()
+                ->with(['user.addresses', 'sponsor.user', 'placementParent.user'])
+                ->where('status', Member::STATUS_ACTIVE)
+                ->orderBy('id')
+                ->first();
+        }
+
         $initialRoot = null;
         if ($root) {
             // Levels are relative to the selected/displayed tree root (self = Level 1).
@@ -182,16 +196,18 @@ class MlmMemberController extends Controller
         }
 
         $leaderOptions = $this->treeService->leaderOptions();
+        $memberCount = Member::query()->count();
 
         $rootPayloads = collect([$root])->filter()->map(function (Member $rootMember): array {
             $childrenData = $this->treeService->children($rootMember, $rootMember);
+
             return [
                 'member' => $childrenData['parent'],
                 'slots' => $childrenData['slots'],
             ];
         })->values();
 
-        return view('admin.mlm.tree', compact('roots', 'initialRoot', 'rootPayloads', 'root', 'leaderOptions'));
+        return view('admin.mlm.tree', compact('roots', 'initialRoot', 'rootPayloads', 'root', 'leaderOptions', 'memberCount'));
     }
 
     public function treeChildren(Request $request, Member $member): JsonResponse
@@ -471,24 +487,49 @@ class MlmMemberController extends Controller
         $placements = $clientData['placements'] ?? [];
         $customers = $clientData['customers'] ?? [];
 
-        // Map customer_id -> member id
-        $memberMap = Member::pluck('id', 'customer_id')->all();
+        // customer_id is an accessor (users.mlm_member_id), not an mlm_members column.
+        $memberMap = Member::query()
+            ->join('users', 'users.id', '=', 'mlm_members.user_id')
+            ->whereNotNull('users.mlm_member_id')
+            ->pluck('mlm_members.id', 'users.mlm_member_id')
+            ->all();
+
+        // If members are missing (fresh/empty Render DB), rebuild from master JSON first.
+        if (count($memberMap) < 5 && ! empty($customers)) {
+            try {
+                Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\MlmSampleDataSeeder', '--force' => true]);
+                $memberMap = Member::query()
+                    ->join('users', 'users.id', '=', 'mlm_members.user_id')
+                    ->whereNotNull('users.mlm_member_id')
+                    ->pluck('mlm_members.id', 'users.mlm_member_id')
+                    ->all();
+            } catch (\Throwable $seedError) {
+                $msg = 'Placement members are missing and auto-seed failed: '.$seedError->getMessage();
+
+                return $request->wantsJson() || $request->ajax()
+                    ? response()->json(['success' => false, 'message' => $msg], 500)
+                    : back()->with('error', $msg);
+            }
+        }
 
         DB::beginTransaction();
         try {
             // Reset root member Nimesh Jagirdar (C22020008)
-            Member::where('customer_id', 'C22020008')->update([
-                'placement_parent_id' => null,
-                'placement_position' => null,
-            ]);
+            $rootId = $memberMap['C22020008'] ?? null;
+            if ($rootId) {
+                Member::whereKey($rootId)->update([
+                    'placement_parent_id' => null,
+                    'placement_position' => null,
+                ]);
+            }
 
             $resetCount = 0;
             foreach ($placements as $downlineCode => $pInfo) {
                 $memberId = $memberMap[$downlineCode] ?? null;
-                $uplineId = $memberMap[$pInfo['upline']] ?? null;
+                $uplineId = $memberMap[$pInfo['upline'] ?? ''] ?? null;
 
                 if ($memberId && $uplineId) {
-                    Member::where('id', $memberId)->update([
+                    Member::whereKey($memberId)->update([
                         'placement_parent_id' => $uplineId,
                         'placement_position' => $pInfo['position'],
                     ]);
@@ -504,13 +545,14 @@ class MlmMemberController extends Controller
                 $sponsorId = $memberMap[$refCode] ?? null;
 
                 if ($memberId && $sponsorId && $memberId !== $sponsorId) {
-                    Member::where('id', $memberId)->update([
+                    Member::whereKey($memberId)->update([
                         'sponsor_member_id' => $sponsorId,
                     ]);
                 }
             }
 
             DB::commit();
+            app(\App\Services\Mlm\MlmTreeService::class)->clearDownlineCountsCache();
 
             $msg = "Placement tree cards successfully synchronized with Aaradhya Gruh Udyog Master Excel ({$resetCount} placements restored). Cards remain fully editable.";
 
@@ -526,7 +568,8 @@ class MlmMemberController extends Controller
 
         } catch (\Throwable $e) {
             DB::rollBack();
-            $err = 'Failed to reset tree hierarchy: ' . $e->getMessage();
+            $err = 'Failed to reset tree hierarchy: '.$e->getMessage();
+
             return $request->wantsJson() || $request->ajax()
                 ? response()->json(['success' => false, 'message' => $err], 500)
                 : back()->with('error', $err);

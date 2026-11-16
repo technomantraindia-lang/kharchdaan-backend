@@ -624,9 +624,22 @@
         <div id="treeViewport" class="tree-viewport density-detailed" data-children-url="{{ admin_route('mlm.tree.children', ['member' => '__MEMBER__']) }}" data-search-url="{{ admin_route('mlm.tree.search') }}" data-move-url="{{ admin_route('mlm.tree.move', ['member' => '__MEMBER__']) }}" data-move-parent-search-url="{{ admin_route('mlm.tree.move.parents.search', ['member' => '__MEMBER__']) }}" data-csrf="{{ csrf_token() }}">
             <div id="treePanContainer" class="tree-pan-container">
                 @if(!$initialRoot)
-                    <div class="text-center text-slate-400 py-16">
+                    <div class="text-center text-slate-400 py-16 px-6">
                         <i class="fas fa-sitemap text-4xl mb-3 text-slate-300 block"></i>
-                        No root member is available for the placement tree.
+                        <div class="font-semibold text-slate-600 mb-2">No root member is available for the placement tree.</div>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto mb-4">
+                            @if(($memberCount ?? 0) === 0)
+                                The database currently has <strong>0 MLM members</strong>. Click
+                                <strong>Sync with Master Excel</strong> to restore the Aaradhya Gruh Udyog master tree,
+                                then reload this page.
+                            @else
+                                Members exist but no placement root was found. Click <strong>Sync with Master Excel</strong>
+                                to rebuild placement pointers from the master file.
+                            @endif
+                        </p>
+                        <button type="button" id="btnResetToExcelEmpty" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-xs transition">
+                            <i class="fas fa-file-excel text-emerald-600"></i> Sync with Master Excel
+                        </button>
                     </div>
                 @endif
             </div>
@@ -1817,8 +1830,14 @@
             try {
                 const url = childrenUrlFor(branch.dataset.nodeId, displayRootId);
                 const response = await fetch(url, { headers: { Accept: 'application/json' } });
-                if (!response.ok) throw new Error('Unable to load placement slots.');
-                const payload = await response.json();
+                const raw = await response.text();
+                let payload = null;
+                try {
+                    payload = raw ? JSON.parse(raw) : null;
+                } catch (parseErr) {
+                    throw new Error(`Unable to load placement slots (HTTP ${response.status}). Server returned HTML instead of JSON.`);
+                }
+                if (!response.ok || !payload?.slots) throw new Error(payload?.message || 'Unable to load placement slots.');
                 await renderSlots(branch, payload.slots);
             } catch (error) {
                 showMessage(error.message || 'Unable to load placement slots.');
@@ -3681,9 +3700,17 @@
                 body: JSON.stringify({})
             });
 
-            const data = await res.json();
-            if (!res.ok || !data.success) {
-                throw new Error(data.message || 'Failed to reset tree hierarchy.');
+            const raw = await res.text();
+            let data = null;
+            try {
+                data = raw ? JSON.parse(raw) : null;
+            } catch (parseErr) {
+                throw new Error(res.ok
+                    ? 'Server returned a non-JSON response while syncing the tree.'
+                    : `Sync failed (HTTP ${res.status}). The server returned an HTML error page instead of JSON.`);
+            }
+            if (!res.ok || !data?.success) {
+                throw new Error(data?.message || 'Failed to reset tree hierarchy.');
             }
 
             const treeMsg = document.getElementById('treeMessage');
@@ -3709,6 +3736,7 @@
 
     document.getElementById('btnResetToExcel')?.addEventListener('click', resetToExcelHandler);
     document.getElementById('btnResetToExcelToolbar')?.addEventListener('click', resetToExcelHandler);
+    document.getElementById('btnResetToExcelEmpty')?.addEventListener('click', resetToExcelHandler);
 
     // Initial Mount
     if (initialRoot) {
