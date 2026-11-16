@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CategoryApiController;
 use App\Http\Controllers\Api\V1\CustomerAuthApiController;
 use App\Http\Controllers\Api\V1\CustomerOrderApiController;
 use App\Http\Controllers\Api\V1\ProductApiController;
+use App\Http\Controllers\Api\V1\RazorpayPaymentController;
 use App\Http\Controllers\Api\WooCommerceWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +18,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('/webhooks/woocommerce', [WooCommerceWebhookController::class, 'handle'])
     ->middleware('throttle:webhooks')
     ->name('api.webhooks.woocommerce');
+
+Route::post('/v1/webhooks/razorpay', [RazorpayPaymentController::class, 'webhook'])
+    ->middleware('throttle:webhooks')
+    ->name('api.webhooks.razorpay');
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +47,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
 
     // Order Placement API
     Route::post('/orders', [CustomerOrderApiController::class, 'store']);
+    Route::post('/payments/razorpay/verify', [RazorpayPaymentController::class, 'verify']);
 
     // Authenticated Customer APIs
     Route::middleware(\App\Http\Middleware\AuthenticateApiToken::class)->group(function () {

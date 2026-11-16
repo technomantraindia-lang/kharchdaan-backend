@@ -6,18 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Services\Delivery\DeliveryAreaService;
 use App\Services\Order\OrderTransactionIdGenerator;
+use App\Services\Payments\RazorpayPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 class CustomerOrderApiController extends Controller
 {
     public function __construct(
         private readonly OrderTransactionIdGenerator $transactionIds,
         private readonly DeliveryAreaService $deliveryArea,
+        private readonly RazorpayPaymentService $razorpay,
     ) {}
 
     public function index(Request $request)
@@ -128,97 +132,150 @@ class CustomerOrderApiController extends Controller
             ], 422);
         }
 
-        return DB::transaction(function () use ($request, $user, $items, $shipAddrStr, $channel) {
-            $orderNum = $this->transactionIds->next();
+        $requestedMethod = strtolower((string) $request->input('payment_method', 'razorpay'));
+        $isCod = $requestedMethod === 'cod';
+        // Map legacy UI methods (upi/cards/netbanking) to Razorpay Checkout.
+        $usesRazorpay = ! $isCod;
 
-            $subtotal = 0;
-            $orderItemsData = [];
+        if ($usesRazorpay && ! $this->razorpay->isConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Online payment is temporarily unavailable. Please use Cash on Delivery or try again later.',
+            ], 503);
+        }
 
-            if ($channel === 'offline') {
-                $subtotal = (float) $request->input('offline_amount');
-                $orderItemsData[] = [
-                    'product_id' => null,
-                    'product_name' => 'Offline Purchase',
-                    'sku' => 'OFFLINE',
-                    'qty' => 1,
-                    'price' => $subtotal,
-                    'line_total' => $subtotal,
-                ];
-            } else {
-                foreach ($items as $item) {
-                    $qty = max(1, (int) ($item['quantity'] ?? $item['qty'] ?? 1));
-                    $price = (float) ($item['price'] ?? 0);
-                    $lineTotal = $price * $qty;
-                    $subtotal += $lineTotal;
+        try {
+            $order = DB::transaction(function () use ($request, $user, $items, $shipAddrStr, $channel, $isCod) {
+                $orderNum = $this->transactionIds->next();
 
-                    $productId = $item['product_id'] ?? $item['id'] ?? null;
-                    $productName = $item['product_name'] ?? $item['name'] ?? 'Product Item';
-                    $sku = $item['sku'] ?? null;
+                $subtotal = 0;
+                $orderItemsData = [];
 
-                    if ($productId && is_numeric($productId)) {
-                        $prodModel = Product::find($productId);
-                        if ($prodModel) {
-                            $productName = $prodModel->name;
-                            $sku = $sku ?: $prodModel->sku;
-                        }
-                    }
-
+                if ($channel === 'offline') {
+                    $subtotal = (float) $request->input('offline_amount');
                     $orderItemsData[] = [
-                        'product_id' => (is_numeric($productId) ? (int) $productId : null),
-                        'product_name' => $productName,
-                        'sku' => $sku,
-                        'qty' => $qty,
-                        'price' => $price,
-                        'line_total' => $lineTotal,
+                        'product_id' => null,
+                        'product_name' => 'Offline Purchase',
+                        'sku' => 'OFFLINE',
+                        'qty' => 1,
+                        'price' => $subtotal,
+                        'line_total' => $subtotal,
                     ];
+                } else {
+                    foreach ($items as $item) {
+                        $qty = max(1, (int) ($item['quantity'] ?? $item['qty'] ?? 1));
+                        $price = (float) ($item['price'] ?? 0);
+                        $lineTotal = $price * $qty;
+                        $subtotal += $lineTotal;
+
+                        $productId = $item['product_id'] ?? $item['id'] ?? null;
+                        $productName = $item['product_name'] ?? $item['name'] ?? 'Product Item';
+                        $sku = $item['sku'] ?? null;
+
+                        if ($productId && is_numeric($productId)) {
+                            $prodModel = Product::find($productId);
+                            if ($prodModel) {
+                                $productName = $prodModel->name;
+                                $sku = $sku ?: $prodModel->sku;
+                            }
+                        }
+
+                        $orderItemsData[] = [
+                            'product_id' => (is_numeric($productId) ? (int) $productId : null),
+                            'product_name' => $productName,
+                            'sku' => $sku,
+                            'qty' => $qty,
+                            'price' => $price,
+                            'line_total' => $lineTotal,
+                        ];
+                    }
                 }
-            }
 
-            $discount = (float) ($request->input('discount', 0));
-            $platformFee = (float) ($request->input('platform_fee', $channel === 'online' && count($items) > 0 ? 5 : 0));
-            $shippingCharge = (float) ($request->input('shipping_charge', 0));
-            $effectiveShipCharge = $shippingCharge + $platformFee;
-            $total = max(0, $subtotal - $discount + $effectiveShipCharge);
+                $discount = (float) ($request->input('discount', 0));
+                $platformFee = (float) ($request->input('platform_fee', $channel === 'online' && count($items) > 0 ? 5 : 0));
+                $shippingCharge = (float) ($request->input('shipping_charge', 0));
+                $effectiveShipCharge = $shippingCharge + $platformFee;
+                $total = max(0, $subtotal - $discount + $effectiveShipCharge);
 
-            $rawBillAddr = $request->input('billing_address', $request->input('shipping_address'));
-            $billAddrStr = is_array($rawBillAddr) ? json_encode($rawBillAddr) : (string) $rawBillAddr;
+                $rawBillAddr = $request->input('billing_address', $request->input('shipping_address'));
+                $billAddrStr = is_array($rawBillAddr) ? json_encode($rawBillAddr) : (string) $rawBillAddr;
 
-            $documentPath = null;
-            if ($channel === 'offline' && $request->hasFile('offline_document')) {
-                $documentPath = $request->file('offline_document')->store('offline-orders', 'public');
-            }
+                $documentPath = null;
+                if ($channel === 'offline' && $request->hasFile('offline_document')) {
+                    $documentPath = $request->file('offline_document')->store('offline-orders', 'public');
+                }
 
-            $order = Order::create([
-                'order_num' => $orderNum,
-                'user_id' => $user ? $user->id : null,
-                'subtotal' => $subtotal,
-                'discount' => $discount,
-                'ship_charge' => $effectiveShipCharge,
-                'total' => $total,
-                'status' => 'pending',
-                'pay_status' => $request->input('payment_method') === 'cod' ? 'pending' : 'paid',
-                'payment_method' => $request->input('payment_method', 'cod'),
-                'ship_addr' => $shipAddrStr,
-                'bill_addr' => $billAddrStr,
-                'currency' => 'INR',
-                'order_channel' => $channel,
-                'special_instruction' => $request->input('special_instruction'),
-                'offline_remark' => $request->input('offline_remark'),
-                'offline_document_path' => $documentPath,
-            ]);
+                $order = Order::create([
+                    'order_num' => $orderNum,
+                    'user_id' => $user ? $user->id : null,
+                    'subtotal' => $subtotal,
+                    'discount' => $discount,
+                    'ship_charge' => $effectiveShipCharge,
+                    'total' => $total,
+                    'status' => 'pending',
+                    'pay_status' => 'pending',
+                    'payment_method' => $isCod ? 'cod' : 'razorpay',
+                    'ship_addr' => $shipAddrStr,
+                    'bill_addr' => $billAddrStr,
+                    'currency' => 'INR',
+                    'order_channel' => $channel,
+                    'special_instruction' => $request->input('special_instruction'),
+                    'offline_remark' => $request->input('offline_remark'),
+                    'offline_document_path' => $documentPath,
+                ]);
 
-            foreach ($orderItemsData as $oi) {
-                $oi['order_id'] = $order->id;
-                OrderItem::create($oi);
-            }
+                foreach ($orderItemsData as $oi) {
+                    $oi['order_id'] = $order->id;
+                    OrderItem::create($oi);
+                }
 
-            $order->load('items.product');
+                if ($isCod) {
+                    Payment::create([
+                        'order_id' => $order->id,
+                        'amount' => $order->total,
+                        'method' => 'cod',
+                        'status' => 'pending',
+                    ]);
+                }
+
+                return $order->load('items.product');
+            });
+        } catch (Throwable $e) {
+            report($e);
 
             return response()->json([
-                'success' => true,
-                'message' => 'Order placed successfully.',
-                'data' => new OrderResource($order),
-            ], 201);
-        });
+                'success' => false,
+                'message' => 'Unable to create order. Please try again.',
+            ], 500);
+        }
+
+        $responseData = (new OrderResource($order))->resolve();
+        $responseData['requires_payment'] = $usesRazorpay;
+
+        if ($usesRazorpay) {
+            try {
+                $rzp = $this->razorpay->createOrderPayment($order->fresh());
+                $responseData['razorpay'] = $rzp;
+                $order->refresh();
+                $responseData['payment_status'] = $order->pay_status;
+                $responseData['payment_method'] = $order->payment_method;
+            } catch (Throwable $e) {
+                report($e);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order saved but payment could not be started: '.$e->getMessage(),
+                    'data' => $responseData,
+                ], 502);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $usesRazorpay
+                ? 'Order created. Complete payment to confirm.'
+                : 'Order placed successfully (Cash on Delivery).',
+            'data' => $responseData,
+        ], 201);
     }
 }
