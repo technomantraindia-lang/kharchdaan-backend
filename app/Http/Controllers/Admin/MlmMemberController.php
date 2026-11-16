@@ -13,6 +13,7 @@ use App\Models\MlmCalculationRun;
 use App\Models\MlmIncomeLedger;
 use App\Models\MlmPayoutLine;
 use App\Models\User;
+use App\Services\Mlm\CustomerMasterImportService;
 use App\Services\Mlm\MlmKycService;
 use App\Services\Mlm\MlmMemberService;
 use App\Services\Mlm\MlmMovementService;
@@ -35,7 +36,37 @@ class MlmMemberController extends Controller
         private readonly MlmMovementService $movementService,
         private readonly MlmKycService $kycService,
         private readonly MlmTreeService $treeService,
+        private readonly CustomerMasterImportService $customerMasterImport,
     ) {}
+
+    public function importForm(): View
+    {
+        abort_unless($this->can('mlm.manage'), 403);
+
+        return view('admin.mlm.members.import');
+    }
+
+    public function importStore(Request $request): RedirectResponse
+    {
+        abort_unless($this->can('mlm.manage'), 403);
+
+        $request->validate([
+            'customer_master_csv' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+        ]);
+
+        try {
+            $result = $this->customerMasterImport->importCsv($request->file('customer_master_csv'));
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Import failed: '.$e->getMessage());
+        }
+
+        $msg = "Customer Master import complete — created {$result['created']}, updated {$result['updated']}, skipped {$result['skipped']}.";
+        if (! empty($result['errors'])) {
+            $msg .= ' Notes: '.implode(' | ', array_slice($result['errors'], 0, 5));
+        }
+
+        return redirect()->to(admin_route('mlm.members.index'))->with('success', $msg);
+    }
 
     public function index(Request $request): View
     {

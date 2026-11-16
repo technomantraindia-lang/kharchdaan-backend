@@ -10,10 +10,13 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Services\Delivery\DeliveryAreaService;
 use App\Services\Order\OrderTransactionIdGenerator;
+use App\Services\OrderService;
 use App\Services\Payments\RazorpayPaymentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use InvalidArgumentException;
 use Throwable;
 
 class CustomerOrderApiController extends Controller
@@ -22,6 +25,7 @@ class CustomerOrderApiController extends Controller
         private readonly OrderTransactionIdGenerator $transactionIds,
         private readonly DeliveryAreaService $deliveryArea,
         private readonly RazorpayPaymentService $razorpay,
+        private readonly OrderService $orderService,
     ) {}
 
     public function index(Request $request)
@@ -68,6 +72,42 @@ class CustomerOrderApiController extends Controller
             'success' => true,
             'message' => 'Order details fetched successfully.',
             'data' => new OrderResource($order),
+        ]);
+    }
+
+    public function cancel(Request $request, $id): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['success' => false, 'message' => 'Please login to cancel an order.'], 401);
+        }
+
+        $order = Order::query()->where('user_id', $user->id)->whereKey($id)->first();
+        if (! $order) {
+            return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
+        }
+
+        if (! in_array($order->status, ['pending', 'processing'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending or processing orders can be cancelled by the customer.',
+            ], 422);
+        }
+
+        try {
+            $this->orderService->updateOrderStatus(
+                $order,
+                'cancelled',
+                'Cancelled by customer from storefront account.'
+            );
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order cancelled successfully.',
+            'data' => new OrderResource($order->fresh('items.product')),
         ]);
     }
 

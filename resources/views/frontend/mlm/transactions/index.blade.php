@@ -72,8 +72,9 @@
                         <th>Date</th>
                         <th>Amount</th>
                         <th>Status</th>
-                        <th>Cashback</th>
-                        <th>Rounded Cashback</th>
+                        <th>Cashback Status</th>
+                        <th>Customer Cashback</th>
+                        <th>Sponsor Cashback</th>
                         <th>Referral</th>
                         <th>Direct Selling</th>
                     </tr>
@@ -98,7 +99,14 @@
                             </td>
                             <td class="fw-semibold">
                                 @if($row['cashback']['eligible'])
-                                    ₹{{ number_format((float) ($row['cashback']['rounded_amount'] ?? $row['cashback']['amount']), 2) }}
+                                    ₹{{ number_format((float) ($row['cashback']['customer_cashback'] ?? $row['cashback']['rounded_amount'] ?? $row['cashback']['amount']), 2) }}
+                                @else
+                                    <span class="text-danger">—</span>
+                                @endif
+                            </td>
+                            <td class="fw-semibold">
+                                @if($row['cashback']['eligible'])
+                                    ₹{{ number_format((float) ($row['cashback']['sponsor_cashback'] ?? 0), 2) }}
                                 @else
                                     <span class="text-danger">—</span>
                                 @endif
@@ -116,7 +124,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="text-center text-muted py-5">No transactions found.</td>
+                            <td colspan="9" class="text-center text-muted py-5">No transactions found.</td>
                         </tr>
                     @endforelse
                 </tbody>

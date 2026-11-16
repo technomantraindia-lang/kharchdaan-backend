@@ -76,6 +76,11 @@ class CustomerTransactionService
                     'rounded_amount' => $cashback?->maximum_cashback_amount
                         ?? $cashback?->current_eligible_amount
                         ?? ($cashbackEligible ? MlmDecimal::roundUpToNextTen($amount) : '0'),
+                    'customer_cashback' => $cashback?->maximum_cashback_amount
+                        ?? $cashback?->current_eligible_amount
+                        ?? ($cashbackEligible ? MlmDecimal::roundUpToNextTen($amount) : '0'),
+                    'sponsor_cashback' => $cashback?->sponsor_cashback_amount
+                        ?? ($cashbackEligible ? MlmDecimal::roundUpToNextTen($amount) : '0'),
                     'amount' => $cashback?->maximum_cashback_amount
                         ?? $cashback?->current_eligible_amount
                         ?? ($cashbackEligible ? MlmDecimal::roundUpToNextTen($amount) : '0'),
@@ -100,6 +105,21 @@ class CustomerTransactionService
             ];
         })->values();
 
+        $monthlyVolume = $orders
+            ->groupBy(fn (Order $o) => $o->created_at?->format('Y-m') ?? 'unknown')
+            ->map(fn (Collection $group, string $month) => [
+                'month' => $month,
+                'count' => $group->count(),
+                'volume' => MlmDecimal::normalize((string) $group->sum(fn (Order $o) => (float) $o->total)),
+            ])
+            ->sortKeys()
+            ->values()
+            ->take(-6)
+            ->values()
+            ->all();
+
+        $cashbackTotal = $rows->sum(fn ($r) => (float) ($r['cashback']['customer_cashback'] ?? 0));
+
         return [
             'summary' => [
                 'month_purchase_total' => $monthTotal,
@@ -107,6 +127,9 @@ class CustomerTransactionService
                 'referral_month_eligible' => $referralEligible,
                 'ds_minimum' => PurchaseEligibilityService::DS_MONTHLY_MINIMUM,
                 'referral_min_transaction' => PurchaseEligibilityService::REFERRAL_MIN_TRANSACTION,
+                'cashback_total_rounded' => MlmDecimal::normalize((string) $cashbackTotal),
+                'order_count' => $rows->count(),
+                'monthly_volume' => $monthlyVolume,
             ],
             'transactions' => $rows->all(),
         ];

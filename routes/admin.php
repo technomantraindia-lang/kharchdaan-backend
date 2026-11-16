@@ -177,6 +177,8 @@ Route::middleware('admin')->group(function () {
     // MLM Members
     Route::prefix('mlm/members')->name('mlm.members.')->group(function (): void {
         Route::get('/', [MlmMemberController::class, 'index'])->middleware('permission:mlm.view')->name('index');
+        Route::get('/import', [MlmMemberController::class, 'importForm'])->middleware('permission:mlm.manage')->name('import');
+        Route::post('/import', [MlmMemberController::class, 'importStore'])->middleware('permission:mlm.manage')->name('import.store');
         Route::get('/create', [MlmMemberController::class, 'create'])->middleware('permission:mlm.manage')->name('create');
         Route::post('/', [MlmMemberController::class, 'store'])->middleware('permission:mlm.manage')->name('store');
         Route::get('/{member}', [MlmMemberController::class, 'show'])->middleware('permission:mlm.view')->name('show');

@@ -48,6 +48,7 @@ class CashbackEligibility extends Model
     protected $fillable = [
         'order_id',
         'member_id',
+        'sponsor_member_id',
         'calculation_run_id',
         'rule_version_id',
         'idempotency_key',
@@ -55,6 +56,7 @@ class CashbackEligibility extends Model
         'original_eligible_amount',
         'current_eligible_amount',
         'maximum_cashback_amount',
+        'sponsor_cashback_amount',
         'original_cashback_amount',
         'refunded_amount',
         'eligibility_threshold',
@@ -78,6 +80,7 @@ class CashbackEligibility extends Model
             'original_eligible_amount' => 'decimal:18',
             'current_eligible_amount' => 'decimal:18',
             'maximum_cashback_amount' => 'decimal:18',
+            'sponsor_cashback_amount' => 'decimal:18',
             'original_cashback_amount' => 'decimal:18',
             'refunded_amount' => 'decimal:18',
             'eligibility_threshold' => 'decimal:18',

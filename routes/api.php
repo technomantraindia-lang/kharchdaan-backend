@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AttributeApiController;
 use App\Http\Controllers\Api\V1\BrandApiController;
 use App\Http\Controllers\Api\V1\CategoryApiController;
 use App\Http\Controllers\Api\V1\CustomerAuthApiController;
+use App\Http\Controllers\Api\V1\CustomerKycApiController;
 use App\Http\Controllers\Api\V1\CustomerOrderApiController;
 use App\Http\Controllers\Api\V1\ProductApiController;
 use App\Http\Controllers\Api\V1\RazorpayPaymentController;
@@ -57,9 +58,13 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::put('/me', [CustomerAuthApiController::class, 'updateProfile']);
         Route::get('/me/referrals', [CustomerAuthApiController::class, 'myReferrals']);
 
+        Route::get('/me/kyc', [CustomerKycApiController::class, 'show']);
+        Route::post('/me/kyc', [CustomerKycApiController::class, 'store']);
+
         Route::middleware('customer.terms')->group(function () {
             Route::get('/orders', [CustomerOrderApiController::class, 'index']);
             Route::get('/orders/{id}', [CustomerOrderApiController::class, 'show']);
+            Route::post('/orders/{id}/cancel', [CustomerOrderApiController::class, 'cancel']);
             Route::get('/me/transactions', [\App\Http\Controllers\Api\V1\CustomerTransactionApiController::class, 'index']);
         });
     });

@@ -89,6 +89,24 @@ class MlmKycService
         ], null, $admin);
     }
 
+    /**
+     * Customer self-submit: stores KYC details and moves status to under_review.
+     * Customers cannot self-approve.
+     */
+    public function submitByCustomer(Member $member, array $data, ?UploadedFile $cancelledCheque, User $customer): void
+    {
+        if ($member->kyc_status === Member::KYC_APPROVED) {
+            throw ValidationException::withMessages([
+                'kyc_status' => 'KYC is already approved. Contact admin to change details.',
+            ]);
+        }
+
+        $data['kyc_status'] = Member::KYC_UNDER_REVIEW;
+        unset($data['kyc_rejection_reason']);
+
+        $this->save($member, $data, $cancelledCheque, $customer);
+    }
+
     private function applyEncryptedValue(
         Member $member,
         array $data,

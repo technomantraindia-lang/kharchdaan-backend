@@ -183,6 +183,9 @@ class CashbackEligibilityService
         // Client req: round up to next zero/ten (831 -> 840) for eligible cashback display/payout cap.
         $amount = $eligible ? MlmDecimal::roundUpToNextTen($rawAmount) : $rawAmount;
         $maximum = $eligible ? $amount : MlmDecimal::normalize('0');
+        // Pt 26-27: sponsor column uses same round-up; payout % still client-owned later.
+        $sponsorAmount = $eligible ? $amount : MlmDecimal::normalize('0');
+        $sponsorMemberId = $member->sponsor_member_id;
         $status = $eligible
             ? CashbackEligibility::STATUS_ELIGIBLE_AWAITING_COMPANY_PROFIT
             : CashbackEligibility::STATUS_NOT_ELIGIBLE;
@@ -191,10 +194,13 @@ class CashbackEligibilityService
         $snapshot = $this->snapshot($order, $run, $amount, $threshold, $maximum, $eligible, $formulaVersion);
         $snapshot['raw_eligible_amount'] = $rawAmount;
         $snapshot['rounded_up_to_next_ten'] = $eligible;
+        $snapshot['sponsor_cashback_amount'] = $sponsorAmount;
+        $snapshot['sponsor_member_id'] = $sponsorMemberId;
 
         return CashbackEligibility::create([
             'order_id' => $order->id,
             'member_id' => $member->id,
+            'sponsor_member_id' => $sponsorMemberId,
             'calculation_run_id' => $run->id,
             'rule_version_id' => $rule?->id,
             'idempotency_key' => $this->idempotencyKey($order, $run),
@@ -202,6 +208,7 @@ class CashbackEligibilityService
             'original_eligible_amount' => $amount,
             'current_eligible_amount' => $amount,
             'maximum_cashback_amount' => $maximum,
+            'sponsor_cashback_amount' => $sponsorAmount,
             'original_cashback_amount' => $maximum,
             'refunded_amount' => MlmDecimal::normalize('0'),
             'eligibility_threshold' => $threshold,
@@ -230,18 +237,24 @@ class CashbackEligibilityService
         $eligible = bccomp($rawAmount, $threshold, MlmDecimal::SCALE) >= 0;
         $amount = $eligible ? MlmDecimal::roundUpToNextTen($rawAmount) : $rawAmount;
         $maximum = $eligible ? $amount : MlmDecimal::normalize('0');
+        $sponsorAmount = $eligible ? $amount : MlmDecimal::normalize('0');
+        $sponsorMemberId = $member->sponsor_member_id;
         $snapshot = $this->snapshot($order, $run, $amount, $threshold, $maximum, $eligible, $rule?->version);
         $snapshot['raw_eligible_amount'] = $rawAmount;
         $snapshot['rounded_up_to_next_ten'] = $eligible;
+        $snapshot['sponsor_cashback_amount'] = $sponsorAmount;
+        $snapshot['sponsor_member_id'] = $sponsorMemberId;
 
         $cashback->update([
             'member_id' => $member->id,
+            'sponsor_member_id' => $sponsorMemberId,
             'calculation_run_id' => $run->id,
             'rule_version_id' => $rule?->id,
             'idempotency_key' => $this->idempotencyKey($order, $run),
             'final_eligible_amount' => $amount,
             'current_eligible_amount' => $amount,
             'maximum_cashback_amount' => $maximum,
+            'sponsor_cashback_amount' => $sponsorAmount,
             'eligibility_threshold' => $threshold,
             'formula_version' => $rule?->version,
             'status' => $eligible

@@ -23,6 +23,9 @@
                 <i class="fas fa-file-pdf text-rose-600"></i> Admin Manual (PDF)
             </a>
             @if(auth()->user()->hasPermission('mlm.manage') || auth()->user()->hasPermission('mlm.create'))
+                <a href="{{ admin_route('mlm.members.import') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-orange-800 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 shadow-xs transition">
+                    <i class="fas fa-file-csv text-orange-600"></i> Upload Customer Master
+                </a>
                 <a href="{{ admin_route('mlm.members.create') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition">
                     <i class="fas fa-user-plus"></i> Add New Member
                 </a>
