@@ -115,6 +115,9 @@
                                 <span class="{{ $row['referral_income']['eligible'] ? 'text-success' : 'text-danger fw-bold' }}">
                                     {{ $row['referral_income']['label'] }}
                                 </span>
+                                @if(!empty($row['referral_income']['eligible']))
+                                    <div class="fw-semibold">₹{{ number_format((float) ($row['referral_income']['amount'] ?? 0), 2) }}</div>
+                                @endif
                             </td>
                             <td>
                                 <span class="{{ $row['direct_selling']['eligible'] ? 'text-success' : 'text-danger fw-bold' }}">

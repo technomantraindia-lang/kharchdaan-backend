@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Structure-only referral eligibility list (no % payout math until rate sheet arrives).
+ * Referral eligibility + 100% referral income amounts (client-confirmed rate).
  */
 class MlmReferralEligibilityController extends Controller
 {
@@ -82,6 +82,19 @@ class MlmReferralEligibilityController extends Controller
                 ->whereBetween('joined_at', [$weekStart, $weekEnd])
                 ->count();
 
+            $weekReferralIncome = $this->eligibility->sponsorReferralIncome(
+                $sponsor,
+                $weekStart,
+                $weekEnd,
+                $month
+            );
+            $monthReferralIncome = $this->eligibility->sponsorReferralIncome(
+                $sponsor,
+                $month->copy()->startOfMonth(),
+                $month->copy()->endOfMonth(),
+                $month
+            );
+
             return [
                 'sponsor_id' => $sponsor->id,
                 'customer_id' => $sponsor->customer_id,
@@ -90,9 +103,12 @@ class MlmReferralEligibilityController extends Controller
                 'month' => $month->format('Y-m'),
                 'month_purchase_total' => $monthTotal,
                 'referral_month_eligible' => $monthEligible,
-                'status_label' => $monthEligible ? 'Eligible (structure)' : 'Not Eligible',
+                'referral_rate_percent' => (float) $this->eligibility->referralRate() * 100,
+                'week_referral_income' => $weekReferralIncome,
+                'month_referral_income' => $monthReferralIncome,
+                'status_label' => $monthEligible ? 'Eligible (100% referral)' : 'Not Eligible',
                 'reason' => $monthEligible
-                    ? 'Has ≥ ₹'.$threshold.' qualifying purchase this month'
+                    ? 'Has ≥ ₹'.$threshold.' qualifying purchase this month — 100% of eligible downline txns (rounded)'
                     : 'Needs ≥ ₹'.$threshold.' own qualifying purchase this month',
                 'week_start' => $weekStart->toDateString(),
                 'week_end' => $weekEnd->toDateString(),
@@ -116,6 +132,7 @@ class MlmReferralEligibilityController extends Controller
                 'q' => $filters['q'] ?? '',
             ],
             'threshold' => $threshold,
+            'referralRatePercent' => (float) $this->eligibility->referralRate() * 100,
         ]);
     }
 }

@@ -7,8 +7,8 @@
     <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Referral Income Eligibility</h1>
         <p class="text-sm text-slate-500 mt-1">
-            Weekly eligibility list per client rules (pt 2 / 20 / 21): CashBack &amp; Referral depend on Sanstha's profit;
-            sponsor needs ≥ ₹{{ $threshold }} qualifying purchase in the month. Rupee payout % is not listed on the 38-point sheet — enter % when client provides it.
+            Client rate: <strong>{{ number_format($referralRatePercent, 0) }}% referral</strong> on qualifying downline purchases (rounded up to next ₹10).
+            Depends on Sanstha's profit. Sponsor needs ≥ ₹{{ $threshold }} own purchase in the month.
         </p>
     </div>
 
@@ -46,7 +46,7 @@
                 Select All (eligible rows)
             </label>
             <button type="button" id="referralMarkReviewed" class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 rounded-lg">
-                Mark Selected as Reviewed (pending rate sheet)
+                Mark Selected for Profit Settlement
             </button>
         </div>
         <div class="overflow-x-auto">
@@ -57,7 +57,8 @@
                         <th class="py-3 px-4">Sponsor</th>
                         <th class="py-3 px-4">Month Total</th>
                         <th class="py-3 px-4">Status</th>
-                        <th class="py-3 px-4">Week Volume</th>
+                        <th class="py-3 px-4">Week Referral (100%)</th>
+                        <th class="py-3 px-4">Month Referral (100%)</th>
                         <th class="py-3 px-4">New Referrals (week)</th>
                         <th class="py-3 px-4">Reason</th>
                     </tr>
@@ -79,16 +80,17 @@
                                     {{ $row['status_label'] }}
                                 </span>
                             </td>
-                            <td class="py-3 px-4">
-                                ₹{{ number_format((float) $row['week_volume'], 2) }}
-                                <div class="text-slate-400">{{ $row['week_txn_count'] }} txns · {{ $row['week_start'] }} → {{ $row['week_end'] }}</div>
+                            <td class="py-3 px-4 font-bold text-emerald-700">
+                                ₹{{ number_format((float) $row['week_referral_income'], 2) }}
+                                <div class="text-slate-400 font-normal">Own week vol ₹{{ number_format((float) $row['week_volume'], 2) }}</div>
                             </td>
+                            <td class="py-3 px-4 font-bold text-emerald-700">₹{{ number_format((float) $row['month_referral_income'], 2) }}</td>
                             <td class="py-3 px-4 font-semibold">{{ $row['week_new_referrals'] }}</td>
                             <td class="py-3 px-4 text-slate-600">{{ $row['reason'] }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-10 text-center text-slate-400">No sponsor rows for this filter.</td>
+                            <td colspan="8" class="py-10 text-center text-slate-400">No sponsor rows for this filter.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -106,7 +108,7 @@ document.getElementById('referralMarkReviewed')?.addEventListener('click', funct
         alert('Select at least one eligible sponsor row.');
         return;
     }
-    alert('Marked ' + ids.length + ' sponsor(s) as reviewed. Paid amounts will apply after client referral % rate sheet is provided. Selected IDs: ' + ids.join(', '));
+    alert('Marked ' + ids.length + ' sponsor(s) for Sanstha-profit settlement (100% referral amounts shown). Selected IDs: ' + ids.join(', '));
 });
 </script>
 @endsection

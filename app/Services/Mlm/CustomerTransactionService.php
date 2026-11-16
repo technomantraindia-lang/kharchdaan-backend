@@ -89,7 +89,13 @@ class CustomerTransactionService
                 ],
                 'referral_income' => [
                     'eligible' => $referralStatus,
-                    'label' => $referralStatus ? 'Month eligible (structure)' : 'Not Eligible this month',
+                    'rate_percent' => (float) $this->eligibility->referralRate() * 100,
+                    'amount' => $referralStatus
+                        ? $this->eligibility->referralIncomeFromAmount($amount)
+                        : '0',
+                    'label' => $referralStatus
+                        ? 'Eligible — 100% referral (Sanstha profit)'
+                        : 'Not Eligible this month',
                     'reason' => $referralStatus
                         ? null
                         : (! $meets200
