@@ -494,8 +494,9 @@
         </div>
 
         <!-- Navigation Links -->
+        @php $showAdvancedMenu = (bool) config('admin.show_advanced_menu', false); @endphp
         <nav class="flex-1 overflow-y-auto sidebar-scroll px-3 py-4 space-y-5 text-xs font-medium">
-            
+
             <!-- 1. DASHBOARD -->
             @if(auth()->user()->hasPermission('dashboard.view') || auth()->user()->isSuperAdmin())
             <div>
@@ -503,16 +504,16 @@
                 <div class="space-y-0.5">
                     <a href="{{ admin_route('dashboard') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.dashboard') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-chart-line w-4 text-center text-sm {{ request()->routeIs('*.dashboard') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Direct Selling Hub</span>
+                        <span>Dashboard</span>
                     </a>
                 </div>
             </div>
             @endif
 
-            <!-- 2. MLM / DIRECT SELLING NETWORK -->
+            <!-- 2. MEMBERS & NETWORK (38-pt: IDs, KYC, placement, plan) -->
             @if(auth()->user()->hasPermission('mlm.view') || auth()->user()->isSuperAdmin())
             <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Distributors & Network</div>
+                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Members & Network</div>
                 <div class="space-y-0.5">
                     <a href="{{ admin_route('mlm.members.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.members.*') && !request()->routeIs('*.mlm.sponsor-network') && !request()->routeIs('*.mlm.genealogy') && !request()->routeIs('*.mlm.levels') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-users w-4 text-center text-sm {{ request()->routeIs('*.mlm.members.*') && !request()->routeIs('*.mlm.sponsor-network') && !request()->routeIs('*.mlm.genealogy') && !request()->routeIs('*.mlm.levels') ? 'text-white' : 'text-slate-400' }}"></i>
@@ -522,79 +523,74 @@
                         <i class="fas fa-sitemap w-4 text-center text-sm {{ request()->routeIs('*.mlm.tree.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>1:3 Placement Tree</span>
                     </a>
+                    <a href="{{ admin_route('mlm.levels') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.levels') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-layer-group w-4 text-center text-sm {{ request()->routeIs('*.mlm.levels') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Commission Rules</span>
+                    </a>
+                    @if($showAdvancedMenu)
                     <a href="{{ admin_route('mlm.genealogy') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.genealogy') || request()->routeIs('*.mlm.sponsor-network') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-project-diagram w-4 text-center text-sm {{ request()->routeIs('*.mlm.genealogy') || request()->routeIs('*.mlm.sponsor-network') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Genealogy (Levels 0–19)</span>
                     </a>
-                    <a href="{{ admin_route('mlm.levels') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.levels') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-layer-group w-4 text-center text-sm {{ request()->routeIs('*.mlm.levels') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Commission Rules & Levels</span>
-                    </a>
+                    @endif
                 </div>
             </div>
             @endif
 
-            <!-- 3. MLM CALCULATIONS & SETTLEMENTS -->
-            @if(auth()->user()->hasPermission('mlm.manage') || auth()->user()->isSuperAdmin())
+            <!-- 3. PAYOUTS (38-pt: weekly cashback/referral + monthly DS) -->
+            @if(auth()->user()->hasPermission('mlm.manage') || auth()->user()->hasPermission('cashback.view') || auth()->user()->isSuperAdmin())
             <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Payouts & Settlements</div>
+                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Payouts</div>
                 <div class="space-y-0.5">
+                    @if(auth()->user()->hasPermission('mlm.manage') || auth()->user()->isSuperAdmin())
                     <a href="{{ admin_route('mlm.payouts.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.payouts.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-wallet w-4 text-center text-sm {{ request()->routeIs('*.mlm.payouts.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Weekly Settlements (Bank/UPI)</span>
+                        <span>DS Weekly Settlements</span>
                     </a>
+                    @endif
+                    @if(auth()->user()->hasPermission('cashback.view') || auth()->user()->isSuperAdmin())
+                    <a href="{{ admin_route('cashback.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.cashback.index') || request()->routeIs('*.cashback.show') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-hand-holding-dollar w-4 text-center text-sm {{ request()->routeIs('*.cashback.index') || request()->routeIs('*.cashback.show') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Cashback & Referral Payouts</span>
+                    </a>
+                    <a href="{{ admin_route('reports.cashback') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.reports.cashback') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-piggy-bank w-4 text-center text-sm {{ request()->routeIs('*.reports.cashback') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Profit Pools & Batches</span>
+                    </a>
+                    @endif
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('mlm.manage') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('mlm.calculations.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.calculations.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-calculator w-4 text-center text-sm {{ request()->routeIs('*.mlm.calculations.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>PV Calculation Engine</span>
                     </a>
                     <a href="{{ admin_route('mlm.referral-eligibility.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.referral-eligibility.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-handshake w-4 text-center text-sm {{ request()->routeIs('*.mlm.referral-eligibility.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Referral Eligibility (Structure)</span>
+                        <span>Referral Eligibility</span>
                     </a>
                     <a href="{{ admin_route('mlm.reconciliation.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.mlm.reconciliation.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-check-double w-4 text-center text-sm {{ request()->routeIs('*.mlm.reconciliation.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Order Commission Audit</span>
                     </a>
-                </div>
-            </div>
-            @endif
-
-            <!-- 4. UP TO 100% CASHBACK -->
-            @if(auth()->user()->hasPermission('cashback.view') || auth()->user()->isSuperAdmin())
-            <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Up to 100% Cashback</div>
-                <div class="space-y-0.5">
-                    <a href="{{ admin_route('cashback.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.cashback.index') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-hand-holding-dollar w-4 text-center text-sm {{ request()->routeIs('*.cashback.index') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Cashback Orders</span>
-                    </a>
-                    <a href="{{ admin_route('reports.cashback') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.reports.cashback') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-piggy-bank w-4 text-center text-sm {{ request()->routeIs('*.reports.cashback') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Profit Pools & Batches</span>
-                    </a>
+                    @endif
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('cashback.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('cashback.reconciliation') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.cashback.reconciliation*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-clipboard-check w-4 text-center text-sm {{ request()->routeIs('*.cashback.reconciliation*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Cashback Orders Audit</span>
                     </a>
+                    @endif
                 </div>
             </div>
             @endif
 
-            <!-- 5. E-COMMERCE & STORE -->
-            @if(auth()->user()->hasPermission('products.view') || auth()->user()->hasPermission('categories.view') || auth()->user()->hasPermission('inventory.view') || auth()->user()->hasPermission('orders.view') || auth()->user()->isSuperAdmin())
+            <!-- 4. STORE (38-pt: ecommerce, online/offline items) -->
+            @if(auth()->user()->hasPermission('products.view') || auth()->user()->hasPermission('categories.view') || auth()->user()->isSuperAdmin())
             <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">E-Commerce & Store</div>
+                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Store</div>
                 <div class="space-y-0.5">
                     @if(auth()->user()->hasPermission('products.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('products.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.products.*') && !request()->routeIs('*.products.create') && !request()->routeIs('*.products.bulkCreate') && !request()->routeIs('*.products.import') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-boxes-stacked w-4 text-center text-sm {{ request()->routeIs('*.products.*') && !request()->routeIs('*.products.create') && !request()->routeIs('*.products.bulkCreate') && !request()->routeIs('*.products.import') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Products Catalog</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasPermission('products.create') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('products.create') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.products.create') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-plus-circle w-4 text-center text-sm {{ request()->routeIs('*.products.create') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Add New Product</span>
+                    <a href="{{ admin_route('products.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.products.*') && !request()->routeIs('*.products.create') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-boxes-stacked w-4 text-center text-sm {{ request()->routeIs('*.products.*') && !request()->routeIs('*.products.create') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Products</span>
                     </a>
                     @endif
                     @if(auth()->user()->hasPermission('categories.view') || auth()->user()->isSuperAdmin())
@@ -603,55 +599,71 @@
                         <span>Categories</span>
                     </a>
                     @endif
-                    @if(auth()->user()->hasPermission('brands.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('brands.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.brands.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-tags w-4 text-center text-sm {{ request()->routeIs('*.brands.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Brands</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasPermission('attributes.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('attributes.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.attributes.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-sliders-h w-4 text-center text-sm {{ request()->routeIs('*.attributes.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Attributes & Variations</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasPermission('inventory.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('inventory.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.inventory.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-warehouse w-4 text-center text-sm {{ request()->routeIs('*.inventory.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Stock & Inventory</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasPermission('coupons.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('coupons.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.coupons.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-ticket w-4 text-center text-sm {{ request()->routeIs('*.coupons.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Coupons & Offers</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasPermission('shipping.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('shipping.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.shipping.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-truck-fast w-4 text-center text-sm {{ request()->routeIs('*.shipping.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Shipping Methods</span>
-                    </a>
-                    @endif
-                    @if(auth()->user()->hasPermission('taxes.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('taxes.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.taxes.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-receipt w-4 text-center text-sm {{ request()->routeIs('*.taxes.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Tax Rates (GST)</span>
-                    </a>
+                    @if($showAdvancedMenu)
+                        @if(auth()->user()->hasPermission('products.create') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('products.create') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.products.create') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-plus-circle w-4 text-center text-sm {{ request()->routeIs('*.products.create') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Add New Product</span>
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('brands.view') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('brands.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.brands.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-tags w-4 text-center text-sm {{ request()->routeIs('*.brands.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Brands</span>
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('attributes.view') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('attributes.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.attributes.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-sliders-h w-4 text-center text-sm {{ request()->routeIs('*.attributes.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Attributes & Variations</span>
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('inventory.view') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('inventory.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.inventory.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-warehouse w-4 text-center text-sm {{ request()->routeIs('*.inventory.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Stock & Inventory</span>
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('coupons.view') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('coupons.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.coupons.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-ticket w-4 text-center text-sm {{ request()->routeIs('*.coupons.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Coupons & Offers</span>
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('shipping.view') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('shipping.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.shipping.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-truck-fast w-4 text-center text-sm {{ request()->routeIs('*.shipping.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Shipping Methods</span>
+                        </a>
+                        @endif
+                        @if(auth()->user()->hasPermission('taxes.view') || auth()->user()->isSuperAdmin())
+                        <a href="{{ admin_route('taxes.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.taxes.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                            <i class="fas fa-receipt w-4 text-center text-sm {{ request()->routeIs('*.taxes.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                            <span>Tax Rates (GST)</span>
+                        </a>
+                        @endif
                     @endif
                 </div>
             </div>
             @endif
 
-            <!-- 6. REPORTING SUITE -->
-            @if(auth()->user()->hasPermission('reports.view') || auth()->user()->isSuperAdmin())
+            <!-- 5. ORDERS & EXPORTS (38-pt: transactions, delivery, cancel, Excel) -->
             <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Reporting Suite</div>
+                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Orders & Reports</div>
                 <div class="space-y-0.5">
-                    <a href="{{ admin_route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.reports.index') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-chart-pie w-4 text-center text-sm {{ request()->routeIs('*.reports.index') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Overview & Revenue</span>
+                    @if(auth()->user()->hasPermission('orders.view') || auth()->user()->isSuperAdmin())
+                    <a href="{{ admin_route('orders.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.orders.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-bag-shopping w-4 text-center text-sm {{ request()->routeIs('*.orders.*') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Orders & Payments</span>
                     </a>
+                    @endif
+                    @if(auth()->user()->hasPermission('reports.view') || auth()->user()->isSuperAdmin())
+                    <a href="{{ admin_route('reports.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.reports.*') && !request()->routeIs('*.reports.cashback') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
+                        <i class="fas fa-file-excel w-4 text-center text-sm {{ request()->routeIs('*.reports.*') && !request()->routeIs('*.reports.cashback') ? 'text-white' : 'text-slate-400' }}"></i>
+                        <span>Exports & Reports</span>
+                    </a>
+                    @endif
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('reports.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('reports.network') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.reports.network') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-network-wired w-4 text-center text-sm {{ request()->routeIs('*.reports.network') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Direct Selling Reports</span>
@@ -664,64 +676,50 @@
                         <i class="fas fa-receipt w-4 text-center text-sm {{ request()->routeIs('*.reports.gst') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>GST Compliance</span>
                     </a>
+                    @endif
                 </div>
             </div>
-            @endif
 
-            <!-- 7. MANAGEMENT & OPERATIONS -->
+            <!-- 6. ADMIN (settings + staff; advanced extras gated) -->
             <div>
-                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Operations & Admin</div>
+                <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Admin</div>
                 <div class="space-y-0.5">
-                    @if(auth()->user()->hasPermission('customers.view') || auth()->user()->isSuperAdmin())
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('customers.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('customers.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.customers.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-address-book w-4 text-center text-sm {{ request()->routeIs('*.customers.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Customers</span>
                     </a>
                     @endif
-
-                    @if(auth()->user()->hasPermission('orders.view') || auth()->user()->isSuperAdmin())
-                    <a href="{{ admin_route('orders.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.orders.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
-                        <i class="fas fa-bag-shopping w-4 text-center text-sm {{ request()->routeIs('*.orders.*') ? 'text-white' : 'text-slate-400' }}"></i>
-                        <span>Orders & Payments</span>
-                    </a>
-                    @endif
-
-                    @if(auth()->user()->hasPermission('inquiries.view') || auth()->user()->isSuperAdmin())
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('inquiries.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('inquiries.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.inquiries.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-comments w-4 text-center text-sm {{ request()->routeIs('*.inquiries.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Inquiries & Leads</span>
                     </a>
                     @endif
-
-                    @if(auth()->user()->hasPermission('woocommerce.view') || auth()->user()->isSuperAdmin())
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('woocommerce.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('woocommerce.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.woocommerce.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-rotate w-4 text-center text-sm {{ request()->routeIs('*.woocommerce.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>WooCommerce Sync</span>
                     </a>
                     @endif
-
-                    @if(auth()->user()->hasPermission('cms.view') || auth()->user()->isSuperAdmin())
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('cms.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('banners.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.banners.*') || request()->routeIs('*.pages.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-file-lines w-4 text-center text-sm {{ request()->routeIs('*.banners.*') || request()->routeIs('*.pages.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>CMS Banners & Pages</span>
                     </a>
                     @endif
-
                     @if(auth()->user()->hasPermission('users.view') || auth()->user()->isSuperAdmin())
                     <a href="{{ admin_route('users.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.users.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-user-shield w-4 text-center text-sm {{ request()->routeIs('*.users.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span class="flex-1">Staff &amp; Roles</span>
-                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Assign Roles</span>
                     </a>
                     @endif
-
-                    @if(auth()->user()->hasPermission('activity_logs.view') || auth()->user()->isSuperAdmin())
+                    @if($showAdvancedMenu && (auth()->user()->hasPermission('activity_logs.view') || auth()->user()->isSuperAdmin()))
                     <a href="{{ admin_route('activity-logs.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.activity-logs.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-clock-rotate-left w-4 text-center text-sm {{ request()->routeIs('*.activity-logs.*') ? 'text-white' : 'text-slate-400' }}"></i>
                         <span>Audit Logs</span>
                     </a>
                     @endif
-
                     @if(auth()->user()->hasPermission('settings.view') || auth()->user()->isSuperAdmin())
                     <a href="{{ admin_route('settings.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition {{ request()->routeIs('*.settings.*') ? 'bg-blue-600/90 text-white font-semibold shadow-xs' : '' }}">
                         <i class="fas fa-sliders w-4 text-center text-sm {{ request()->routeIs('*.settings.*') ? 'text-white' : 'text-slate-400' }}"></i>
@@ -819,34 +817,44 @@
                         <i class="fas fa-plus text-xs"></i> Quick Action
                     </button>
                     <div id="quickActionMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1.5 z-50 text-xs">
-                        <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Direct Selling Actions</div>
+                        <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Members & Payouts</div>
                         <a href="{{ admin_route('mlm.members.create') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
-                            <i class="fas fa-user-plus text-orange-500 w-4"></i> Add Direct Selling Member
+                            <i class="fas fa-user-plus text-orange-500 w-4"></i> Add Member
                         </a>
                         <a href="{{ admin_route('mlm.tree.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-sitemap text-amber-500 w-4"></i> Placement Tree (1:3)
                         </a>
+                        <a href="{{ admin_route('mlm.payouts.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
+                            <i class="fas fa-wallet text-amber-500 w-4"></i> DS Settlements
+                        </a>
+                        <a href="{{ admin_route('cashback.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
+                            <i class="fas fa-hand-holding-dollar text-emerald-500 w-4"></i> Cashback Payouts
+                        </a>
+                        @if($showAdvancedMenu)
                         <a href="{{ admin_route('mlm.calculations.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-calculator text-emerald-500 w-4"></i> Run Calculation Engine
                         </a>
-                        <a href="{{ admin_route('mlm.payouts.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
-                            <i class="fas fa-wallet text-amber-500 w-4"></i> Weekly Settlement
-                        </a>
+                        @endif
 
                         <div class="my-1 border-t border-slate-100"></div>
-                        <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Store & E-Commerce</div>
+                        <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Store & Orders</div>
                         <a href="{{ admin_route('products.create') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
-                            <i class="fas fa-plus-circle text-emerald-500 w-4"></i> Add New Product
+                            <i class="fas fa-plus-circle text-emerald-500 w-4"></i> Add Product
                         </a>
                         <a href="{{ admin_route('products.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
-                            <i class="fas fa-boxes-stacked text-orange-500 w-4"></i> Products Catalog
+                            <i class="fas fa-boxes-stacked text-orange-500 w-4"></i> Products
                         </a>
-                        <a href="{{ admin_route('categories.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
-                            <i class="fas fa-folder-tree text-amber-500 w-4"></i> Manage Categories
+                        <a href="{{ admin_route('orders.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
+                            <i class="fas fa-bag-shopping text-amber-500 w-4"></i> Orders & Payments
                         </a>
+                        <a href="{{ admin_route('reports.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
+                            <i class="fas fa-file-excel text-emerald-600 w-4"></i> Exports & Reports
+                        </a>
+                        @if($showAdvancedMenu)
                         <a href="{{ admin_route('inventory.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-warehouse text-purple-500 w-4"></i> Stock & Inventory
                         </a>
+                        @endif
                     </div>
                 </div>
 

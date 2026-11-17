@@ -29,15 +29,23 @@
                 </a>
                 <a href="{{ admin_route('mlm.members.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
                     <i class="fas fa-users text-orange-500 text-xs"></i>
-                    <span>Members Directory</span>
+                    <span>Members & KYC</span>
                 </a>
                 <a href="{{ admin_route('mlm.payouts.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-amber-600 hover:border-amber-300 shadow-xs">
                     <i class="fas fa-wallet text-amber-500 text-xs"></i>
-                    <span>Weekly Payouts</span>
+                    <span>DS Settlements</span>
                 </a>
-                <a href="{{ admin_route('mlm.calculations.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
-                    <i class="fas fa-calculator text-emerald-500 text-xs"></i>
-                    <span>PV Calculations</span>
+                <a href="{{ admin_route('cashback.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
+                    <i class="fas fa-hand-holding-dollar text-emerald-500 text-xs"></i>
+                    <span>Cashback Payouts</span>
+                </a>
+                <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
+                    <i class="fas fa-bag-shopping text-orange-500 text-xs"></i>
+                    <span>Orders</span>
+                </a>
+                <a href="{{ admin_route('reports.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
+                    <i class="fas fa-file-excel text-emerald-600 text-xs"></i>
+                    <span>Exports</span>
                 </a>
             </div>
         </div>

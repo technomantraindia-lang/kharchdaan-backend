@@ -5,14 +5,23 @@
 @section('content')
 <div class="space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="flex flex-col gap-4">
         <div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Platform Reports & Analytics</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Financial metrics, direct selling performance, and platform analytics for KharchDaan.Com</p>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Exports & Reports</h1>
+            <p class="text-xs text-slate-500 mt-0.5">Excel exports for Transactions, Items, Customers, and Vendors (client requirement).</p>
         </div>
-        <div>
-            <a href="{{ admin_route('reports.export', ['module' => 'sales', 'date_preset' => $range['preset'], 'date_from' => $range['date_from'], 'date_to' => $range['date_to']]) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
-                <i class="fas fa-file-export text-xs"></i> Export Sales CSV
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ admin_route('reports.export', ['module' => 'transactions', 'date_preset' => $range['preset'], 'date_from' => $range['date_from'], 'date_to' => $range['date_to']]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
+                <i class="fas fa-file-excel text-xs"></i> Transactions
+            </a>
+            <a href="{{ admin_route('reports.export', ['module' => 'items', 'date_preset' => $range['preset'], 'date_from' => $range['date_from'], 'date_to' => $range['date_to']]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
+                <i class="fas fa-boxes-stacked text-xs"></i> Items
+            </a>
+            <a href="{{ admin_route('reports.export', ['module' => 'customers', 'date_preset' => $range['preset'], 'date_from' => $range['date_from'], 'date_to' => $range['date_to']]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
+                <i class="fas fa-users text-xs"></i> Customers
+            </a>
+            <a href="{{ admin_route('reports.export', ['module' => 'vendors', 'date_preset' => $range['preset'], 'date_from' => $range['date_from'], 'date_to' => $range['date_to']]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
+                <i class="fas fa-store text-xs"></i> Vendors
             </a>
         </div>
     </div>
