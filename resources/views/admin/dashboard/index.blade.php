@@ -37,43 +37,46 @@
                     @endif
                 </p>
             </div>
-            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 flex-shrink-0">
+            @php
+                $hubBtn = 'inline-flex items-center justify-center gap-2 h-10 px-3.5 text-xs font-semibold text-slate-700 bg-white hover:bg-orange-50 border border-slate-200 hover:border-orange-300 rounded-xl transition hover:text-orange-700 shadow-xs whitespace-nowrap';
+            @endphp
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 flex-shrink-0">
                 @if($canMlm)
-                <a href="{{ admin_route('mlm.tree.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-xl shadow-xs transition hover:shadow group">
-                    <i class="fas fa-sitemap text-xs"></i>
+                <a href="{{ admin_route('mlm.tree.index') }}" class="{{ $hubBtn }}">
+                    <i class="fas fa-sitemap text-orange-500 text-xs"></i>
                     <span>1:3 Placement Tree</span>
                 </a>
-                <a href="{{ admin_route('mlm.members.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
+                <a href="{{ admin_route('mlm.members.index') }}" class="{{ $hubBtn }}">
                     <i class="fas fa-users text-orange-500 text-xs"></i>
                     <span>Members & KYC</span>
                 </a>
                 @endif
                 @if($canMlmManage || $canMlm)
-                <a href="{{ admin_route('mlm.payouts.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-amber-600 hover:border-amber-300 shadow-xs">
+                <a href="{{ admin_route('mlm.payouts.index') }}" class="{{ $hubBtn }}">
                     <i class="fas fa-wallet text-amber-500 text-xs"></i>
                     <span>DS Settlements</span>
                 </a>
                 @endif
                 @if($canCashback)
-                <a href="{{ admin_route('cashback.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
+                <a href="{{ admin_route('cashback.index') }}" class="{{ $hubBtn }}">
                     <i class="fas fa-hand-holding-dollar text-emerald-500 text-xs"></i>
                     <span>Cashback Payouts</span>
                 </a>
                 @endif
                 @if($canProducts)
-                <a href="{{ admin_route('products.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
+                <a href="{{ admin_route('products.index') }}" class="{{ $hubBtn }}">
                     <i class="fas fa-boxes-stacked text-orange-500 text-xs"></i>
                     <span>Products</span>
                 </a>
                 @endif
                 @if($canOrders)
-                <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
+                <a href="{{ admin_route('orders.index') }}" class="{{ $hubBtn }}">
                     <i class="fas fa-bag-shopping text-orange-500 text-xs"></i>
                     <span>Orders</span>
                 </a>
                 @endif
                 @if($canReports)
-                <a href="{{ admin_route('reports.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
+                <a href="{{ admin_route('reports.index') }}" class="{{ $hubBtn }}">
                     <i class="fas fa-file-excel text-emerald-600 text-xs"></i>
                     <span>Exports</span>
                 </a>
