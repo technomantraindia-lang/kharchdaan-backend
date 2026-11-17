@@ -1,57 +1,96 @@
 @extends('frontend.layouts.app')
 
-@section('title', 'Login')
+@section('title', 'Member Login')
 
 @section('content')
-<div class="row justify-content-center my-5">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <h2 class="fw-bold text-gradient" style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome Back</h2>
-                    <p class="text-muted">Login with Customer ID, Mobile, or Email</p>
+<section class="relative flex-1 px-4 py-10 sm:py-14">
+    <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(249,115,22,0.12),_transparent_55%)]"></div>
+
+    <div class="relative mx-auto w-full max-w-md">
+        <div class="rounded-3xl border border-orange-100/80 bg-white p-6 shadow-[0_20px_50px_-24px_rgba(234,88,12,0.35)] sm:p-8">
+            <div class="mb-7 text-center">
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/30">
+                    <i class="fas fa-right-to-bracket text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-black tracking-tight text-slate-900 sm:text-[1.65rem]">Welcome Back</h1>
+                <p class="mt-2 text-sm font-medium text-slate-500">Login with Customer ID, Mobile, or Email</p>
+            </div>
+
+            @if ($errors->any())
+                <div class="mb-5 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700" role="alert">
+                    <i class="fas fa-circle-exclamation mt-0.5 text-rose-500"></i>
+                    <span>{{ $errors->first() }}</span>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-5 flex items-start gap-2.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700" role="alert">
+                    <i class="fas fa-circle-exclamation mt-0.5 text-rose-500"></i>
+                    <span>{{ session('error') }}</span>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login.post') }}" class="space-y-5" novalidate>
+                @csrf
+
+                <div>
+                    <label for="login" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Customer ID / Mobile / Email
+                    </label>
+                    <div class="relative">
+                        <span class="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-slate-400">
+                            <i class="fas fa-user text-sm"></i>
+                        </span>
+                        <input
+                            type="text"
+                            id="login"
+                            name="login"
+                            value="{{ old('login', old('email')) }}"
+                            placeholder="C25070002 / 98XXXXXXXX / email"
+                            required
+                            autofocus
+                            autocomplete="username"
+                            class="w-full rounded-xl border {{ $errors->has('login') ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-slate-50' }} py-3 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-500/15"
+                        >
+                    </div>
                 </div>
 
-                @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+                <div>
+                    <label for="password" class="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-600">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <span class="pointer-events-none absolute inset-y-0 left-0 flex w-11 items-center justify-center text-slate-400">
+                            <i class="fas fa-lock text-sm"></i>
+                        </span>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            placeholder="••••••••"
+                            required
+                            autocomplete="current-password"
+                            class="w-full rounded-xl border {{ $errors->has('password') ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200 bg-slate-50' }} py-3 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-500 focus:bg-white focus:ring-4 focus:ring-orange-500/15"
+                        >
                     </div>
-                @endif
+                </div>
 
-                <form method="POST" action="{{ route('login.post') }}">
-                    @csrf
+                <button
+                    type="submit"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 px-4 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-700 hover:to-amber-600 hover:shadow-orange-500/40 focus:outline-none focus:ring-4 focus:ring-orange-500/25"
+                >
+                    <span>Login</span>
+                    <i class="fas fa-arrow-right text-xs"></i>
+                </button>
+            </form>
 
-                    <div class="mb-3">
-                        <label for="login" class="form-label">Customer ID / Mobile / Email</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-user text-muted"></i></span>
-                            <input type="text" class="form-control bg-light border-start-0 @error('login') is-invalid @enderror" id="login" name="login" value="{{ old('login', old('email')) }}" placeholder="C25070002 / 98XXXXXXXX / email" required autofocus>
-                        </div>
-                        @error('login')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-lock text-muted"></i></span>
-                            <input type="password" class="form-control bg-light border-start-0 @error('password') is-invalid @enderror" id="password" name="password" placeholder="••••••••" required>
-                        </div>
-                        @error('password')<span class="invalid-feedback d-block">{{ $message }}</span>@enderror
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold text-white shadow-sm mb-3">Login</button>
-
-                    <div class="text-center">
-                        <span class="text-muted">Don't have an account?</span>
-                        <a href="{{ route('register') }}" class="text-decoration-none fw-bold" style="color: var(--primary);">Register here</a>
-                    </div>
-                </form>
-            </div>
+            <p class="mt-6 text-center text-sm text-slate-500">
+                Don't have an account?
+                <a href="{{ route('register') }}" class="font-bold text-orange-600 hover:text-orange-700 hover:underline">
+                    Register here
+                </a>
+            </p>
         </div>
     </div>
-</div>
+</section>
 @endsection
