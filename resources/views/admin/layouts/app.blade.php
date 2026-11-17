@@ -648,6 +648,7 @@
             @endif
 
             <!-- 5. ORDERS & EXPORTS (38-pt: transactions, delivery, cancel, Excel) -->
+            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('orders.view') || auth()->user()->hasPermission('reports.view'))
             <div>
                 <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Orders & Reports</div>
                 <div class="space-y-0.5">
@@ -679,8 +680,22 @@
                     @endif
                 </div>
             </div>
+            @endif
 
             <!-- 6. ADMIN (settings + staff; advanced extras gated) -->
+            @php
+                $showAdminNav = auth()->user()->isSuperAdmin()
+                    || auth()->user()->hasPermission('users.view')
+                    || auth()->user()->hasPermission('settings.view')
+                    || ($showAdvancedMenu && (
+                        auth()->user()->hasPermission('customers.view')
+                        || auth()->user()->hasPermission('inquiries.view')
+                        || auth()->user()->hasPermission('woocommerce.view')
+                        || auth()->user()->hasPermission('cms.view')
+                        || auth()->user()->hasPermission('activity_logs.view')
+                    ));
+            @endphp
+            @if($showAdminNav)
             <div>
                 <div class="px-3 pb-1.5 text-[10px] font-extrabold uppercase tracking-wider text-slate-400/80">Admin</div>
                 <div class="space-y-0.5">
@@ -728,6 +743,7 @@
                     @endif
                 </div>
             </div>
+            @endif
         </nav>
 
         <!-- Sidebar User Footer -->
@@ -817,40 +833,55 @@
                         <i class="fas fa-plus text-xs"></i> Quick Action
                     </button>
                     <div id="quickActionMenu" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200/80 py-1.5 z-50 text-xs">
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('mlm.view') || auth()->user()->hasPermission('mlm.manage') || auth()->user()->hasPermission('cashback.view'))
                         <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Members & Payouts</div>
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('mlm.manage'))
                         <a href="{{ admin_route('mlm.members.create') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-user-plus text-orange-500 w-4"></i> Add Member
                         </a>
+                        @endif
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('mlm.view'))
                         <a href="{{ admin_route('mlm.tree.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-sitemap text-amber-500 w-4"></i> Placement Tree (1:3)
                         </a>
                         <a href="{{ admin_route('mlm.payouts.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-wallet text-amber-500 w-4"></i> DS Settlements
                         </a>
+                        @endif
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('cashback.view'))
                         <a href="{{ admin_route('cashback.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-hand-holding-dollar text-emerald-500 w-4"></i> Cashback Payouts
                         </a>
-                        @if($showAdvancedMenu)
+                        @endif
+                        @if($showAdvancedMenu && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('mlm.view')))
                         <a href="{{ admin_route('mlm.calculations.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-calculator text-emerald-500 w-4"></i> Run Calculation Engine
                         </a>
                         @endif
-
                         <div class="my-1 border-t border-slate-100"></div>
+                        @endif
                         <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Store & Orders</div>
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('products.create'))
                         <a href="{{ admin_route('products.create') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-plus-circle text-emerald-500 w-4"></i> Add Product
                         </a>
+                        @endif
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('products.view'))
                         <a href="{{ admin_route('products.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-boxes-stacked text-orange-500 w-4"></i> Products
                         </a>
+                        @endif
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('orders.view'))
                         <a href="{{ admin_route('orders.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-bag-shopping text-amber-500 w-4"></i> Orders & Payments
                         </a>
+                        @endif
+                        @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('reports.view'))
                         <a href="{{ admin_route('reports.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-file-excel text-emerald-600 w-4"></i> Exports & Reports
                         </a>
-                        @if($showAdvancedMenu)
+                        @endif
+                        @if($showAdvancedMenu && (auth()->user()->isSuperAdmin() || auth()->user()->hasPermission('inventory.view')))
                         <a href="{{ admin_route('inventory.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-orange-600 transition">
                             <i class="fas fa-warehouse text-purple-500 w-4"></i> Stock & Inventory
                         </a>

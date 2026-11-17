@@ -3,6 +3,15 @@
 @section('title', 'Direct Selling Dashboard')
 
 @section('content')
+@php
+    $user = auth()->user();
+    $canMlm = $user->isSuperAdmin() || $user->hasPermission('mlm.view');
+    $canMlmManage = $user->isSuperAdmin() || $user->hasPermission('mlm.manage');
+    $canCashback = $user->isSuperAdmin() || $user->hasPermission('cashback.view');
+    $canOrders = $user->isSuperAdmin() || $user->hasPermission('orders.view');
+    $canProducts = $user->isSuperAdmin() || $user->hasPermission('products.view');
+    $canReports = $user->isSuperAdmin() || $user->hasPermission('reports.view');
+@endphp
 <div class="space-y-6">
     <!-- Header Banner -->
     <div class="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-6 shadow-xs">
@@ -17,12 +26,19 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> v2.0 Active
                     </span>
                 </div>
-                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">Direct Selling & Up to 100% Cashback Platform</h1>
+                <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">
+                    {{ $canMlm ? 'Direct Selling & Up to 100% Cashback Platform' : 'Store Operations Dashboard' }}
+                </h1>
                 <p class="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                    <span class="font-bold text-orange-600">"खरीदारी भी, कमाई भी"</span> &mdash; 1:3 placement matrix, 20-level grocery PV commissions, wallet settlements & cashback pool.
+                    @if($canMlm)
+                        <span class="font-bold text-orange-600">"खरीदारी भी, कमाई भी"</span> &mdash; 1:3 placement matrix, 20-level grocery PV commissions, wallet settlements & cashback pool.
+                    @else
+                        Manage products, categories, and orders for your store role. Direct Selling / payout tools are available to Super Admin only.
+                    @endif
                 </p>
             </div>
             <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 flex-shrink-0">
+                @if($canMlm)
                 <a href="{{ admin_route('mlm.tree.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 rounded-xl shadow-xs transition hover:shadow group">
                     <i class="fas fa-sitemap text-xs"></i>
                     <span>1:3 Placement Tree</span>
@@ -31,26 +47,42 @@
                     <i class="fas fa-users text-orange-500 text-xs"></i>
                     <span>Members & KYC</span>
                 </a>
+                @endif
+                @if($canMlmManage || $canMlm)
                 <a href="{{ admin_route('mlm.payouts.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-amber-600 hover:border-amber-300 shadow-xs">
                     <i class="fas fa-wallet text-amber-500 text-xs"></i>
                     <span>DS Settlements</span>
                 </a>
+                @endif
+                @if($canCashback)
                 <a href="{{ admin_route('cashback.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
                     <i class="fas fa-hand-holding-dollar text-emerald-500 text-xs"></i>
                     <span>Cashback Payouts</span>
                 </a>
+                @endif
+                @if($canProducts)
+                <a href="{{ admin_route('products.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
+                    <i class="fas fa-boxes-stacked text-orange-500 text-xs"></i>
+                    <span>Products</span>
+                </a>
+                @endif
+                @if($canOrders)
                 <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-orange-600 hover:border-orange-300 shadow-xs">
                     <i class="fas fa-bag-shopping text-orange-500 text-xs"></i>
                     <span>Orders</span>
                 </a>
+                @endif
+                @if($canReports)
                 <a href="{{ admin_route('reports.index') }}" class="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition hover:text-emerald-600 hover:border-emerald-300 shadow-xs">
                     <i class="fas fa-file-excel text-emerald-600 text-xs"></i>
                     <span>Exports</span>
                 </a>
+                @endif
             </div>
         </div>
     </div>
 
+    @if($canMlm)
     <!-- Client Quick Guide: How KharchDaan MLM Operates -->
     <div class="bg-gradient-to-r from-orange-50/70 via-amber-50/50 to-white rounded-2xl border border-orange-200/80 p-5 shadow-xs">
         <div class="flex items-center justify-between pb-3 border-b border-orange-200/60 mb-4">
@@ -68,7 +100,6 @@
             </span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            <!-- Step 1 -->
             <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
                 <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
@@ -84,7 +115,6 @@
                 </a>
             </div>
 
-            <!-- Step 2 -->
             <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
                 <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
@@ -100,7 +130,6 @@
                 </a>
             </div>
 
-            <!-- Step 3 -->
             <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
                 <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
@@ -116,7 +145,6 @@
                 </a>
             </div>
 
-            <!-- Step 4 -->
             <div class="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-orange-200 transition">
                 <div>
                     <div class="flex items-center gap-1.5 mb-1.5">
@@ -133,6 +161,23 @@
             </div>
         </div>
     </div>
+    @else
+    <div class="rounded-2xl border border-orange-200/80 bg-orange-50/60 p-5 shadow-xs">
+        <h2 class="text-sm font-extrabold text-slate-900">Your store role shortcuts</h2>
+        <p class="mt-1 text-xs text-slate-600">You can manage catalog and orders. For Members, Tree, and Payouts, sign in as Super Admin.</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+            @if($canProducts)
+            <a href="{{ admin_route('products.index') }}" class="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs font-bold text-orange-700 hover:bg-orange-50">Products</a>
+            @endif
+            @if($user->hasPermission('categories.view') || $user->isSuperAdmin())
+            <a href="{{ admin_route('categories.index') }}" class="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs font-bold text-orange-700 hover:bg-orange-50">Categories</a>
+            @endif
+            @if($canOrders)
+            <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center gap-1.5 rounded-lg border border-orange-200 bg-white px-3 py-2 text-xs font-bold text-orange-700 hover:bg-orange-50">Orders & Payments</a>
+            @endif
+        </div>
+    </div>
+    @endif
 
     <!-- Section 1: Main Platform KPI Grid (4 Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -246,6 +291,7 @@
         </div>
     </div>
 
+    @if($canMlm)
     <!-- Section 3: Pending Administrative Actions (4 Cards Grid) -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
@@ -280,9 +326,11 @@
                     <div class="text-xs font-bold text-indigo-900">Cashback Awaiting Profit</div>
                     <div class="text-2xl font-extrabold text-indigo-700 mt-1">{{ $pendingActions['cashback_awaiting_profit_count'] }}</div>
                 </div>
+                @if($canCashback)
                 <a href="{{ admin_route('cashback.index') }}" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-xs">
                     Declare
                 </a>
+                @endif
             </div>
 
             <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
@@ -357,9 +405,11 @@
             <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                 <i class="fas fa-coins text-emerald-600"></i> Direct Selling Commission by Level (Levels 0–19)
             </h2>
+            @if($canReports)
             <a href="{{ admin_route('reports.income') }}" class="text-xs font-semibold text-emerald-600 hover:underline">
                 View Full Income Report &rarr;
             </a>
+            @endif
         </div>
         <div class="overflow-x-auto max-h-72 overflow-y-auto">
             <table class="w-full text-left border-collapse">
@@ -475,6 +525,7 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 
 @push('scripts')
