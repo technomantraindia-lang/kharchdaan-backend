@@ -55,7 +55,7 @@ class CustomerApiLoginSecurityTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(401)
             ->assertJsonPath('success', false);
     }
 
@@ -75,7 +75,7 @@ class CustomerApiLoginSecurityTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $response->assertStatus(403)
+        $response->assertStatus(401)
             ->assertJsonPath('success', false);
     }
 

@@ -36,7 +36,7 @@ class ProductInventoryWritesTest extends TestCase
     {
         $category = Category::first();
 
-        $response = $this->actingAs($this->admin)->post(route('admin.products.store'), [
+        $response = $this->actingAs($this->admin)->post(admin_route('products.store'), [
             'name' => 'Test Inventory Product',
             'sku' => 'SKU-INV-001',
             'category_id' => $category->id,
@@ -45,7 +45,7 @@ class ProductInventoryWritesTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response->assertRedirect(route('admin.products.index'));
+        $response->assertRedirect(admin_route('products.index'));
 
         $product = Product::where('sku', 'SKU-INV-001')->firstOrFail();
         $this->assertEquals(25, $product->stock_qty);
@@ -61,7 +61,7 @@ class ProductInventoryWritesTest extends TestCase
     {
         $category = Category::first();
 
-        $response = $this->actingAs($this->admin)->post(route('admin.products.bulkStore'), [
+        $response = $this->actingAs($this->admin)->post(admin_route('products.bulkStore'), [
             'products' => [
                 [
                     'name' => 'Bulk Product 1',
@@ -82,7 +82,7 @@ class ProductInventoryWritesTest extends TestCase
             ],
         ]);
 
-        $response->assertRedirect(route('admin.products.index'));
+        $response->assertRedirect(admin_route('products.index'));
 
         $p1 = Product::where('sku', 'BULK-001')->firstOrFail();
         $p2 = Product::where('sku', 'BULK-002')->firstOrFail();
@@ -100,11 +100,11 @@ class ProductInventoryWritesTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('products.csv', $csvHeader . $csvRow);
 
-        $response = $this->actingAs($this->admin)->post(route('admin.products.importStore'), [
+        $response = $this->actingAs($this->admin)->post(admin_route('products.importStore'), [
             'csv_file' => $file,
         ]);
 
-        $response->assertRedirect(route('admin.products.index'));
+        $response->assertRedirect(admin_route('products.index'));
 
         $product = Product::where('sku', 'CSV-001')->firstOrFail();
         $this->assertEquals(30, $product->stock_qty);

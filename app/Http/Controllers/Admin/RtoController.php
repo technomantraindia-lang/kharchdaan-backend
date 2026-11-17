@@ -56,7 +56,7 @@ class RtoController extends Controller
         $order = Order::findOrFail($request->order_id);
         $rto = $rtoService->createRto($order, $request->reason, $request->shipment_id);
 
-        return redirect()->route('admin.rto.index')->with('success', "RTO #{$rto->rto_num} initiated successfully.");
+        return redirect()->to(admin_route('rto.index'))->with('success', "RTO #{$rto->rto_num} initiated successfully.");
     }
 
     public function show(RtoShipment $rto)

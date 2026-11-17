@@ -114,7 +114,7 @@ class PhasesValidationTest extends TestCase
     {
         $this->assertEquals('Customer', $this->customer->role?->name);
 
-        $response = $this->actingAs($this->customer)->get(route('admin.dashboard'));
+        $response = $this->actingAs($this->customer)->get(admin_route('dashboard'));
         $response->assertStatus(403);
     }
 
@@ -122,12 +122,12 @@ class PhasesValidationTest extends TestCase
     {
         $this->actingAs($this->admin);
 
-        // Admin has products.view, so /admin/products should succeed
-        $responseView = $this->get(route('admin.products.index'));
+        // Admin has products.view, so /super-admin/products should succeed
+        $responseView = $this->get(admin_route('products.index'));
         $responseView->assertStatus(200);
 
         // Admin does not have woocommerce.manage, so test-connection should return 403
-        $responseForbidden = $this->post(route('admin.woocommerce.testConnection'));
+        $responseForbidden = $this->post(admin_route('woocommerce.testConnection'));
         $responseForbidden->assertStatus(403);
     }
 
@@ -135,7 +135,7 @@ class PhasesValidationTest extends TestCase
     {
         $this->actingAs($this->superAdmin);
 
-        $response = $this->post(route('admin.users.store'), [
+        $response = $this->post(admin_route('users.store'), [
             'name' => 'New Staff',
             'email' => 'staff@test.com',
             'phone' => '1234567890',
@@ -145,7 +145,7 @@ class PhasesValidationTest extends TestCase
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('admin.users.index'));
+        $response->assertRedirect(admin_route('users.index'));
         $this->assertDatabaseHas('users', ['email' => 'staff@test.com']);
     }
 

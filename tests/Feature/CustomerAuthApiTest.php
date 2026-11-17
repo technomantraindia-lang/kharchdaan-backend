@@ -84,6 +84,7 @@ class CustomerAuthApiTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'name' => 'Malicious Admin Request',
             'email' => 'hacker@example.com',
+            'phone' => '9811111101',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
             'role' => 'Super Admin',
@@ -244,12 +245,13 @@ class CustomerAuthApiTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /** 14. Update profile /api/v1/me updates name and phone */
+    /** 14. Update profile /api/v1/me updates name (phone change is admin-only) */
     public function test_14_update_profile_me_updates_name_and_phone(): void
     {
         $user = User::create([
             'name' => 'Original Name',
             'email' => 'update@example.com',
+            'phone' => '9876543210',
             'password' => bcrypt('password123'),
             'role_id' => $this->customerRole->id,
         ]);
@@ -268,6 +270,13 @@ class CustomerAuthApiTest extends TestCase
 
         $this->assertEquals('Updated Name', $user->fresh()->name);
         $this->assertEquals('9876543210', $user->fresh()->phone);
+
+        $blocked = $this->withHeader('Authorization', 'Bearer ' . $tokenData['plainTextToken'])
+            ->putJson('/api/v1/me', [
+                'name' => 'Updated Name',
+                'phone' => '9876543211',
+            ]);
+        $blocked->assertStatus(422);
     }
 
     /** 15. Logout /api/v1/logout revokes current token */

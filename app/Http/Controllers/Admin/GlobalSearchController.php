@@ -34,7 +34,7 @@ class GlobalSearchController extends Controller
         $like = $isPgsql ? 'ilike' : 'like';
         $lowerQuery = strtolower($query);
 
-        $isSuperAdmin = $user && ($user->isSuperAdmin() || $user->hasRole('Super Admin') || $user->hasRole('super_admin') || $user->isAdmin());
+        $isSuperAdmin = $user && ($user->isSuperAdmin() || $user->hasRole('Super Admin') || $user->hasRole('super_admin'));
         $type = strtolower(trim((string) $request->get('type', 'all')));
 
         // 1. MLM Members & Distributors Search

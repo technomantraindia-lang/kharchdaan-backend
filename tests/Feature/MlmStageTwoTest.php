@@ -60,7 +60,7 @@ class MlmStageTwoTest extends TestCase
 
     public function test_admin_can_create_root_and_sponsored_members_with_encrypted_kyc(): void
     {
-        $rootResponse = $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $rootResponse = $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'name' => 'Root Member',
             'mobile' => '9200000001',
             'email' => 'root-stage-two@example.com',
@@ -78,7 +78,7 @@ class MlmStageTwoTest extends TestCase
         ]);
         $root = Member::query()->whereHas('user', fn ($query) => $query->where('email', 'root-stage-two@example.com'))->firstOrFail();
 
-        $rootResponse->assertRedirect(route('admin.mlm.members.show', $root));
+        $rootResponse->assertRedirect(admin_route('mlm.members.show', $root));
         $this->assertMatchesRegularExpression('/^C[0-9]{8}$/', $root->customer_id);
         $this->assertSame($this->admin->id, $root->created_by);
         $this->assertSame('ABCDE1234F', $root->pan_number);
@@ -87,7 +87,7 @@ class MlmStageTwoTest extends TestCase
         $this->assertSame('********9012', $root->masked_aadhaar);
         $this->assertNotSame('ABCDE1234F', DB::table('mlm_members')->where('id', $root->id)->value('pan_number'));
 
-        $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'name' => 'Sponsored Member',
             'mobile' => '9200000002',
             'email' => 'sponsored-stage-two@example.com',
@@ -112,7 +112,7 @@ class MlmStageTwoTest extends TestCase
             'aadhaar_reference' => '234567890123',
         ]);
 
-        $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'name' => 'Duplicate Email',
             'mobile' => '9200000004',
             'email' => 'duplicate-source@example.com',
@@ -121,7 +121,7 @@ class MlmStageTwoTest extends TestCase
             'kyc_status' => Member::KYC_PENDING,
         ])->assertSessionHasErrors('email');
 
-        $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'name' => 'Duplicate PAN',
             'mobile' => '9200000005',
             'email' => 'duplicate-pan@example.com',
@@ -131,7 +131,7 @@ class MlmStageTwoTest extends TestCase
             'pan_number' => 'BCDEF2345G',
         ])->assertSessionHasErrors('pan_number');
 
-        $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'name' => 'Duplicate Aadhaar',
             'mobile' => '9200000006',
             'email' => 'duplicate-aadhaar@example.com',
@@ -147,22 +147,22 @@ class MlmStageTwoTest extends TestCase
         $member = $this->createMember(['email' => 'kyc-review@example.com', 'mobile' => '9200000007']);
 
         $this->actingAs($this->admin)
-            ->patch(route('admin.mlm.members.kyc.update', $member), ['kyc_status' => Member::KYC_UNDER_REVIEW])
+            ->patch(admin_route('mlm.members.kyc.update', $member), ['kyc_status' => Member::KYC_UNDER_REVIEW])
             ->assertRedirect();
         $this->assertSame(Member::KYC_UNDER_REVIEW, $member->fresh()->kyc_status);
 
         $this->actingAs($this->admin)
-            ->patch(route('admin.mlm.members.kyc.update', $member), ['kyc_status' => Member::KYC_REJECTED])
+            ->patch(admin_route('mlm.members.kyc.update', $member), ['kyc_status' => Member::KYC_REJECTED])
             ->assertSessionHasErrors('kyc_rejection_reason');
 
         $this->actingAs($this->admin)
-            ->patch(route('admin.mlm.members.kyc.update', $member), [
+            ->patch(admin_route('mlm.members.kyc.update', $member), [
                 'kyc_status' => Member::KYC_REJECTED,
                 'kyc_rejection_reason' => 'IFSC document is unclear',
             ])->assertRedirect();
 
         $this->actingAs($this->admin)
-            ->patch(route('admin.mlm.members.kyc.update', $member), ['kyc_status' => Member::KYC_APPROVED])
+            ->patch(admin_route('mlm.members.kyc.update', $member), ['kyc_status' => Member::KYC_APPROVED])
             ->assertRedirect();
 
         $member = $member->fresh();
@@ -182,7 +182,7 @@ class MlmStageTwoTest extends TestCase
         $sponsor = $this->createMember(['email' => 'blocked-sponsor@example.com', 'mobile' => '9200000008']);
         $sponsor->update(['status' => Member::STATUS_BLOCKED]);
 
-        $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'name' => 'Blocked Sponsor Child',
             'mobile' => '9200000009',
             'email' => 'blocked-sponsor-child@example.com',
@@ -205,13 +205,13 @@ class MlmStageTwoTest extends TestCase
         $this->admin->refresh();
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.show', $member))
+            ->get(admin_route('mlm.members.show', $member))
             ->assertOk()
             ->assertSee('Sensitive KYC data is restricted')
             ->assertDontSee('CDEFG3456H');
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.kyc', $member))
+            ->get(admin_route('mlm.members.kyc', $member))
             ->assertForbidden();
     }
 
@@ -222,7 +222,7 @@ class MlmStageTwoTest extends TestCase
         $this->admin->refresh();
 
         $this->actingAs($this->admin)
-            ->post(route('admin.mlm.members.store'), [
+            ->post(admin_route('mlm.members.store'), [
                 'name' => 'Unauthorized KYC Member',
                 'mobile' => '9200000011',
                 'email' => 'unauthorized-kyc@example.com',
@@ -246,7 +246,7 @@ class MlmStageTwoTest extends TestCase
             'kyc_status' => Member::KYC_PENDING,
         ], $overrides);
 
-        $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), $data)->assertRedirect();
+        $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), $data)->assertRedirect();
 
         return Member::query()->whereHas('user', fn ($query) => $query->where('email', $data['email']))->firstOrFail();
     }

@@ -36,7 +36,7 @@ class BannerController extends Controller
         $data['image'] = $this->uploader->upload($request->file('image'), 'banners');
         Banner::create($data);
 
-        return redirect()->route('admin.banners.index')->with('success', 'Banner created successfully.');
+        return redirect()->to(admin_route('banners.index'))->with('success', 'Banner created successfully.');
     }
 
     public function edit(Banner $banner)
@@ -64,13 +64,13 @@ class BannerController extends Controller
 
         $banner->update($data);
 
-        return redirect()->route('admin.banners.index')->with('success', 'Banner updated successfully.');
+        return redirect()->to(admin_route('banners.index'))->with('success', 'Banner updated successfully.');
     }
 
     public function destroy(Banner $banner)
     {
         $this->uploader->delete($banner->image);
         $banner->delete();
-        return redirect()->route('admin.banners.index')->with('success', 'Banner deleted successfully.');
+        return redirect()->to(admin_route('banners.index'))->with('success', 'Banner deleted successfully.');
     }
 }

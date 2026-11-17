@@ -49,6 +49,6 @@ class InventoryController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('admin.inventory.index')->with('success', "Stock updated successfully for {$product->name}.");
+        return redirect()->to(admin_route('inventory.index'))->with('success', "Stock updated successfully for {$product->name}.");
     }
 }

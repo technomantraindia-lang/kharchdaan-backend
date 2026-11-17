@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Member;
 use App\Models\MlmCalculationRule;
 use App\Models\MlmIncomeLedger;
+use App\Models\Order;
 use App\Models\Permission;
 use App\Models\PlacementMovement;
 use App\Models\Role;
@@ -99,7 +100,7 @@ class MlmCalculationTest extends TestCase
     public function test_calculation_engine_page_is_formula_and_history_only(): void
     {
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.calculations.index'))
+            ->get(admin_route('mlm.calculations.index'))
             ->assertOk()
             ->assertSee('Automatic 20-level PV')
             ->assertSee('How income is calculated')
@@ -202,7 +203,7 @@ class MlmCalculationTest extends TestCase
             'mlm_member_id' => $memberId,
         ]);
 
-        return Member::create([
+        $member = Member::create([
             'user_id' => $user->id,
             'sponsor_member_id' => $sponsor?->id,
             'placement_parent_id' => $parent?->id,
@@ -210,5 +211,26 @@ class MlmCalculationTest extends TestCase
             'status' => Member::STATUS_ACTIVE,
             'joined_at' => now(),
         ]);
+
+        // Uplines need ≥ ₹1000 monthly purchase for Direct Selling income (client pt 22/32).
+        Order::create([
+            'order_num' => 'T-DS-'.$memberId,
+            'user_id' => $user->id,
+            'subtotal' => 1000,
+            'discount' => 0,
+            'ship_charge' => 0,
+            'total' => 1000,
+            'status' => 'delivered',
+            'pay_status' => 'paid',
+            'currency' => 'INR',
+            'ship_addr' => 'Ahmedabad',
+            'bill_addr' => 'Ahmedabad',
+            'order_channel' => 'online',
+            'special_instruction' => 'DS eligibility fixture',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $member;
     }
 }

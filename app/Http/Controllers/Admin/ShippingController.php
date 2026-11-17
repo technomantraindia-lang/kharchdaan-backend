@@ -30,7 +30,7 @@ class ShippingController extends Controller
 
         ShippingMethod::create($data);
 
-        return redirect()->route('admin.shipping.index')->with('success', 'Shipping method created successfully.');
+        return redirect()->to(admin_route('shipping.index'))->with('success', 'Shipping method created successfully.');
     }
 
     public function edit(ShippingMethod $shipping)
@@ -49,12 +49,12 @@ class ShippingController extends Controller
 
         $shipping->update($data);
 
-        return redirect()->route('admin.shipping.index')->with('success', 'Shipping method updated successfully.');
+        return redirect()->to(admin_route('shipping.index'))->with('success', 'Shipping method updated successfully.');
     }
 
     public function destroy(ShippingMethod $shipping)
     {
         $shipping->delete();
-        return redirect()->route('admin.shipping.index')->with('success', 'Shipping method deleted successfully.');
+        return redirect()->to(admin_route('shipping.index'))->with('success', 'Shipping method deleted successfully.');
     }
 }

@@ -35,6 +35,6 @@ class InquiryController extends Controller
 
         $inquiry->update($data);
 
-        return redirect()->route('admin.inquiries.show', $inquiry)->with('success', 'Inquiry updated successfully.');
+        return redirect()->to(admin_route('inquiries.show', $inquiry))->with('success', 'Inquiry updated successfully.');
     }
 }

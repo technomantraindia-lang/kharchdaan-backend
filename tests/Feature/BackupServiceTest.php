@@ -30,10 +30,10 @@ class BackupServiceTest extends TestCase
 
     public function test_super_admin_can_create_and_list_backups(): void
     {
-        $response = $this->actingAs($this->superAdmin)->post(route('admin.system.backups.create'));
+        $response = $this->actingAs($this->superAdmin)->post(admin_route('system.backups.create'));
         $response->assertRedirect();
 
-        $listResponse = $this->actingAs($this->superAdmin)->get(route('admin.system.backups.index'));
+        $listResponse = $this->actingAs($this->superAdmin)->get(admin_route('system.backups.index'));
         $listResponse->assertStatus(200);
     }
 }

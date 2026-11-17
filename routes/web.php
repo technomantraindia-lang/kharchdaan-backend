@@ -202,6 +202,5 @@ Route::prefix('admin')
     ->name('admin.')
     ->group(base_path('routes/admin.php'));
 
-// Universal Portal Login
-Route::get('/login', [\App\Http\Controllers\Admin\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [\App\Http\Controllers\Admin\LoginController::class, 'login'])->name('login.post');
+// Admin portal logins live under /super-admin/login and /sub-admin/login (routes/admin.php).
+// Keep /login for the customer storefront (Frontend\LoginController above).

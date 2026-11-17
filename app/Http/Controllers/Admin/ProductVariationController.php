@@ -68,7 +68,7 @@ class ProductVariationController extends Controller
             app(ProductSyncService::class)->syncVariation($variation);
         }
 
-        return redirect()->route('admin.products.variations.index', $product)
+        return redirect()->to(admin_route('products.variations.index', $product))
             ->with('success', 'Product variation created successfully.');
     }
 
@@ -114,7 +114,7 @@ class ProductVariationController extends Controller
             app(ProductSyncService::class)->syncVariation($variation);
         }
 
-        return redirect()->route('admin.products.variations.index', $product)
+        return redirect()->to(admin_route('products.variations.index', $product))
             ->with('success', 'Product variation updated successfully.');
     }
 
@@ -133,7 +133,7 @@ class ProductVariationController extends Controller
             "Deleted variation {$sku} for product #{$product->id}"
         );
 
-        return redirect()->route('admin.products.variations.index', $product)
+        return redirect()->to(admin_route('products.variations.index', $product))
             ->with('success', 'Product variation deleted successfully.');
     }
 }

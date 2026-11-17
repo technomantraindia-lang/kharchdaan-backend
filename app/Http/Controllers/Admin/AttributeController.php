@@ -37,7 +37,7 @@ class AttributeController extends Controller
 
         $this->syncValues($attribute, $data['values'] ?? []);
 
-        return redirect()->route('admin.attributes.index')->with('success', 'Attribute created successfully.');
+        return redirect()->to(admin_route('attributes.index'))->with('success', 'Attribute created successfully.');
     }
 
     public function edit(ProductAttribute $attribute)
@@ -58,14 +58,14 @@ class AttributeController extends Controller
         $attribute->update(['name' => $data['name'], 'status' => $data['status']]);
         $this->syncValues($attribute, $data['values'] ?? []);
 
-        return redirect()->route('admin.attributes.index')->with('success', 'Attribute updated successfully.');
+        return redirect()->to(admin_route('attributes.index'))->with('success', 'Attribute updated successfully.');
     }
 
     public function destroy(ProductAttribute $attribute)
     {
         $attribute->values()->delete();
         $attribute->delete();
-        return redirect()->route('admin.attributes.index')->with('success', 'Attribute deleted successfully.');
+        return redirect()->to(admin_route('attributes.index'))->with('success', 'Attribute deleted successfully.');
     }
 
     private function syncValues(ProductAttribute $attribute, array $values): void

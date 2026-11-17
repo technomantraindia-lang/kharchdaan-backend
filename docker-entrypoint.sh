@@ -17,11 +17,17 @@ if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DB_CONNECTION" ]; then
 fi
 
 # Run database migrations & seed default data (admin, roles, permissions)
+# Includes sponsor_cashback_amount on cashback_eligibilities and all pending MLM migrations.
 echo "Running database migrations..."
-php artisan migrate --force || true
+if ! php artisan migrate --force; then
+    echo "WARNING: migrate reported errors — check logs. Continuing startup."
+fi
 
 echo "Running database seeders..."
 php artisan db:seed --force || true
+
+echo "Migration status (latest):"
+php artisan migrate:status 2>/dev/null | tail -n 20 || true
 
 echo "=================================================="
 echo "KharchDaan Backend starting on 0.0.0.0:${PORT}"

@@ -157,7 +157,7 @@ class OrderController extends Controller
             return back()->withInput()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('admin.orders.show', $order)->with('success', 'Order updated successfully.');
+        return redirect()->to(admin_route('orders.show', $order))->with('success', 'Order updated successfully.');
     }
 
     public function verifyPaymentManually(Request $request, Order $order, \App\Services\OrderService $orderService)

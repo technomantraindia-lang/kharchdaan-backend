@@ -172,7 +172,7 @@ class CashbackPayoutWorkflowTest extends TestCase
         $service->startProcessing($batch, $this->admin);
 
         $this->actingAs($this->admin)
-            ->patch(route('admin.cashback.batches.paid', $batch), ['payment_reference' => 'UTR-NO-PROOF'])
+            ->patch(admin_route('cashback.batches.paid', $batch), ['payment_reference' => 'UTR-NO-PROOF'])
             ->assertSessionHasErrors('payment_proof');
     }
 
@@ -197,8 +197,8 @@ class CashbackPayoutWorkflowTest extends TestCase
     public function test_unauthorized_roles_are_denied(): void
     {
         $customer = $this->user($this->customerRole, 'workflow-customer@example.com', '9800000003');
-        $this->actingAs($customer)->get(route('admin.cashback.index'))->assertForbidden();
-        $this->actingAs($this->accounts)->get(route('admin.cashback.index'))->assertOk();
+        $this->actingAs($customer)->get(admin_route('cashback.index'))->assertForbidden();
+        $this->actingAs($this->accounts)->get(admin_route('cashback.index'))->assertOk();
     }
 
     public function test_customer_sees_only_own_cashback_and_cannot_access_another_customer_url(): void
@@ -206,6 +206,8 @@ class CashbackPayoutWorkflowTest extends TestCase
         $own = $this->eligible('500', 'CB-CUSTOMER-OWN');
         $other = $this->eligible('600', 'CB-CUSTOMER-OTHER');
         $customer = $own->member->user;
+
+        $customer->forceFill(['terms_accepted_at' => now()])->save();
 
         $this->actingAs($customer)->get(route('cashback.index'))
             ->assertOk()

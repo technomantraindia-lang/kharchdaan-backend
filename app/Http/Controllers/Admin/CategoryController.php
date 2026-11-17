@@ -42,7 +42,7 @@ class CategoryController extends Controller
 
         Category::create($data);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Category created successfully.');
+        return redirect()->to(admin_route('categories.index'))->with('success', 'Category created successfully.');
     }
 
     public function edit(Category $category)
@@ -71,14 +71,14 @@ class CategoryController extends Controller
 
         $category->update($data);
 
-        return redirect()->route('admin.categories.index')->with('success', 'Category updated successfully.');
+        return redirect()->to(admin_route('categories.index'))->with('success', 'Category updated successfully.');
     }
 
     public function destroy(Category $category)
     {
         $this->uploader->delete($category->image);
         $category->delete();
-        return redirect()->route('admin.categories.index')->with('success', 'Category deleted successfully.');
+        return redirect()->to(admin_route('categories.index'))->with('success', 'Category deleted successfully.');
     }
 
     private function buildCategoryOptions(array $excludeIds = []): array

@@ -33,7 +33,7 @@ class PageController extends Controller
         $data['slug'] = Str::slug($data['title']);
         Page::create($data);
 
-        return redirect()->route('admin.pages.index')->with('success', 'Page created successfully.');
+        return redirect()->to(admin_route('pages.index'))->with('success', 'Page created successfully.');
     }
 
     public function edit(Page $page)
@@ -54,12 +54,12 @@ class PageController extends Controller
         $data['slug'] = Str::slug($data['title']);
         $page->update($data);
 
-        return redirect()->route('admin.pages.index')->with('success', 'Page updated successfully.');
+        return redirect()->to(admin_route('pages.index'))->with('success', 'Page updated successfully.');
     }
 
     public function destroy(Page $page)
     {
         $page->delete();
-        return redirect()->route('admin.pages.index')->with('success', 'Page deleted successfully.');
+        return redirect()->to(admin_route('pages.index'))->with('success', 'Page deleted successfully.');
     }
 }

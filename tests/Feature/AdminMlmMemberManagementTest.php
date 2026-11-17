@@ -44,7 +44,7 @@ class AdminMlmMemberManagementTest extends TestCase
     {
         $customer = $this->makeCustomer('Existing Customer', 'existing@example.com', '9100000001');
 
-        $response = $this->actingAs($this->admin)->post(route('admin.mlm.members.store'), [
+        $response = $this->actingAs($this->admin)->post(admin_route('mlm.members.store'), [
             'user_id' => $customer->id,
             'member_id' => 'MEM-001',
             'name' => $customer->name,
@@ -55,7 +55,7 @@ class AdminMlmMemberManagementTest extends TestCase
 
         $member = Member::firstOrFail();
 
-        $response->assertRedirect(route('admin.mlm.members.show', $member));
+        $response->assertRedirect(admin_route('mlm.members.show', $member));
         $this->assertSame(1, User::where('email', 'existing@example.com')->count());
         $this->assertMatchesRegularExpression('/^C[0-9]{8}$/', (string) $customer->fresh()->mlm_member_id);
         $this->assertDatabaseHas('mlm_members', [
@@ -69,17 +69,17 @@ class AdminMlmMemberManagementTest extends TestCase
         ]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.create'))
+            ->get(admin_route('mlm.members.create'))
             ->assertOk()
             ->assertSee('Add MLM Member');
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.edit', $member))
+            ->get(admin_route('mlm.members.edit', $member))
             ->assertOk()
             ->assertSee('Edit MLM Member');
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.show', $member))
+            ->get(admin_route('mlm.members.show', $member))
             ->assertOk()
             ->assertSee('Network Relationships');
     }
@@ -91,24 +91,24 @@ class AdminMlmMemberManagementTest extends TestCase
         $inactive->update(['status' => Member::STATUS_INACTIVE]);
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.index', ['search' => 'MEM-SEARCH-001']))
+            ->get(admin_route('mlm.members.index', ['search' => 'MEM-SEARCH-001']))
             ->assertOk()
             ->assertSee('Search Member')
             ->assertDontSee('Inactive Member');
 
         $this->actingAs($this->admin)
-            ->get(route('admin.mlm.members.index', ['status' => Member::STATUS_INACTIVE]))
+            ->get(admin_route('mlm.members.index', ['status' => Member::STATUS_INACTIVE]))
             ->assertOk()
             ->assertSee('Inactive Member')
             ->assertDontSee('Search Member');
 
-        $this->actingAs($this->admin)->put(route('admin.mlm.members.update', $member), [
+        $this->actingAs($this->admin)->put(admin_route('mlm.members.update', $member), [
             'name' => 'Updated Member',
             'mobile' => '9100000004',
             'email' => 'updated@example.com',
             'status' => Member::STATUS_ACTIVE,
             'mobile_change_reason' => 'Corrected verified customer contact number',
-        ])->assertRedirect(route('admin.mlm.members.show', $member));
+        ])->assertRedirect(admin_route('mlm.members.show', $member));
 
         $this->assertDatabaseHas('users', [
             'id' => $member->user_id,
@@ -127,7 +127,7 @@ class AdminMlmMemberManagementTest extends TestCase
         $this->assertSame('MEM-SEARCH-001', $updateLog->new_values['member_id']);
 
         $this->actingAs($this->admin)
-            ->patch(route('admin.mlm.members.toggleStatus', $member))
+            ->patch(admin_route('mlm.members.toggleStatus', $member))
             ->assertRedirect();
 
         $this->assertDatabaseHas('mlm_members', [
@@ -141,7 +141,7 @@ class AdminMlmMemberManagementTest extends TestCase
         $existing = $this->makeMember('MEM-DUP-001', 'Duplicate One', '9100000005');
 
         $this->actingAs($this->admin)
-            ->post(route('admin.mlm.members.store'), [
+            ->post(admin_route('mlm.members.store'), [
                 'member_id' => 'MEM-DUP-001',
                 'name' => 'Duplicate ID',
                 'mobile' => '9100000009',
@@ -151,7 +151,7 @@ class AdminMlmMemberManagementTest extends TestCase
             ->assertSessionHasErrors('member_id');
 
         $this->actingAs($this->admin)
-            ->post(route('admin.mlm.members.store'), [
+            ->post(admin_route('mlm.members.store'), [
                 'member_id' => 'MEM-DUP-002',
                 'name' => 'Duplicate Two',
                 'mobile' => '9100000005',
@@ -161,7 +161,7 @@ class AdminMlmMemberManagementTest extends TestCase
             ->assertSessionHasErrors('mobile');
 
         $this->actingAs($this->admin)
-            ->post(route('admin.mlm.members.store'), [
+            ->post(admin_route('mlm.members.store'), [
                 'member_id' => 'MEM-SPONSOR-INVALID',
                 'name' => 'Invalid Sponsor',
                 'mobile' => '9100000006',
@@ -191,7 +191,7 @@ class AdminMlmMemberManagementTest extends TestCase
         ];
 
         $this->actingAs($this->admin)
-            ->put(route('admin.mlm.members.update', $member), $payload)
+            ->put(admin_route('mlm.members.update', $member), $payload)
             ->assertSessionHasErrors(['sponsor_member_id', 'placement_parent_id']);
 
         $this->assertDatabaseHas('mlm_members', [
@@ -206,7 +206,7 @@ class AdminMlmMemberManagementTest extends TestCase
         $customer = $this->makeCustomer('Regular Customer', 'regular@example.com', '9100000008');
 
         $this->actingAs($customer)
-            ->get(route('admin.mlm.members.index'))
+            ->get(admin_route('mlm.members.index'))
             ->assertForbidden();
 
         $limitedRole = Role::create(['name' => 'Limited Admin', 'guard_name' => 'web']);
@@ -219,7 +219,7 @@ class AdminMlmMemberManagementTest extends TestCase
         ]);
 
         $this->actingAs($limitedAdmin)
-            ->get(route('admin.mlm.members.index'))
+            ->get(admin_route('mlm.members.index'))
             ->assertForbidden();
     }
 

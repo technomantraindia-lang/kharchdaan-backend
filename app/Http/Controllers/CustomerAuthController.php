@@ -89,7 +89,7 @@ class CustomerAuthController extends Controller
         $user = Auth::user();
 
         if (! $user || ! $user->isCustomer()) {
-            return redirect()->route('admin.dashboard');
+            return redirect()->to(admin_route('dashboard'));
         }
 
         return view('customer.account', compact('user'));

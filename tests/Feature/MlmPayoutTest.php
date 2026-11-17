@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\MlmCalculationRule;
 use App\Models\MlmIncomeLedger;
 use App\Models\MlmPayoutCycle;
+use App\Models\Order;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -133,7 +134,7 @@ class MlmPayoutTest extends TestCase
         ]);
 
         $this->actingAs($customer)
-            ->get(route('admin.mlm.payouts.index'))
+            ->get(admin_route('mlm.payouts.index'))
             ->assertForbidden();
     }
 
@@ -184,6 +185,7 @@ class MlmPayoutTest extends TestCase
             'mlm_member_id' => 'PAYOUT-ROOT-'.uniqid(),
         ]);
         $root = Member::create(['user_id' => $rootUser->id, 'status' => Member::STATUS_ACTIVE, 'joined_at' => now()]);
+        $this->seedDsEligibilityOrder($rootUser, 'ROOT-'.uniqid());
         $purchasingUser = User::create([
             'name' => 'Payout Purchasing',
             'email' => 'payout-purchasing-'.uniqid().'@example.com',
@@ -200,7 +202,27 @@ class MlmPayoutTest extends TestCase
             'status' => Member::STATUS_ACTIVE,
             'joined_at' => now(),
         ]);
+        $this->seedDsEligibilityOrder($purchasingUser, 'BUY-'.uniqid());
 
         return [$root, $purchasing];
+    }
+
+    private function seedDsEligibilityOrder(User $user, string $suffix): void
+    {
+        Order::withoutEvents(fn () => Order::create([
+            'order_num' => 'T-DS-'.$suffix,
+            'user_id' => $user->id,
+            'subtotal' => 1000,
+            'discount' => 0,
+            'ship_charge' => 0,
+            'total' => 1000,
+            'status' => 'delivered',
+            'pay_status' => 'paid',
+            'currency' => 'INR',
+            'ship_addr' => 'Ahmedabad',
+            'bill_addr' => 'Ahmedabad',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
     }
 }

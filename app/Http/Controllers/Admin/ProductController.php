@@ -95,11 +95,16 @@ class ProductController extends Controller
             }
         }
 
-        $product = DB::transaction(function () use ($data, $request, $variationsData) {
+        $product = DB::transaction(function () use ($data, $request, $variationsData, $initialStock) {
+            $data['stock_qty'] = 0;
             $product = Product::create($data);
             $this->saveGallery($product, $request);
             $this->saveVariations($product, $variationsData);
-            return $product;
+            if ($initialStock > 0) {
+                $this->inventoryService->adjustStock($product, $initialStock, 'opening_stock');
+            }
+
+            return $product->fresh();
         });
 
         return redirect(admin_route('products.index'))->with('success', "Product '{$product->name}' was added successfully to the catalog!");
@@ -223,7 +228,7 @@ class ProductController extends Controller
             }
         });
 
-        return redirect()->route('admin.products.index')->with('success', "{$count} products added successfully.");
+        return redirect()->to(admin_route('products.index'))->with('success', "{$count} products added successfully.");
     }
 
     public function importForm()
@@ -286,7 +291,7 @@ class ProductController extends Controller
         }
         fclose($file);
 
-        return redirect()->route('admin.products.index')->with('success', "{$count} products imported successfully.");
+        return redirect()->to(admin_route('products.index'))->with('success', "{$count} products imported successfully.");
     }
 
     public function toggleStatus(Product $product)

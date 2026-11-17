@@ -175,7 +175,7 @@ class Phase31To40Test extends TestCase
     /** 7. Test customer cannot call admin APIs */
     public function test_7_customer_cannot_call_admin_apis(): void
     {
-        $response = $this->actingAs($this->customer, 'web')->get('/admin/products');
+        $response = $this->actingAs($this->customer, 'web')->get('/super-admin/products');
         $this->assertTrue(in_array($response->status(), [302, 403]));
     }
 
@@ -185,6 +185,7 @@ class Phase31To40Test extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'name' => 'Hacker User',
             'email' => 'hacker@example.com',
+            'phone' => '9822222202',
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'role' => 'Super Admin',
@@ -229,7 +230,7 @@ class Phase31To40Test extends TestCase
             'pay_status' => 'paid',
         ]);
 
-        $response = $this->actingAs($this->superAdmin, 'web')->getJson('/admin/search?q=ORD-TEST-999');
+        $response = $this->actingAs($this->superAdmin, 'web')->getJson('/super-admin/search?q=ORD-TEST-999');
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
             ->assertJsonCount(1, 'results.orders');
@@ -239,7 +240,7 @@ class Phase31To40Test extends TestCase
     public function test_11_global_search_respects_permissions(): void
     {
         // $admin user lacks customers.view permission
-        $response = $this->actingAs($this->admin, 'web')->getJson('/admin/search?q=customer');
+        $response = $this->actingAs($this->admin, 'web')->getJson('/sub-admin/search?q=customer');
         $response->assertStatus(200)
             ->assertJsonCount(0, 'results.customers');
     }
@@ -258,7 +259,7 @@ class Phase31To40Test extends TestCase
         ]);
 
         $response = $this->actingAs($this->superAdmin, 'web')
-            ->getJson('/admin/orders?status=processing&pay_status=paid&payment_method=cod');
+            ->getJson('/super-admin/orders?status=processing&pay_status=paid&payment_method=cod');
 
         $response->assertStatus(200)
             ->assertJsonPath('pagination.total', 1);
@@ -283,7 +284,7 @@ class Phase31To40Test extends TestCase
             'status' => 'delivered',
         ]);
 
-        $response = $this->actingAs($this->superAdmin, 'web')->postJson('/admin/orders/bulk-action', [
+        $response = $this->actingAs($this->superAdmin, 'web')->postJson('/super-admin/orders/bulk-action', [
             'order_ids' => [$orderPending->id, $orderDelivered->id],
             'action' => 'change_status',
             'target_status' => 'processing',
@@ -308,7 +309,7 @@ class Phase31To40Test extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->actingAs($this->superAdmin, 'web')->postJson('/admin/orders/bulk-action', [
+        $this->actingAs($this->superAdmin, 'web')->postJson('/super-admin/orders/bulk-action', [
             'order_ids' => [$order->id],
             'action' => 'change_status',
             'target_status' => 'processing',
@@ -329,7 +330,7 @@ class Phase31To40Test extends TestCase
             'New WooCommerce Order Received',
             'Order #WC-1001 imported successfully.',
             'info',
-            route('admin.orders.index')
+            admin_route('orders.index')
         ));
 
         Notification::assertSentTo($this->superAdmin, SystemAlertNotification::class);
@@ -342,7 +343,7 @@ class Phase31To40Test extends TestCase
             'WooCommerce Product Sync Failed',
             'Failed to sync Product #102 due to invalid API credentials.',
             'error',
-            route('admin.woocommerce.sync-logs.index')
+            admin_route('woocommerce.sync-logs.index')
         ));
 
         $this->assertDatabaseHas('notifications', [
@@ -363,7 +364,7 @@ class Phase31To40Test extends TestCase
         $this->assertNotNull($notification);
 
         $response = $this->actingAs($this->superAdmin, 'web')
-            ->postJson('/admin/notifications/' . $notification->id . '/read');
+            ->postJson('/super-admin/notifications/' . $notification->id . '/read');
 
         $response->assertStatus(200);
         $this->assertEquals(0, $this->superAdmin->fresh()->unreadNotifications->count());
@@ -382,7 +383,7 @@ class Phase31To40Test extends TestCase
         ]);
 
         $response = $this->actingAs($this->superAdmin, 'web')
-            ->getJson('/admin/system/failed-jobs');
+            ->getJson('/super-admin/system/failed-jobs');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true);
@@ -401,7 +402,7 @@ class Phase31To40Test extends TestCase
         ]);
 
         $response = $this->actingAs($this->superAdmin, 'web')
-            ->postJson('/admin/system/failed-jobs/' . $id . '/retry');
+            ->postJson('/super-admin/system/failed-jobs/' . $id . '/retry');
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true);

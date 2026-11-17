@@ -30,7 +30,7 @@ class TaxController extends Controller
 
         Tax::create($data);
 
-        return redirect()->route('admin.taxes.index')->with('success', 'Tax rate created successfully.');
+        return redirect()->to(admin_route('taxes.index'))->with('success', 'Tax rate created successfully.');
     }
 
     public function edit(Tax $tax)
@@ -49,12 +49,12 @@ class TaxController extends Controller
 
         $tax->update($data);
 
-        return redirect()->route('admin.taxes.index')->with('success', 'Tax rate updated successfully.');
+        return redirect()->to(admin_route('taxes.index'))->with('success', 'Tax rate updated successfully.');
     }
 
     public function destroy(Tax $tax)
     {
         $tax->delete();
-        return redirect()->route('admin.taxes.index')->with('success', 'Tax rate deleted successfully.');
+        return redirect()->to(admin_route('taxes.index'))->with('success', 'Tax rate deleted successfully.');
     }
 }

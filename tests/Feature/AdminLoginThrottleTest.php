@@ -30,16 +30,17 @@ class AdminLoginThrottleTest extends TestCase
         ]);
 
         for ($i = 0; $i < 5; $i++) {
-            $response = $this->post('/admin/login', [
-                'email' => 'targetadmin@example.com',
+            $response = $this->from('/super-admin/login')->post('/super-admin/login', [
+                'login' => 'targetadmin@example.com',
                 'password' => 'wrong_password',
             ]);
-            $response->assertSessionHas('error', 'Invalid credentials');
+            $response->assertSessionHas('error');
+            $this->assertStringContainsString('Invalid', session('error'));
         }
 
         // 6th attempt should return throttle error message
-        $response = $this->post('/admin/login', [
-            'email' => 'targetadmin@example.com',
+        $response = $this->from('/super-admin/login')->post('/super-admin/login', [
+            'login' => 'targetadmin@example.com',
             'password' => 'wrong_password',
         ]);
 

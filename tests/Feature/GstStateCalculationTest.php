@@ -23,7 +23,7 @@ class GstStateCalculationTest extends TestCase
 
     public function test_same_state_calculates_cgst_and_sgst(): void
     {
-        Order::query()->delete();
+        $this->clearOrdersForGstFixtures();
         $user = User::first();
         Address::create([
             'user_id' => $user->id,
@@ -59,7 +59,7 @@ class GstStateCalculationTest extends TestCase
 
     public function test_interstate_calculates_igst(): void
     {
-        Order::query()->delete();
+        $this->clearOrdersForGstFixtures();
         Address::query()->delete();
         $user = User::first();
 
@@ -82,5 +82,16 @@ class GstStateCalculationTest extends TestCase
         $this->assertEquals(0.00, $report['total_cgst']);
         $this->assertEquals(0.00, $report['total_sgst']);
         $this->assertEquals(18.00, $report['total_igst']);
+    }
+
+    private function clearOrdersForGstFixtures(): void
+    {
+        // Neutralize seeded orders without deleting (avoids SQLite FK cascades).
+        Order::query()->update([
+            'gst_amt' => 0,
+            'pay_status' => 'unpaid',
+            'seller_state' => null,
+            'customer_state' => null,
+        ]);
     }
 }

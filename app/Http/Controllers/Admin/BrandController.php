@@ -71,7 +71,7 @@ class BrandController extends Controller
             $brand->only(['name', 'slug', 'status'])
         );
 
-        return redirect()->route('admin.brands.index')->with('success', 'Brand created successfully.');
+        return redirect()->to(admin_route('brands.index'))->with('success', 'Brand created successfully.');
     }
 
     public function edit(Brand $brand)
@@ -111,7 +111,7 @@ class BrandController extends Controller
             $brand->only(['name', 'slug', 'description', 'status', 'image'])
         );
 
-        return redirect()->route('admin.brands.index')->with('success', 'Brand updated successfully.');
+        return redirect()->to(admin_route('brands.index'))->with('success', 'Brand updated successfully.');
     }
 
     public function destroy(Brand $brand)
@@ -127,7 +127,7 @@ class BrandController extends Controller
                 $brand
             );
 
-            return redirect()->route('admin.brands.index')->with('warning', 'Brand is linked to existing products. It has been deactivated instead of deleted.');
+            return redirect()->to(admin_route('brands.index'))->with('warning', 'Brand is linked to existing products. It has been deactivated instead of deleted.');
         }
 
         $brandName = $brand->name;
@@ -140,6 +140,6 @@ class BrandController extends Controller
             null
         );
 
-        return redirect()->route('admin.brands.index')->with('success', 'Brand deleted successfully.');
+        return redirect()->to(admin_route('brands.index'))->with('success', 'Brand deleted successfully.');
     }
 }

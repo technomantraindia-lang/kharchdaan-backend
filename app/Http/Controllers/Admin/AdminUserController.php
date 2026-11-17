@@ -260,7 +260,7 @@ class AdminUserController extends Controller
             $user->only(['name', 'email', 'staff_code', 'phone', 'role_id', 'status'])
         );
 
-        return redirect()->route('admin.users.index')->with('success', "Staff user {$user->name} created successfully with ID: {$user->staff_code}.");
+        return redirect()->to(admin_route('users.index'))->with('success', "Staff user {$user->name} created successfully with ID: {$user->staff_code}.");
     }
 
     public function edit(User $user)
@@ -269,7 +269,7 @@ class AdminUserController extends Controller
 
         // Prevent normal admin from editing a super admin
         if ($user->isSuperAdmin() && ! $authUser->isSuperAdmin()) {
-            return redirect()->route('admin.users.index')->with('error', 'Only Super Admin can edit Super Admin users.');
+            return redirect()->to(admin_route('users.index'))->with('error', 'Only Super Admin can edit Super Admin users.');
         }
 
         $rolesQuery = Role::whereIn('name', ['Super Admin', 'Sub Admin', 'Admin', 'Accounts']);
@@ -365,7 +365,7 @@ class AdminUserController extends Controller
             $user->only(['name', 'email', 'phone', 'role_id', 'status'])
         );
 
-        return redirect()->route('admin.users.index')->with('success', "Staff user {$user->name} updated successfully.");
+        return redirect()->to(admin_route('users.index'))->with('success', "Staff user {$user->name} updated successfully.");
     }
 
     public function toggleStatus(User $user)

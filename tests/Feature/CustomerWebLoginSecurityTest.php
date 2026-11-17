@@ -27,10 +27,11 @@ class CustomerWebLoginSecurityTest extends TestCase
             'password' => Hash::make('secret123'),
             'role_id' => $role->id,
             'status' => 'active',
+            'terms_accepted_at' => now(),
         ]);
 
         $response = $this->post('/login', [
-            'email' => 'webcust@example.com',
+            'login' => 'webcust@example.com',
             'password' => 'secret123',
         ]);
 
@@ -41,7 +42,7 @@ class CustomerWebLoginSecurityTest extends TestCase
     public function test_admin_cannot_login_to_customer_web_area(): void
     {
         $role = Role::where('name', 'Admin')->first();
-        $user = User::create([
+        User::create([
             'name' => 'Admin User',
             'email' => 'adminweb@example.com',
             'password' => Hash::make('secret123'),
@@ -49,19 +50,19 @@ class CustomerWebLoginSecurityTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->post('/login', [
-            'email' => 'adminweb@example.com',
+        $response = $this->from('/login')->post('/login', [
+            'login' => 'adminweb@example.com',
             'password' => 'secret123',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
         $this->assertGuest();
     }
 
     public function test_super_admin_cannot_login_to_customer_web_area(): void
     {
         $role = Role::where('name', 'Super Admin')->first();
-        $user = User::create([
+        User::create([
             'name' => 'Super Admin',
             'email' => 'superweb@example.com',
             'password' => Hash::make('secret123'),
@@ -69,19 +70,19 @@ class CustomerWebLoginSecurityTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->post('/login', [
-            'email' => 'superweb@example.com',
+        $response = $this->from('/login')->post('/login', [
+            'login' => 'superweb@example.com',
             'password' => 'secret123',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
         $this->assertGuest();
     }
 
     public function test_inactive_or_suspended_customer_cannot_login(): void
     {
         $role = Role::where('name', 'Customer')->first();
-        $inactive = User::create([
+        User::create([
             'name' => 'Inactive Cust',
             'email' => 'inactivecust@example.com',
             'password' => Hash::make('secret123'),
@@ -89,12 +90,12 @@ class CustomerWebLoginSecurityTest extends TestCase
             'status' => 'inactive',
         ]);
 
-        $response = $this->post('/login', [
-            'email' => 'inactivecust@example.com',
+        $response = $this->from('/login')->post('/login', [
+            'login' => 'inactivecust@example.com',
             'password' => 'secret123',
         ]);
 
-        $response->assertSessionHasErrors('email');
+        $response->assertSessionHasErrors('login');
         $this->assertGuest();
     }
 }

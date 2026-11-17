@@ -612,7 +612,7 @@ class MlmMemberController extends Controller
                 ]);
             }
 
-            return redirect()->route('admin.mlm.tree.index')->with('success', $msg);
+            return redirect()->to(admin_route('mlm.tree.index'))->with('success', $msg);
 
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -640,7 +640,7 @@ class MlmMemberController extends Controller
             $request->file('cancelled_cheque')
         );
 
-        return redirect()->route('admin.mlm.members.show', $member)
+        return redirect()->to(admin_route('mlm.members.show', $member))
             ->with('success', 'Member created successfully.');
     }
 
@@ -751,7 +751,7 @@ class MlmMemberController extends Controller
             $request->file('cancelled_cheque')
         );
 
-        return redirect()->route('admin.mlm.members.show', $member)
+        return redirect()->to(admin_route('mlm.members.show', $member))
             ->with('success', 'Member updated successfully.');
     }
 
@@ -926,7 +926,7 @@ class MlmMemberController extends Controller
     {
         $user = request()->user();
 
-        if ($user && ($user->isSuperAdmin() || $user->isAdmin() || $user->hasRole('Super Admin') || $user->hasRole('super_admin'))) {
+        if ($user && ($user->isSuperAdmin() || $user->hasRole('Super Admin') || $user->hasRole('super_admin'))) {
             return true;
         }
 

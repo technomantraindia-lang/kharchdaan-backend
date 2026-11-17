@@ -30,6 +30,7 @@ class AdminAuthAndIdorAuditTest extends TestCase
             'password' => bcrypt('password123'),
             'role_id' => $this->customerRole->id,
             'status' => 'active',
+            'terms_accepted_at' => now(),
         ]);
 
         $this->customerB = User::create([
@@ -38,6 +39,7 @@ class AdminAuthAndIdorAuditTest extends TestCase
             'password' => bcrypt('password123'),
             'role_id' => $this->customerRole->id,
             'status' => 'active',
+            'terms_accepted_at' => now(),
         ]);
 
         $this->orderB = Order::create([

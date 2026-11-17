@@ -179,8 +179,8 @@ class MlmOrderIntegrationTest extends TestCase
             'status' => 'active',
         ]);
 
-        $this->actingAs($customer)->get(route('admin.mlm.reconciliation.index'))->assertForbidden();
-        $this->actingAs($this->admin)->get(route('admin.mlm.reconciliation.index'))->assertOk();
+        $this->actingAs($customer)->get(admin_route('mlm.reconciliation.index'))->assertForbidden();
+        $this->actingAs($this->admin)->get(admin_route('mlm.reconciliation.index'))->assertOk();
     }
 
     private function memberChain(int $depth): array
@@ -188,6 +188,7 @@ class MlmOrderIntegrationTest extends TestCase
         $role = Role::where('name', 'Customer')->firstOrFail();
         $rootUser = $this->customer($role, 'MLM-ORDER-ROOT', '9700000000');
         $root = Member::create(['user_id' => $rootUser->id, 'status' => Member::STATUS_ACTIVE, 'joined_at' => now()]);
+        $this->seedDsEligibilityOrder($rootUser, 'DS-ROOT');
         $current = $root;
 
         for ($level = 1; $level <= $depth; $level++) {
@@ -199,6 +200,7 @@ class MlmOrderIntegrationTest extends TestCase
                 'status' => Member::STATUS_ACTIVE,
                 'joined_at' => now(),
             ]);
+            $this->seedDsEligibilityOrder($user, 'DS-'.$level);
         }
 
         return [$root, $current->user];
@@ -215,6 +217,25 @@ class MlmOrderIntegrationTest extends TestCase
             'status' => 'active',
             'mlm_member_id' => $memberId,
         ]);
+    }
+
+    private function seedDsEligibilityOrder(User $user, string $suffix): void
+    {
+        Order::withoutEvents(fn () => Order::create([
+            'order_num' => 'T-DS-'.$suffix,
+            'user_id' => $user->id,
+            'subtotal' => 1000,
+            'discount' => 0,
+            'ship_charge' => 0,
+            'total' => 1000,
+            'status' => 'delivered',
+            'pay_status' => 'paid',
+            'currency' => 'INR',
+            'ship_addr' => 'Ahmedabad',
+            'bill_addr' => 'Ahmedabad',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
     }
 
     private function order(User $customer, string $orderNumber, string $subtotal, $deliveredAt): Order
