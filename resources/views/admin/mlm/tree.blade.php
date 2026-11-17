@@ -1968,8 +1968,10 @@
 
     // Drawer System
     const openDrawer = (member) => {
+        if (!member || !drawer || !drawerBody) return;
         currentDrawerMember = member;
         const initials = ((member.name || 'M').split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase()) || 'M';
+        const isTopRoot = Boolean(member.is_top_root || member.customer_id === 'C22020008' || member.position === 'root' || member.placement_position === 'root');
         const isIdle = Boolean(member.is_idle_slot);
         const isPromoted = Boolean(isIdle && (member.is_promoted_acting || (member.promoted_info && !member.promoted_info.is_expired)));
         const isExpired = Boolean(isIdle && (member.is_promoted_expired || (member.promoted_info && member.promoted_info.is_expired)));
@@ -2129,16 +2131,18 @@
             </div>
         `;
 
-        btnDrawerFullProfile.href = member.details_url || '#';
+        if (btnDrawerFullProfile) {
+            btnDrawerFullProfile.href = member.details_url || '#';
+        }
         if (btnDrawerMoveMember) {
-            if (member.customer_id === 'C22020008') {
+            if (isTopRoot || member.customer_id === 'C22020008') {
                 btnDrawerMoveMember.classList.add('hidden');
             } else {
                 btnDrawerMoveMember.classList.remove('hidden');
                 btnDrawerMoveMember.href = member.move_url || `/super-admin/mlm/tree/move/${member.id}`;
             }
         }
-        drawerBackdrop.classList.remove('hidden');
+        drawerBackdrop?.classList.remove('hidden');
         drawer.classList.remove('translate-x-full');
     };
 
@@ -2651,8 +2655,18 @@
             return;
         }
 
+        const infoBtn = event.target.closest('.btn-node-drawer');
+        if (infoBtn) {
+            event.stopPropagation();
+            const card = infoBtn.closest('.org-node-card');
+            if (card && card._memberData) {
+                openDrawer(card._memberData);
+            }
+            return;
+        }
+
         const card = event.target.closest('.org-node-card');
-        if (card && card._memberData) {
+        if (card && card._memberData && !event.target.closest('button') && !event.target.closest('a')) {
             openDrawer(card._memberData);
         }
     });
