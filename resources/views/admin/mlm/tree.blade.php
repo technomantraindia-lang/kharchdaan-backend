@@ -515,19 +515,23 @@
         </div>
         @endif
 
-        <div class="mt-4 p-3 rounded-lg bg-blue-50/70 border border-blue-100 text-xs text-blue-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div><strong>Sponsor Tree and Placement Tree are separate.</strong> Sponsor information is shown on each card; branches below are placement relationships only.</div>
-            @php
-                $currentRootId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? null;
-            @endphp
-            <div class="flex items-center gap-2 flex-wrap">
-                <button type="button" id="btnResetToExcelToolbar" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 rounded-md hover:bg-emerald-100 transition flex-shrink-0 shadow-2xs cursor-pointer" title="Reset all tree cards to original Aaradhya Gruh Udyog Master Excel layout">
+        @php
+            $currentRootId = $initialRoot['member']['id'] ?? $initialRoot['id'] ?? null;
+            $treeToolbarBtn = 'inline-flex items-center justify-center gap-1.5 h-8 px-3 text-[11px] font-bold rounded-lg border shadow-2xs transition whitespace-nowrap flex-shrink-0';
+        @endphp
+        <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <p class="min-w-0 leading-snug text-slate-600">
+                <strong class="text-slate-900">Sponsor Tree and Placement Tree are separate.</strong>
+                <span class="whitespace-normal lg:whitespace-nowrap"> Sponsor info is on each card; branches below are placement only.</span>
+            </p>
+            <div class="flex items-center gap-2 flex-nowrap overflow-x-auto pb-0.5">
+                <button type="button" id="btnResetToExcelToolbar" class="{{ $treeToolbarBtn }} text-emerald-800 bg-white border-emerald-200 hover:bg-emerald-50 hover:border-emerald-300 cursor-pointer" title="Reset all tree cards to original Aaradhya Gruh Udyog Master Excel layout">
                     <i class="fas fa-file-excel text-emerald-600 text-[11px]"></i> Sync with Excel
                 </button>
-                <a href="{{ admin_route('mlm.manual') }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-rose-800 bg-white border border-rose-200 rounded-md hover:bg-rose-50 transition flex-shrink-0 shadow-2xs" title="Open complete step-by-step PDF manual in browser">
-                    <i class="fas fa-file-pdf text-rose-600 text-[11px]"></i> Admin Manual (PDF)
+                <a href="{{ admin_route('mlm.manual') }}" target="_blank" class="{{ $treeToolbarBtn }} text-rose-800 bg-white border-rose-200 hover:bg-rose-50 hover:border-rose-300" title="Open complete step-by-step PDF manual in browser">
+                    <i class="fas fa-file-pdf text-rose-600 text-[11px]"></i> Admin Manual
                 </a>
-                <button type="button" id="btnOpenMoveModal" class="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold text-amber-900 bg-amber-100 border border-amber-300 rounded-md hover:bg-amber-200 transition flex-shrink-0 shadow-2xs cursor-pointer" title="Move & relocate any distributor in the 1:3 placement matrix">
+                <button type="button" id="btnOpenMoveModal" class="{{ $treeToolbarBtn }} text-amber-900 bg-white border-amber-200 hover:bg-amber-50 hover:border-amber-300 cursor-pointer" title="Move & relocate any distributor in the 1:3 placement matrix">
                     <i class="fas fa-arrows-up-down-left-right text-[10px] text-amber-700"></i> Move Member
                 </button>
             </div>
