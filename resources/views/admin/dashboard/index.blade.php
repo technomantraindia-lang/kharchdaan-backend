@@ -18,12 +18,12 @@
         <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-600 via-amber-500 to-orange-400"></div>
         <div class="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-5">
             <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200 shadow-xs">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-orange-50 text-orange-700 border border-orange-200 shadow-xs whitespace-nowrap">
                         <i class="fas fa-layer-group text-[10px] text-orange-600"></i> KharchDaan Direct Selling Engine
                     </span>
-                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> v2.0 Active
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span> v2.0 Active
                     </span>
                 </div>
                 <h1 class="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900">
