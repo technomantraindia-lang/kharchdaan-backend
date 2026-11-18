@@ -5,18 +5,47 @@
 @push('styles')
 <style>
     .terms-box {
-        background: #fff7ed;
+        background: linear-gradient(180deg, #fff7ed, #fff);
         border: 2px solid #fdba74;
         border-radius: 1rem;
-        padding: 1.5rem;
+        padding: 1.25rem 1.5rem;
         max-height: 55vh;
         overflow-y: auto;
-        font-size: 1.15rem;
-        line-height: 1.7;
         color: #1f2937;
     }
-    .terms-box h3 { font-size: 1.35rem; font-weight: 800; color: #9a3412; margin-top: 1rem; }
-    .terms-box p, .terms-box li { font-size: 1.1rem; }
+    .terms-section {
+        padding: 0.85rem 0;
+        border-bottom: 1px solid #fed7aa;
+    }
+    .terms-section:last-child { border-bottom: 0; }
+    .terms-section h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #9a3412;
+        margin: 0 0 0.4rem;
+    }
+    .terms-num {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 999px;
+        background: #ea580c;
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .terms-section p {
+        margin: 0;
+        padding-left: 2.1rem;
+        font-size: 1rem;
+        line-height: 1.65;
+    }
 </style>
 @endpush
 
@@ -31,23 +60,30 @@
                 </p>
 
                 <div class="terms-box mb-4">
-                    <h3>1. Account &amp; Membership</h3>
-                    <p>You are responsible for keeping your Customer ID, mobile number, and password secure. One mobile number is allowed for one customer account only.</p>
-
-                    <h3>2. Direct Selling Network</h3>
-                    <p>Sponsor and placement relationships are managed as per KharchDaan Direct Selling rules (1:3 matrix). Placement may be arranged by admin/sponsor as per policy. Commission and PV benefits follow published Direct Selling criteria.</p>
-
-                    <h3>3. Cashback &amp; Referral Benefits</h3>
-                    <p>CashBack and Referral Income depend on Sanstha's profit and system criteria (client requirement). Referral Income is calculated at 100% of qualifying downline purchases (rounded up to the next ₹10), subject to the ₹200 monthly eligibility gate. Benefits shown as pending are not guaranteed until marked Paid after profit availability and admin settlement.</p>
-
-                    <h3>4. Orders &amp; Delivery</h3>
-                    <p>Orders are accepted within the serviceable delivery area (primarily Ahmedabad and surrounding pincodes). Delivery status will be updated on your order. Cancellation follows company process.</p>
-
-                    <h3>5. KYC &amp; Payouts</h3>
-                    <p>Aadhaar, PAN, and bank details with cancelled cheque may be required for payouts. Incorrect or duplicate KYC may delay or block settlements.</p>
-
-                    <h3>6. Acceptance</h3>
-                    <p>By ticking the box below, you confirm that you have read and agree to these Terms &amp; Conditions in full.</p>
+                    <div class="terms-section">
+                        <h3><span class="terms-num">1</span> Account &amp; Membership</h3>
+                        <p>One mobile number maps to one Customer ID. Keep your ID, mobile, and password secure. You are responsible for all activity on your account.</p>
+                    </div>
+                    <div class="terms-section">
+                        <h3><span class="terms-num">2</span> Direct Selling Network</h3>
+                        <p>Sponsor and 1:3 placement follow KharchDaan rules. Placement may be arranged by admin/sponsor as per policy. Benefits follow published Direct Selling criteria, including monthly purchase gates.</p>
+                    </div>
+                    <div class="terms-section">
+                        <h3><span class="terms-num">3</span> Cashback &amp; Referral</h3>
+                        <p>CashBack and Referral Income depend on Sanstha's profit and system criteria. Referral Income is 100% of qualifying purchases (rounded up to the next ₹10). Minimum ₹200 transaction rules apply. Amounts shown as pending are not guaranteed until marked Paid by admin after profit availability.</p>
+                    </div>
+                    <div class="terms-section">
+                        <h3><span class="terms-num">4</span> Orders &amp; Delivery</h3>
+                        <p>Orders are accepted in the Ahmedabad service area only. Status updates will appear on your order. Cancellation follows company process.</p>
+                    </div>
+                    <div class="terms-section">
+                        <h3><span class="terms-num">5</span> KYC &amp; Payouts</h3>
+                        <p>Aadhaar, PAN, and bank details with cancelled cheque may be required before payouts. Incorrect or duplicate KYC may delay or block settlements.</p>
+                    </div>
+                    <div class="terms-section">
+                        <h3><span class="terms-num">6</span> Acceptance</h3>
+                        <p>By accepting these Terms &amp; Conditions, you confirm that you have read them in full and agree to continue shopping and using Direct Selling features under these rules.</p>
+                    </div>
                 </div>
 
                 @if($alreadyAccepted)
