@@ -30,19 +30,19 @@
 
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Gross Direct Selling Income</div>
-            <div class="text-2xl font-extrabold text-emerald-600 mt-2">₹{{ number_format(round($summary['total_income'])) }}</div>
-            <div class="text-xs text-emerald-600 font-semibold mt-1"><i class="fas fa-circle-check text-[10px] mr-1"></i>₹{{ number_format(round($summary['paid_income'])) }} paid out</div>
+            <div class="text-2xl font-extrabold text-emerald-600 mt-2">₹{{ number_format((float) $summary['total_income'], 2) }}</div>
+            <div class="text-xs text-emerald-600 font-semibold mt-1"><i class="fas fa-circle-check text-[10px] mr-1"></i>₹{{ number_format((float) $summary['paid_income'], 2) }} paid out</div>
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending / In-Cycle Income</div>
-            <div class="text-2xl font-extrabold text-amber-600 mt-2">₹{{ number_format(round($summary['pending_income'])) }}</div>
+            <div class="text-2xl font-extrabold text-amber-600 mt-2">₹{{ number_format((float) $summary['pending_income'], 2) }}</div>
             <div class="text-xs text-slate-400 mt-1">Awaiting weekly cycle payout</div>
         </div>
 
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Reversals & Adjustments</div>
-            <div class="text-2xl font-extrabold text-rose-600 mt-2">₹{{ number_format(round($summary['reversed_income'])) }}</div>
+            <div class="text-2xl font-extrabold text-rose-600 mt-2">₹{{ number_format((float) $summary['reversed_income'], 2) }}</div>
             <div class="text-xs text-slate-400 mt-1">Returns / clawbacks processed</div>
         </div>
     </div>
@@ -82,7 +82,7 @@
                             <td class="px-5 py-2.5 text-center font-semibold text-slate-800">{{ $lvl['tx_count'] }}</td>
                             <td class="px-5 py-2.5 text-center font-semibold text-slate-800">{{ $lvl['member_count'] }}</td>
                             <td class="px-5 py-2.5 text-right font-mono font-semibold text-blue-600">{{ number_format($lvl['total_pv'], 2) }}</td>
-                            <td class="px-5 py-2.5 text-right font-bold text-emerald-600">₹{{ number_format(round($lvl['total_income'])) }}</td>
+                            <td class="px-5 py-2.5 text-right font-bold text-emerald-600">₹{{ number_format((float) $lvl['total_income'], 2) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -102,7 +102,7 @@
                         <div class="text-[11px] text-slate-400 mt-0.5">ID: {{ $earner->member?->customer_id }} &bull; {{ $earner->entries_count }} entries</div>
                     </div>
                     <div class="text-right">
-                        <div class="font-bold text-xs text-emerald-600">₹{{ number_format(round($earner->total_income)) }}</div>
+                        <div class="font-bold text-xs text-emerald-600">₹{{ number_format((float) $earner->total_income, 2) }}</div>
                         <div class="text-[10px] font-mono text-slate-400">{{ number_format($earner->total_pv, 2) }} PV</div>
                     </div>
                 </div>
@@ -188,7 +188,7 @@
                         <td class="px-5 py-3 text-right text-slate-800">₹{{ number_format($ledger->eligible_amount, 2) }}</td>
                         <td class="px-5 py-3 text-right font-mono font-semibold text-blue-600">{{ number_format($ledger->pv, 2) }} PV</td>
                         <td class="px-5 py-3 text-right text-slate-500">{{ number_format($ledger->rate * 100, 0) }}%</td>
-                        <td class="px-5 py-3 text-right font-bold text-emerald-600">₹{{ number_format(round($ledger->calculated_amount)) }}</td>
+                        <td class="px-5 py-3 text-right font-bold text-emerald-600">₹{{ number_format((float) $ledger->calculated_amount, 2) }}</td>
                         <td class="px-5 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $ledger->status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($ledger->status === 'reversed' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-50 text-amber-700 border border-amber-200') }}">
                                 {{ ucfirst(str_replace('_', ' ', $ledger->status)) }}

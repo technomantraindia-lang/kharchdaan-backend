@@ -255,8 +255,8 @@
                 </div>
             </div>
             <div class="mt-3">
-                <div class="text-2xl font-extrabold text-emerald-600 tracking-tight">₹{{ number_format(round($stats['total_direct_selling_income'])) }}</div>
-                <div class="text-xs text-slate-500 mt-1">₹{{ number_format(round($stats['paid_payout'])) }} paid to distributors</div>
+                <div class="text-2xl font-extrabold text-emerald-600 tracking-tight">₹{{ number_format((float) $stats['total_direct_selling_income'], 2) }}</div>
+                <div class="text-xs text-slate-500 mt-1">₹{{ number_format((float) $stats['paid_payout'], 2) }} paid to distributors</div>
             </div>
         </div>
     </div>
@@ -266,22 +266,22 @@
         <!-- Pending Payouts -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Payouts</span>
-            <div class="text-xl font-bold text-amber-600 mt-2">₹{{ number_format(round($stats['pending_payout'])) }}</div>
+            <div class="text-xl font-bold text-amber-600 mt-2">₹{{ number_format((float) $stats['pending_payout'], 2) }}</div>
             <div class="text-xs text-slate-400 mt-0.5">Awaiting admin one-click approval</div>
         </div>
 
         <!-- Settled Payouts -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Paid / Settled Payouts</span>
-            <div class="text-xl font-bold text-slate-900 mt-2">₹{{ number_format(round($stats['paid_payout'])) }}</div>
+            <div class="text-xl font-bold text-slate-900 mt-2">₹{{ number_format((float) $stats['paid_payout'], 2) }}</div>
             <div class="text-xs text-slate-400 mt-0.5">Disbursed with bank audit proof</div>
         </div>
 
         <!-- Up to 100% Cashback Eligible -->
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Up to 100% Cashback Eligible</span>
-            <div class="text-xl font-bold text-orange-600 mt-2">₹{{ number_format(round($stats['cashback_eligible_amount'])) }}</div>
-            <div class="text-xs text-slate-400 mt-0.5">₹{{ number_format(round($stats['cashback_paid_amount'])) }} disbursed</div>
+            <div class="text-xl font-bold text-orange-600 mt-2">₹{{ number_format((float) $stats['cashback_eligible_amount'], 2) }}</div>
+            <div class="text-xs text-slate-400 mt-0.5">₹{{ number_format((float) $stats['cashback_paid_amount'], 2) }} disbursed</div>
         </div>
 
         <!-- Current Weekly Cycle -->
@@ -478,7 +478,7 @@
                                 </td>
                                 <td class="py-3 px-4 text-right font-medium text-slate-900">₹{{ number_format($calc->eligible_amount, 2) }}</td>
                                 <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format($calc->total_pv, 2) }}</td>
-                                <td class="py-3 px-4 text-right font-bold text-emerald-600">₹{{ number_format(round($calc->total_income)) }}</td>
+                                <td class="py-3 px-4 text-right font-bold text-emerald-600">₹{{ number_format((float) $calc->total_income, 2) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="5" class="py-8 text-center text-slate-400">No recent calculations recorded.</td></tr>

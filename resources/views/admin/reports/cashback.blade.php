@@ -10,11 +10,23 @@
             <h1 class="text-xl font-bold text-slate-900 tracking-tight">Up to 100% Cashback & Profit Pool Reports</h1>
             <p class="text-xs text-slate-500 mt-0.5">Customer cashback recovery, company profit allocations, distribution batches, and reconciliation</p>
         </div>
-        <div>
+        <div class="flex items-center gap-2">
+            <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                <i class="fas fa-bag-shopping text-orange-500"></i> Orders
+            </a>
             <a href="{{ admin_route('cashback.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
                 <i class="fas fa-hand-holding-dollar text-xs"></i> Manage Cashback
             </a>
         </div>
+    </div>
+
+    <div class="rounded-xl border border-indigo-200 bg-indigo-50/70 p-4 text-xs text-indigo-950 leading-relaxed">
+        <div class="font-extrabold text-sm mb-1 flex items-center gap-1.5"><i class="fas fa-circle-info text-indigo-600"></i> About Profit Pools &amp; Batches</div>
+        <p class="text-indigo-900/90">
+            This report shows <strong>profit pools and payout batches</strong>, not the Orders table.
+            Eligibility is created only after member orders are <strong>Paid + Delivered</strong>.
+            Declare pools and pay batches from <a class="font-bold underline" href="{{ admin_route('cashback.index') }}">Cashback Management</a>.
+        </p>
     </div>
 
     @include('admin.reports.partials.nav')

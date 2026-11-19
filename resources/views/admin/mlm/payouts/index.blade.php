@@ -3,7 +3,7 @@
 @section('title', 'Weekly Direct Selling Settlements')
 
 @php
-    $money = static fn ($value): string => '₹' . number_format(round((float) ($value ?? 0)));
+    $money = static fn ($value): string => inr($value);
 @endphp
 
 @section('content')
@@ -17,6 +17,9 @@
             <p class="text-sm text-slate-500 mt-1">Weekly Direct Selling income settlement cycles and member payment disbursements.</p>
         </div>
         <div class="flex items-center gap-2.5">
+            <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
+                <i class="fas fa-bag-shopping text-orange-500"></i> Orders
+            </a>
             <a href="{{ admin_route('mlm.calculations.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
                 <i class="fas fa-calculator text-blue-500"></i> Calculation Engine
             </a>
@@ -24,6 +27,16 @@
                 <i class="fas fa-chart-line text-emerald-500"></i> Payout Reports
             </a>
         </div>
+    </div>
+
+    <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-xs text-amber-950 leading-relaxed">
+        <div class="font-extrabold text-sm mb-1.5 flex items-center gap-1.5"><i class="fas fa-circle-info text-amber-600"></i> How this screen works</div>
+        <ol class="list-decimal pl-4 space-y-1 text-amber-900/90">
+            <li>Member grocery orders must be <strong>Paid</strong> and marked <strong>Delivered</strong> in <a href="{{ admin_route('orders.index') }}" class="font-bold text-orange-700 underline">Orders</a>.</li>
+            <li>System auto-calculates Direct Selling PV/income into the ledger (Calculation Engine).</li>
+            <li>Click <strong>Generate Settlement Cycle</strong> for a Monday–Sunday week to create payout lines.</li>
+            <li>Then <strong>Approve → Process → Mark Paid</strong> to disburse. Orders themselves are not listed here — only settlement cycles and member payout lines.</li>
+        </ol>
     </div>
 
     <!-- KPI Summary Grid -->
@@ -233,9 +246,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="7" class="py-12 text-center text-slate-500">
                                 <i class="fas fa-wallet text-3xl mb-2 text-slate-300 block"></i>
-                                No weekly settlement cycles prepared yet.
+                                <div class="font-semibold text-slate-700">No weekly settlement cycles yet</div>
+                                <p class="mt-1 max-w-lg mx-auto text-xs text-slate-500">
+                                    First ensure member orders are <strong>Delivered + Paid</strong>, wait for MLM calculation, then use
+                                    <strong>Generate Settlement Cycle</strong> above. This screen shows settlement batches — not the Orders list.
+                                </p>
+                                <a href="{{ admin_route('orders.index') }}" class="inline-flex mt-3 text-xs font-bold text-orange-700 hover:underline">Open Orders →</a>
                             </td>
                         </tr>
                     @endforelse
@@ -286,9 +304,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="7" class="py-12 text-center text-slate-500">
                                 <i class="fas fa-file-invoice text-3xl mb-2 text-slate-300 block"></i>
-                                No payout lines found.
+                                <div class="font-semibold text-slate-700">No payout lines yet</div>
+                                <p class="mt-1 max-w-lg mx-auto text-xs text-slate-500">
+                                    Payout lines appear after you generate a weekly cycle that includes calculated member income from delivered orders.
+                                </p>
                             </td>
                         </tr>
                     @endforelse

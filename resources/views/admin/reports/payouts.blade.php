@@ -24,22 +24,22 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Gross Income Payable</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-2">₹{{ number_format(round($summary['gross_income'])) }}</div>
+            <div class="text-2xl font-extrabold text-slate-900 mt-2">₹{{ number_format((float) $summary['gross_income'], 2) }}</div>
             <div class="text-xs text-slate-400 mt-1">Total earnings across weekly cycles</div>
         </div>
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Net Payable Amount</div>
-            <div class="text-2xl font-extrabold text-blue-600 mt-2">₹{{ number_format(round($summary['net_payable'])) }}</div>
-            <div class="text-xs text-slate-400 mt-1">After ₹{{ number_format(round($summary['adjustments_reversals'])) }} adjustments</div>
+            <div class="text-2xl font-extrabold text-blue-600 mt-2">₹{{ number_format((float) $summary['net_payable'], 2) }}</div>
+            <div class="text-xs text-slate-400 mt-1">After ₹{{ number_format((float) $summary['adjustments_reversals'], 2) }} adjustments</div>
         </div>
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Amount Paid</div>
-            <div class="text-2xl font-extrabold text-emerald-600 mt-2">₹{{ number_format(round($summary['paid_amount'])) }}</div>
+            <div class="text-2xl font-extrabold text-emerald-600 mt-2">₹{{ number_format((float) $summary['paid_amount'], 2) }}</div>
             <div class="text-xs text-emerald-600 font-semibold mt-1"><i class="fas fa-circle-check text-[10px] mr-1"></i>Successfully transferred to bank</div>
         </div>
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending / Hold Payouts</div>
-            <div class="text-2xl font-extrabold text-amber-600 mt-2">₹{{ number_format(round($summary['pending_amount'] + $summary['on_hold_amount'])) }}</div>
+            <div class="text-2xl font-extrabold text-amber-600 mt-2">₹{{ number_format((float) $summary['pending_amount'] + $summary['on_hold_amount'], 2) }}</div>
             <div class="text-xs text-slate-400 mt-1">Pending approval or processing</div>
         </div>
     </div>
@@ -73,9 +73,9 @@
                             {{ $c->period_start?->format('M d, Y') }} &ndash; {{ $c->period_end?->format('M d, Y') }}
                         </td>
                         <td class="px-5 py-3 text-center font-bold text-slate-900">{{ $c->lines_count }}</td>
-                        <td class="px-5 py-3 text-right text-slate-800">₹{{ number_format(round($c->gross_income)) }}</td>
-                        <td class="px-5 py-3 text-right text-slate-400">₹{{ number_format(round($c->adjustments_reversals)) }}</td>
-                        <td class="px-5 py-3 text-right font-bold text-slate-900">₹{{ number_format(round($c->net_payable)) }}</td>
+                        <td class="px-5 py-3 text-right text-slate-800">₹{{ number_format((float) $c->gross_income, 2) }}</td>
+                        <td class="px-5 py-3 text-right text-slate-400">₹{{ number_format((float) $c->adjustments_reversals, 2) }}</td>
+                        <td class="px-5 py-3 text-right font-bold text-slate-900">₹{{ number_format((float) $c->net_payable, 2) }}</td>
                         <td class="px-5 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $c->status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($c->status === 'approved' ? 'bg-blue-50 text-blue-700 border border-blue-200' : ($c->status === 'on_hold' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-50 text-amber-700 border border-amber-200')) }}">
                                 {{ ucfirst(str_replace('_', ' ', $c->status)) }}
@@ -148,9 +148,9 @@
                                 {{ $line->cycle?->cycle_reference ?? '-' }}
                             </span>
                         </td>
-                        <td class="px-5 py-3 text-right text-slate-800">₹{{ number_format(round($line->gross_income)) }}</td>
-                        <td class="px-5 py-3 text-right text-slate-400">₹{{ number_format(round($line->adjustment_amount)) }}</td>
-                        <td class="px-5 py-3 text-right font-bold text-emerald-600">₹{{ number_format(round($line->net_payable)) }}</td>
+                        <td class="px-5 py-3 text-right text-slate-800">₹{{ number_format((float) $line->gross_income, 2) }}</td>
+                        <td class="px-5 py-3 text-right text-slate-400">₹{{ number_format((float) $line->adjustment_amount, 2) }}</td>
+                        <td class="px-5 py-3 text-right font-bold text-emerald-600">₹{{ number_format((float) $line->net_payable, 2) }}</td>
                         <td class="px-5 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ $line->status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($line->status === 'on_hold' ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-amber-50 text-amber-700 border border-amber-200') }}">
                                 {{ ucfirst(str_replace('_', ' ', $line->status)) }}

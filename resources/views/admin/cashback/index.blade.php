@@ -18,6 +18,9 @@
             <p class="text-sm text-slate-500 mt-1">Cashback recovery strictly conditional on declared company profit pool allocations.</p>
         </div>
         <div class="flex items-center gap-2.5">
+            <a href="{{ admin_route('orders.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
+                <i class="fas fa-bag-shopping text-orange-500"></i> Orders
+            </a>
             <a href="{{ admin_route('cashback.reconciliation') }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 rounded-lg hover:bg-slate-50 shadow-xs transition">
                 <i class="fas fa-clipboard-check text-blue-500"></i> Cashback Reconciliation
             </a>
@@ -25,6 +28,16 @@
                 <i class="fas fa-piggy-bank text-indigo-500"></i> Pool Analytics
             </a>
         </div>
+    </div>
+
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950 leading-relaxed">
+        <div class="font-extrabold text-sm mb-1.5 flex items-center gap-1.5"><i class="fas fa-circle-info text-emerald-600"></i> How this screen works</div>
+        <ol class="list-decimal pl-4 space-y-1 text-emerald-900/90">
+            <li>Member orders must be <strong>Paid + Delivered</strong> so cashback eligibility is created automatically.</li>
+            <li><strong>Declare a company profit pool</strong> on this page (Sanstha profit).</li>
+            <li>Select eligible cashback records, create a payout batch, then approve / mark paid.</li>
+            <li>Raw grocery orders stay under <a href="{{ admin_route('orders.index') }}" class="font-bold text-emerald-800 underline">Orders</a>. <a href="{{ admin_route('reports.cashback') }}" class="font-bold text-emerald-800 underline">Profit Pools &amp; Batches</a> is the analytics view of pools.</li>
+        </ol>
     </div>
 
     <!-- KPI Cards -->

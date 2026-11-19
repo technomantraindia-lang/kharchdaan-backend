@@ -134,7 +134,7 @@
                             </td>
                             <td class="py-3 px-4 text-right font-semibold text-slate-900">₹{{ number_format((float) $run->eligible_amount, 2) }}</td>
                             <td class="py-3 px-4 text-right font-mono font-bold text-indigo-600">{{ number_format((float) $run->total_pv, 2) }} PV</td>
-                            <td class="py-3 px-4 text-right font-bold text-emerald-600">₹{{ number_format(round((float) $run->total_income)) }}</td>
+                            <td class="py-3 px-4 text-right font-bold text-emerald-600">₹{{ number_format((float) $run->total_income, 2) }}</td>
                             <td class="py-3 px-4 text-slate-500 text-[11px]">
                                 {{ $run->processed_at?->format('M d, Y H:i') ?? $run->created_at?->format('M d, Y H:i') }}
                             </td>

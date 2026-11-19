@@ -95,8 +95,8 @@
         <div class="card border-0 shadow-sm bg-white h-100">
             <div class="card-body">
                 <div class="text-muted small fw-bold text-uppercase">Total Commission Earned</div>
-                <h3 class="fw-bold text-success mt-1 mb-0">₹{{ number_format(round($totalIncome)) }}</h3>
-                <div class="small text-success mt-1"><i class="fas fa-check-circle me-1"></i>₹{{ number_format(round($paidIncome)) }} paid out</div>
+                <h3 class="fw-bold text-success mt-1 mb-0">₹{{ number_format((float) $totalIncome, 2) }}</h3>
+                <div class="small text-success mt-1"><i class="fas fa-check-circle me-1"></i>₹{{ number_format((float) $paidIncome, 2) }} paid out</div>
             </div>
         </div>
     </div>
@@ -367,9 +367,9 @@
                             <h6 class="fw-bold text-success mb-3"><i class="fas fa-coins me-2"></i>Financial & Commission Summary</h6>
                             <table class="table table-borderless table-sm mb-0">
                                 <tr><td class="text-muted" style="width: 180px;">Accumulated PV:</td><td><strong class="text-primary">{{ number_format($totalPv, 2) }} PV</strong></td></tr>
-                                <tr><td class="text-muted">Gross Income Earned:</td><td><strong class="text-success fs-5">₹{{ number_format(round($totalIncome)) }}</strong></td></tr>
-                                <tr><td class="text-muted">Income Paid Out:</td><td><strong class="text-dark">₹{{ number_format(round($paidIncome)) }}</strong></td></tr>
-                                <tr><td class="text-muted">Pending In-Cycle:</td><td><strong class="text-warning">₹{{ number_format(round($pendingIncome)) }}</strong></td></tr>
+                                <tr><td class="text-muted">Gross Income Earned:</td><td><strong class="text-success fs-5">₹{{ number_format((float) $totalIncome, 2) }}</strong></td></tr>
+                                <tr><td class="text-muted">Income Paid Out:</td><td><strong class="text-dark">₹{{ number_format((float) $paidIncome, 2) }}</strong></td></tr>
+                                <tr><td class="text-muted">Pending In-Cycle:</td><td><strong class="text-warning">₹{{ number_format((float) $pendingIncome, 2) }}</strong></td></tr>
                                 <tr><td class="text-muted">Up to 100% Cashback Count:</td><td><strong>{{ count($cashbacks) }}</strong> orders</td></tr>
                             </table>
                         </div>
@@ -381,7 +381,7 @@
             <div class="tab-pane fade" id="tab-ledgers" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold text-dark mb-0"><i class="fas fa-list text-primary me-2"></i>Detailed Income Ledgers by Level</h6>
-                    <span class="badge bg-light text-dark border">Total PV: {{ number_format($totalPv, 2) }} &bull; Total: ₹{{ number_format(round($totalIncome)) }}</span>
+                    <span class="badge bg-light text-dark border">Total PV: {{ number_format($totalPv, 2) }} &bull; Total: ₹{{ number_format((float) $totalIncome, 2) }}</span>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -416,7 +416,7 @@
                                 <td class="text-end">₹{{ number_format($ledger->eligible_amount, 2) }}</td>
                                 <td class="text-end fw-semibold text-primary">{{ number_format($ledger->pv, 2) }} PV</td>
                                 <td class="text-end">{{ number_format($ledger->rate * 100, 0) }}%</td>
-                                <td class="text-end fw-bold text-success">₹{{ number_format(round($ledger->calculated_amount)) }}</td>
+                                <td class="text-end fw-bold text-success">₹{{ number_format((float) $ledger->calculated_amount, 2) }}</td>
                                 <td>
                                     <span class="badge bg-{{ $ledger->status === 'paid' ? 'success' : ($ledger->status === 'reversed' ? 'danger' : 'warning text-dark') }}">
                                         {{ ucfirst(str_replace('_', ' ', $ledger->status)) }}
@@ -458,9 +458,9 @@
                             <tr>
                                 <td><strong>{{ $line->cycle?->cycle_reference ?? 'Cycle #'.$line->payout_cycle_id }}</strong></td>
                                 <td>{{ $line->cycle?->period_start?->format('M d') }} – {{ $line->cycle?->period_end?->format('M d, Y') }}</td>
-                                <td class="text-end">₹{{ number_format(round($line->gross_income)) }}</td>
-                                <td class="text-end text-muted">₹{{ number_format(round($line->adjustment_amount)) }}</td>
-                                <td class="text-end fw-bold text-success">₹{{ number_format(round($line->net_payable)) }}</td>
+                                <td class="text-end">₹{{ number_format((float) $line->gross_income, 2) }}</td>
+                                <td class="text-end text-muted">₹{{ number_format((float) $line->adjustment_amount, 2) }}</td>
+                                <td class="text-end fw-bold text-success">₹{{ number_format((float) $line->net_payable, 2) }}</td>
                                 <td>
                                     <span class="badge bg-{{ $line->status === 'paid' ? 'success' : ($line->status === 'on_hold' ? 'danger' : 'warning text-dark') }}">
                                         {{ ucfirst(str_replace('_', ' ', $line->status)) }}

@@ -101,9 +101,9 @@
         <div class="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
             <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Network Income Generated</div>
             <div class="text-2xl font-extrabold text-indigo-600 mt-2">
-                ₹{{ number_format(round($networkData['network_income'])) }}
+                ₹{{ number_format((float) $networkData['network_income'], 2) }}
             </div>
-            <div class="text-xs text-slate-400 mt-1">Root Earned: ₹{{ number_format(round($networkData['personal_income'])) }}</div>
+            <div class="text-xs text-slate-400 mt-1">Root Earned: ₹{{ number_format((float) $networkData['personal_income'], 2) }}</div>
         </div>
     </div>
 

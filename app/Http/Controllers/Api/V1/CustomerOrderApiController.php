@@ -186,8 +186,6 @@ class CustomerOrderApiController extends Controller
 
         try {
             $order = DB::transaction(function () use ($request, $user, $items, $shipAddrStr, $channel, $isCod) {
-                $orderNum = $this->transactionIds->next();
-
                 $subtotal = 0;
                 $orderItemsData = [];
 
@@ -245,8 +243,43 @@ class CustomerOrderApiController extends Controller
                     $documentPath = $request->file('offline_document')->store('offline-orders', 'public');
                 }
 
-                $order = Order::create([
-                    'order_num' => $orderNum,
+                // Reuse one unpaid checkout draft so payment retries / method changes
+                // do not mint a new order number each time.
+                $reuseOrder = null;
+                if ($user) {
+                    $reuseId = (int) $request->input('reuse_order_id', 0);
+                    $openQuery = Order::query()
+                        ->where('user_id', $user->id)
+                        ->where('order_channel', $channel)
+                        ->where('status', 'pending')
+                        ->whereIn('pay_status', ['pending', 'failed']);
+
+                    if ($reuseId > 0) {
+                        $reuseOrder = (clone $openQuery)->whereKey($reuseId)->first();
+                    }
+                    if (! $reuseOrder) {
+                        $reuseOrder = (clone $openQuery)->latest('id')->first();
+                    }
+
+                    // Cancel other open unpaid drafts for this user/channel.
+                    $openQuery
+                        ->when($reuseOrder, fn ($q) => $q->where('id', '!=', $reuseOrder->id))
+                        ->orderBy('id')
+                        ->get()
+                        ->each(function (Order $stale) {
+                            try {
+                                $this->orderService->updateOrderStatus(
+                                    $stale,
+                                    'cancelled',
+                                    'Superseded by a newer checkout / payment attempt.'
+                                );
+                            } catch (Throwable $e) {
+                                report($e);
+                            }
+                        });
+                }
+
+                $payload = [
                     'user_id' => $user ? $user->id : null,
                     'subtotal' => $subtotal,
                     'discount' => $discount,
@@ -261,8 +294,21 @@ class CustomerOrderApiController extends Controller
                     'order_channel' => $channel,
                     'special_instruction' => $request->input('special_instruction'),
                     'offline_remark' => $request->input('offline_remark'),
-                    'offline_document_path' => $documentPath,
-                ]);
+                ];
+                if ($documentPath) {
+                    $payload['offline_document_path'] = $documentPath;
+                }
+
+                if ($reuseOrder) {
+                    $order = $reuseOrder;
+                    $order->fill($payload)->save();
+                    $order->items()->delete();
+                    Payment::query()->where('order_id', $order->id)->delete();
+                } else {
+                    $order = Order::create(array_merge($payload, [
+                        'order_num' => $this->transactionIds->next(),
+                    ]));
+                }
 
                 foreach ($orderItemsData as $oi) {
                     $oi['order_id'] = $order->id;
@@ -278,7 +324,10 @@ class CustomerOrderApiController extends Controller
                     ]);
                 }
 
-                return $order->load('items.product');
+                return [
+                    'order' => $order->load('items.product'),
+                    'reused' => (bool) $reuseOrder,
+                ];
             });
         } catch (Throwable $e) {
             report($e);
@@ -289,8 +338,12 @@ class CustomerOrderApiController extends Controller
             ], 500);
         }
 
+        $wasReused = (bool) ($order['reused'] ?? false);
+        $order = $order['order'];
+
         $responseData = (new OrderResource($order))->resolve();
         $responseData['requires_payment'] = $usesRazorpay;
+        $responseData['reused'] = $wasReused;
 
         if ($usesRazorpay) {
             try {
@@ -313,9 +366,11 @@ class CustomerOrderApiController extends Controller
         return response()->json([
             'success' => true,
             'message' => $usesRazorpay
-                ? 'Order created. Complete payment to confirm.'
+                ? ($wasReused
+                    ? 'Continuing your unpaid order. Complete payment to confirm.'
+                    : 'Order created. Complete payment to confirm.')
                 : 'Order placed successfully (Cash on Delivery).',
             'data' => $responseData,
-        ], 201);
+        ], $wasReused ? 200 : 201);
     }
 }
