@@ -138,6 +138,9 @@ class CustomerAuthApiController extends Controller
 
     private function issueCustomerToken(User $user): object
     {
+        // Drop previous customer API tokens so redeploys / re-logins don't leave stale sessions.
+        $user->tokens()->where('name', 'customer_api_token')->delete();
+
         $tokenObj = $user->createToken('customer_api_token');
         $minutes = (int) config('auth.api_token_expiration', 525600);
         if ($minutes > 0 && isset($tokenObj->accessToken)) {
