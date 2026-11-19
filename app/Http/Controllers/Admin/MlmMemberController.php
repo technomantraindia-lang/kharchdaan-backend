@@ -658,18 +658,41 @@ class MlmMemberController extends Controller
         $canViewSensitive = $this->can('mlm.kyc.view');
         $canViewActivity = $this->can('mlm.activity.view');
 
-        // Level & Placement
+        // Level & Placement (depth from matrix root; 0 = root)
         $placementLevel = $this->treeService->level($member);
 
         // Network Statistics
         $directReferrals = Member::query()->with('user')->where('sponsor_member_id', $member->id)->get();
         $placementSlots = $this->treeService->children($member)['slots'];
+        $networkStats = $this->treeService->getSponsorNetwork($member);
 
-        // Income & Financial Stats
-        $totalPv = (float) MlmIncomeLedger::where('member_id', $member->id)->where('status', '!=', MlmIncomeLedger::STATUS_FAILED)->sum('pv');
-        $totalIncome = (float) MlmIncomeLedger::where('member_id', $member->id)->where('status', '!=', MlmIncomeLedger::STATUS_FAILED)->sum('calculated_amount');
-        $paidIncome = (float) MlmIncomeLedger::where('member_id', $member->id)->where('status', MlmIncomeLedger::STATUS_PAID)->sum('calculated_amount');
-        $pendingIncome = (float) MlmIncomeLedger::where('member_id', $member->id)->whereIn('status', [MlmIncomeLedger::STATUS_CALCULATED, MlmIncomeLedger::STATUS_PENDING_APPROVAL, MlmIncomeLedger::STATUS_APPROVED, MlmIncomeLedger::STATUS_PROCESSING])->sum('calculated_amount');
+        // Income & Financial Stats — exclude failed/reversed and TEST seed rows
+        $activeLedger = static function () use ($member) {
+            return MlmIncomeLedger::query()
+                ->where('member_id', $member->id)
+                ->whereNotIn('status', [
+                    MlmIncomeLedger::STATUS_FAILED,
+                    MlmIncomeLedger::STATUS_REVERSED,
+                ])
+                ->where(function ($q) {
+                    $q->whereNull('source_transaction_reference')
+                        ->orWhereRaw("UPPER(source_transaction_reference) NOT LIKE '%TEST%'");
+                });
+        };
+
+        // Personal commission PV/income earned by this member
+        $totalPv = (float) $activeLedger()->sum('pv');
+        $totalIncome = (float) $activeLedger()->sum('calculated_amount');
+        $paidIncome = (float) $activeLedger()->where('status', MlmIncomeLedger::STATUS_PAID)->sum('calculated_amount');
+        $pendingIncome = (float) $activeLedger()->whereIn('status', [
+            MlmIncomeLedger::STATUS_CALCULATED,
+            MlmIncomeLedger::STATUS_PENDING_APPROVAL,
+            MlmIncomeLedger::STATUS_APPROVED,
+            MlmIncomeLedger::STATUS_PROCESSING,
+        ])->sum('calculated_amount');
+
+        // Accumulated Network PV = PV from this member + sponsor-downline purchases
+        $networkPv = (float) ($networkStats['network_pv'] ?? $totalPv);
 
         // Calculations & Ledgers
         $calculations = MlmCalculationRun::query()
@@ -693,12 +716,18 @@ class MlmMemberController extends Controller
             ->latest()
             ->get();
 
-        // Cashback
+        // Cashback — only real eligibility (exclude not_eligible / cancelled / reversed)
         $cashbacks = CashbackEligibility::query()
             ->with('order')
             ->where('member_id', $member->id)
+            ->whereNotIn('status', [
+                CashbackEligibility::STATUS_NOT_ELIGIBLE,
+                CashbackEligibility::STATUS_CANCELLED_DUE_TO_REFUND,
+                CashbackEligibility::STATUS_REVERSED,
+            ])
             ->latest()
             ->get();
+        $cashbackEligibleVolume = (float) $cashbacks->sum(fn ($row) => (float) ($row->current_eligible_amount ?? $row->original_eligible_amount ?? 0));
 
         // Activity & KYC Histories
         $activityLogs = $canViewActivity
@@ -713,6 +742,8 @@ class MlmMemberController extends Controller
             'placementLevel',
             'directReferrals',
             'placementSlots',
+            'networkStats',
+            'networkPv',
             'totalPv',
             'totalIncome',
             'paidIncome',
@@ -721,6 +752,7 @@ class MlmMemberController extends Controller
             'incomeLedgers',
             'payoutLines',
             'cashbacks',
+            'cashbackEligibleVolume',
             'activityLogs',
             'kycHistories',
             'canViewSensitive',

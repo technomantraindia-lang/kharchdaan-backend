@@ -86,8 +86,11 @@
         <div class="card border-0 shadow-sm bg-white h-100">
             <div class="card-body">
                 <div class="text-muted small fw-bold text-uppercase">Accumulated Network PV</div>
-                <h3 class="fw-bold text-primary mt-1 mb-0">{{ number_format($totalPv, 2) }} <small class="fs-6 text-muted">PV</small></h3>
-                <div class="small text-muted mt-1">Placement Level: <span class="badge bg-secondary">Level {{ $placementLevel }}</span></div>
+                <h3 class="fw-bold text-primary mt-1 mb-0">{{ number_format((float) $networkPv, 2) }} <small class="fs-6 text-muted">PV</small></h3>
+                <div class="small text-muted mt-1">
+                    Personal commission PV: <strong>{{ number_format((float) $totalPv, 2) }}</strong>
+                    &middot; Placement Level: <span class="badge bg-secondary">Level {{ $placementLevel }}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -95,8 +98,8 @@
         <div class="card border-0 shadow-sm bg-white h-100">
             <div class="card-body">
                 <div class="text-muted small fw-bold text-uppercase">Total Commission Earned</div>
-                <h3 class="fw-bold text-success mt-1 mb-0">₹{{ number_format((float) $totalIncome, 2) }}</h3>
-                <div class="small text-success mt-1"><i class="fas fa-check-circle me-1"></i>₹{{ number_format((float) $paidIncome, 2) }} paid out</div>
+                <h3 class="fw-bold text-success mt-1 mb-0">{{ inr($totalIncome) }}</h3>
+                <div class="small text-success mt-1"><i class="fas fa-check-circle me-1"></i>{{ inr($paidIncome) }} paid out &middot; {{ inr($pendingIncome) }} pending</div>
             </div>
         </div>
     </div>
@@ -113,65 +116,44 @@
         <div class="card border-0 shadow-sm bg-white h-100">
             <div class="card-body">
                 <div class="text-muted small fw-bold text-uppercase">Up to 100% Cashback Purchases</div>
-                <h3 class="fw-bold text-warning mt-1 mb-0">{{ count($cashbacks) }} <small class="fs-6 text-muted">Records</small></h3>
-                <div class="small text-muted mt-1">₹{{ number_format($cashbacks->sum('current_eligible_amount'), 2) }} eligible volume</div>
+                <h3 class="fw-bold text-warning mt-1 mb-0">{{ count($cashbacks) }} <small class="fs-6 text-muted">Eligible</small></h3>
+                <div class="small text-muted mt-1">{{ inr($cashbackEligibleVolume ?? 0) }} eligible volume</div>
             </div>
         </div>
     </div>
 </div>
 
-{{-- Main Tabbed Interface --}}
+{{-- Main Tabbed Interface (vanilla JS — admin layout has no Bootstrap JS) --}}
+<style>
+    .member-profile-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid #e2e8f0; padding: 0.5rem 0.75rem 0; background: #fff; }
+    .member-profile-tabs .member-tab-btn {
+        border: 0; background: transparent; cursor: pointer; padding: 0.75rem 0.9rem;
+        font-size: 0.8rem; font-weight: 700; color: #64748b; border-bottom: 2px solid transparent; margin-bottom: -1px;
+    }
+    .member-profile-tabs .member-tab-btn:hover { color: #ea580c; }
+    .member-profile-tabs .member-tab-btn.is-active { color: #ea580c; border-bottom-color: #ea580c; }
+    .member-tab-pane { display: none; }
+    .member-tab-pane.is-active { display: block; }
+</style>
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white p-0 border-bottom">
-        <ul class="nav nav-tabs card-header-tabs m-0 px-3 pt-2" id="memberTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active py-3 fw-semibold" id="overview-tab" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button" role="tab">
-                    <i class="fas fa-user me-1 text-primary"></i> Overview
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="sponsor-tab" data-bs-toggle="tab" data-bs-target="#tab-sponsor" type="button" role="tab">
-                    <i class="fas fa-user-friends me-1 text-success"></i> Sponsor & Referrals
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="placement-tab" data-bs-toggle="tab" data-bs-target="#tab-placement" type="button" role="tab">
-                    <i class="fas fa-sitemap me-1 text-info"></i> 1:3 Placement Matrix
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="network-tab" data-bs-toggle="tab" data-bs-target="#tab-network" type="button" role="tab">
-                    <i class="fas fa-chart-network me-1 text-warning"></i> Network Summary
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="ledgers-tab" data-bs-toggle="tab" data-bs-target="#tab-ledgers" type="button" role="tab">
-                    <i class="fas fa-coins me-1 text-primary"></i> Income Ledgers ({{ $incomeLedgers->total() }})
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="payouts-tab" data-bs-toggle="tab" data-bs-target="#tab-payouts" type="button" role="tab">
-                    <i class="fas fa-wallet me-1 text-success"></i> Payouts ({{ count($payoutLines) }})
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="cashback-tab" data-bs-toggle="tab" data-bs-target="#tab-cashback" type="button" role="tab">
-                    <i class="fas fa-hand-holding-usd me-1 text-warning"></i> Up to 100% Cashback ({{ count($cashbacks) }})
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link py-3 fw-semibold" id="activity-tab" data-bs-toggle="tab" data-bs-target="#tab-activity" type="button" role="tab">
-                    <i class="fas fa-history me-1 text-secondary"></i> Audit & Activity
-                </button>
-            </li>
-        </ul>
+        <div class="member-profile-tabs" id="memberTab" role="tablist">
+            <button class="member-tab-btn is-active" type="button" data-member-tab="tab-overview"><i class="fas fa-user me-1 text-primary"></i> Overview</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-sponsor"><i class="fas fa-user-friends me-1 text-success"></i> Sponsor &amp; Referrals</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-placement"><i class="fas fa-sitemap me-1 text-info"></i> 1:3 Placement Matrix</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-network"><i class="fas fa-project-diagram me-1 text-warning"></i> Network Summary</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-ledgers"><i class="fas fa-coins me-1 text-primary"></i> Income Ledgers ({{ $incomeLedgers->total() }})</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-payouts"><i class="fas fa-wallet me-1 text-success"></i> Payouts ({{ count($payoutLines) }})</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-cashback"><i class="fas fa-hand-holding-usd me-1 text-warning"></i> Up to 100% Cashback ({{ count($cashbacks) }})</button>
+            <button class="member-tab-btn" type="button" data-member-tab="tab-activity"><i class="fas fa-history me-1 text-secondary"></i> Audit &amp; Activity</button>
+        </div>
     </div>
 
     <div class="card-body p-4">
         <div class="tab-content" id="memberTabContent">
             
             {{-- TAB 1: OVERVIEW --}}
-            <div class="tab-pane fade show active" id="tab-overview" role="tabpanel">
+            <div class="member-tab-pane is-active" id="tab-overview" role="tabpanel">
                 <div class="row g-4">
                     <div class="col-md-6">
                         <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="fas fa-id-badge me-2 text-primary"></i>Personal & Account Profile</h6>
@@ -209,7 +191,7 @@
             </div>
 
             {{-- TAB 2: SPONSOR & REFERRALS --}}
-            <div class="tab-pane fade" id="tab-sponsor" role="tabpanel">
+            <div class="member-tab-pane" id="tab-sponsor" role="tabpanel">
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
                         <div class="card bg-light border p-3">
@@ -285,7 +267,7 @@
             </div>
 
             {{-- TAB 3: 1:3 PLACEMENT MATRIX --}}
-            <div class="tab-pane fade" id="tab-placement" role="tabpanel">
+            <div class="member-tab-pane" id="tab-placement" role="tabpanel">
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
                         <div class="card bg-light border p-3">
@@ -347,7 +329,7 @@
             </div>
 
             {{-- TAB 4: NETWORK SUMMARY --}}
-            <div class="tab-pane fade" id="tab-network" role="tabpanel">
+            <div class="member-tab-pane" id="tab-network" role="tabpanel">
                 <div class="row g-4">
                     <div class="col-md-6">
                         <div class="card border p-3 h-100">
@@ -358,6 +340,7 @@
                                 <tr><td class="text-muted">Placement Position:</td><td><span class="badge bg-light text-dark border text-uppercase">{{ $member->placement_position ?? 'ROOT' }}</span></td></tr>
                                 <tr><td class="text-muted">Placement Tree Level:</td><td><span class="badge bg-primary">Level {{ $placementLevel }}</span></td></tr>
                                 <tr><td class="text-muted">Direct Referrals:</td><td><strong>{{ count($directReferrals) }}</strong> members</td></tr>
+                                <tr><td class="text-muted">Sponsor Downline:</td><td><strong>{{ (int) ($networkStats['total_downline_count'] ?? 0) }}</strong> members</td></tr>
                                 <tr><td class="text-muted">Placement Children:</td><td><strong>{{ $member->placementChildren()->count() }}</strong> / 3 slots</td></tr>
                             </table>
                         </div>
@@ -366,11 +349,12 @@
                         <div class="card border p-3 h-100">
                             <h6 class="fw-bold text-success mb-3"><i class="fas fa-coins me-2"></i>Financial & Commission Summary</h6>
                             <table class="table table-borderless table-sm mb-0">
-                                <tr><td class="text-muted" style="width: 180px;">Accumulated PV:</td><td><strong class="text-primary">{{ number_format($totalPv, 2) }} PV</strong></td></tr>
-                                <tr><td class="text-muted">Gross Income Earned:</td><td><strong class="text-success fs-5">₹{{ number_format((float) $totalIncome, 2) }}</strong></td></tr>
-                                <tr><td class="text-muted">Income Paid Out:</td><td><strong class="text-dark">₹{{ number_format((float) $paidIncome, 2) }}</strong></td></tr>
-                                <tr><td class="text-muted">Pending In-Cycle:</td><td><strong class="text-warning">₹{{ number_format((float) $pendingIncome, 2) }}</strong></td></tr>
-                                <tr><td class="text-muted">Up to 100% Cashback Count:</td><td><strong>{{ count($cashbacks) }}</strong> orders</td></tr>
+                                <tr><td class="text-muted" style="width: 180px;">Network PV:</td><td><strong class="text-primary">{{ number_format((float) $networkPv, 2) }} PV</strong></td></tr>
+                                <tr><td class="text-muted">Personal Commission PV:</td><td><strong class="text-primary">{{ number_format((float) $totalPv, 2) }} PV</strong></td></tr>
+                                <tr><td class="text-muted">Gross Income Earned:</td><td><strong class="text-success fs-5">{{ inr($totalIncome) }}</strong></td></tr>
+                                <tr><td class="text-muted">Income Paid Out:</td><td><strong class="text-dark">{{ inr($paidIncome) }}</strong></td></tr>
+                                <tr><td class="text-muted">Pending In-Cycle:</td><td><strong class="text-warning">{{ inr($pendingIncome) }}</strong></td></tr>
+                                <tr><td class="text-muted">Eligible Cashback Orders:</td><td><strong>{{ count($cashbacks) }}</strong> &middot; {{ inr($cashbackEligibleVolume ?? 0) }}</td></tr>
                             </table>
                         </div>
                     </div>
@@ -378,7 +362,7 @@
             </div>
 
             {{-- TAB 5: INCOME LEDGERS --}}
-            <div class="tab-pane fade" id="tab-ledgers" role="tabpanel">
+            <div class="member-tab-pane" id="tab-ledgers" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold text-dark mb-0"><i class="fas fa-list text-primary me-2"></i>Detailed Income Ledgers by Level</h6>
                     <span class="badge bg-light text-dark border">Total PV: {{ number_format($totalPv, 2) }} &bull; Total: ₹{{ number_format((float) $totalIncome, 2) }}</span>
@@ -438,7 +422,7 @@
             </div>
 
             {{-- TAB 6: PAYOUTS --}}
-            <div class="tab-pane fade" id="tab-payouts" role="tabpanel">
+            <div class="member-tab-pane" id="tab-payouts" role="tabpanel">
                 <h6 class="fw-bold text-dark mb-3"><i class="fas fa-wallet text-primary me-2"></i>Weekly Payout Lines & Settlements</h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -477,7 +461,7 @@
             </div>
 
             {{-- TAB 7: UP TO 100% CASHBACK --}}
-            <div class="tab-pane fade" id="tab-cashback" role="tabpanel">
+            <div class="member-tab-pane" id="tab-cashback" role="tabpanel">
                 <h6 class="fw-bold text-dark mb-3"><i class="fas fa-hand-holding-usd text-warning me-2"></i>Up to 100% Cashback Eligibility Records</h6>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -516,7 +500,7 @@
             </div>
 
             {{-- TAB 8: AUDIT & ACTIVITY --}}
-            <div class="tab-pane fade" id="tab-activity" role="tabpanel">
+            <div class="member-tab-pane" id="tab-activity" role="tabpanel">
                 <div class="row g-4">
                     <div class="col-md-6">
                         <h6 class="fw-bold text-dark mb-3"><i class="fas fa-history text-secondary me-2"></i>Member Activity History</h6>
@@ -573,4 +557,40 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function () {
+    const tabRoot = document.getElementById('memberTab');
+    if (!tabRoot) return;
+
+    const buttons = Array.from(tabRoot.querySelectorAll('[data-member-tab]'));
+    const panes = Array.from(document.querySelectorAll('#memberTabContent .member-tab-pane'));
+
+    const activate = (tabId) => {
+        buttons.forEach((btn) => {
+            btn.classList.toggle('is-active', btn.getAttribute('data-member-tab') === tabId);
+        });
+        panes.forEach((pane) => {
+            pane.classList.toggle('is-active', pane.id === tabId);
+        });
+    };
+
+    tabRoot.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-member-tab]');
+        if (!btn) return;
+        event.preventDefault();
+        activate(btn.getAttribute('data-member-tab'));
+    });
+
+    // Deep-link support: ?tab=ledgers
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('tab');
+    if (requested) {
+        const match = buttons.find((btn) => btn.getAttribute('data-member-tab') === 'tab-' + requested || btn.getAttribute('data-member-tab') === requested);
+        if (match) activate(match.getAttribute('data-member-tab'));
+    }
+})();
+</script>
+@endpush
 @endsection
