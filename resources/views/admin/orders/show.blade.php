@@ -248,9 +248,10 @@
                         <label class="block font-semibold text-slate-700 mb-1">Payment Status</label>
                         <select name="pay_status" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 outline-none transition">
                             @foreach(['pending','paid','failed','refunded'] as $s)
-                                <option value="{{ $s }}" @selected($order->pay_status===$s)>{{ ucfirst($s) }}</option>
+                                <option value="{{ $s }}" @selected(old('pay_status', $order->pay_status)===$s)>{{ ucfirst($s) }}</option>
                             @endforeach
                         </select>
+                        <p class="mt-1 text-[10px] text-slate-500">For COD, set to <strong>Paid</strong> after cash is collected so MLM/cashback can process.</p>
                     </div>
 
                     <div>

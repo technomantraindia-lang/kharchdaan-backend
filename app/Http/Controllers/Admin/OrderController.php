@@ -132,6 +132,7 @@ class OrderController extends Controller
     {
         $data = $request->validate([
             'status' => 'required|in:pending,processing,packed,shipped,delivered,cancelled,failed,refunded',
+            'pay_status' => 'required|in:pending,paid,failed,refunded',
             'tracking_num' => 'nullable|string|max:255',
             'courier' => 'nullable|string|max:255',
             'admin_note' => 'nullable|string',
@@ -152,6 +153,12 @@ class OrderController extends Controller
                 $data['status_note'] ?? null,
                 $isSuperAdminOverride,
                 $overrideReason
+            );
+
+            $orderService->updatePaymentStatus(
+                $order->fresh(),
+                $data['pay_status'],
+                $data['status_note'] ?? 'Updated from Manage Order State'
             );
         } catch (\InvalidArgumentException $e) {
             return back()->withInput()->with('error', $e->getMessage());

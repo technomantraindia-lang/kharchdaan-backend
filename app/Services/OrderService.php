@@ -86,26 +86,70 @@ class OrderService
         string $reason,
         ?string $txnId = null
     ): Order {
+        return $this->updatePaymentStatus(
+            $order,
+            'paid',
+            $reason,
+            $txnId,
+            'manual_payment_verification'
+        );
+    }
+
+    /**
+     * Admin can set payment status from the order manage form (COD collect, mark failed, etc).
+     */
+    public function updatePaymentStatus(
+        Order $order,
+        string $newPayStatus,
+        ?string $reason = null,
+        ?string $txnId = null,
+        string $logAction = 'update_payment_status'
+    ): Order {
+        $allowed = ['pending', 'paid', 'failed', 'refunded'];
+        if (! in_array($newPayStatus, $allowed, true)) {
+            throw new InvalidArgumentException("Invalid payment status '{$newPayStatus}'.");
+        }
+
+        $oldPayStatus = (string) ($order->pay_status ?? 'pending');
+        if ($oldPayStatus === $newPayStatus) {
+            return $order;
+        }
+
         $admin = Auth::user();
+        $order->update(['pay_status' => $newPayStatus]);
 
-        $order->update(['pay_status' => 'paid']);
-
-        if ($order->payment) {
-            $order->payment->update([
+        $payment = $order->relationLoaded('payment') ? $order->payment : $order->payment()->first();
+        if ($payment) {
+            $payment->update([
+                'status' => $newPayStatus,
+                'txn_id' => $txnId ?: $payment->txn_id,
+            ]);
+        } elseif ($newPayStatus === 'paid') {
+            // COD/offline drafts may not have a payment row yet.
+            \App\Models\Payment::create([
+                'order_id' => $order->id,
+                'amount' => $order->total,
+                'method' => $order->payment_method ?: 'cod',
                 'status' => 'paid',
-                'txn_id' => $txnId ?: $order->payment->txn_id,
+                'txn_id' => $txnId,
             ]);
         }
 
         ActivityLogService::log(
-            'manual_payment_verification',
+            $logAction,
             'payments',
-            "Manual payment verification for Order #{$order->order_num} by Admin #{$admin?->id} ({$admin?->email}). Reason: {$reason}",
+            "Payment status for Order #{$order->order_num} changed from {$oldPayStatus} to {$newPayStatus} by Admin #{$admin?->id}"
+                .($reason ? ". Reason: {$reason}" : ''),
             $order,
-            ['pay_status' => 'pending'],
-            ['pay_status' => 'paid', 'verified_by' => $admin?->id, 'reason' => $reason, 'verified_at' => now()->toIso8601String()]
+            ['pay_status' => $oldPayStatus],
+            [
+                'pay_status' => $newPayStatus,
+                'updated_by' => $admin?->id,
+                'reason' => $reason,
+                'updated_at' => now()->toIso8601String(),
+            ]
         );
 
-        return $order;
+        return $order->fresh(['payment']);
     }
 }
