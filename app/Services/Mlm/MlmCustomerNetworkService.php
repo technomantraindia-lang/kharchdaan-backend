@@ -153,6 +153,10 @@ class MlmCustomerNetworkService
                 'joined_at_label' => $ref->joined_at?->format('d M Y'),
                 'placement_position' => $ref->placement_position,
                 'has_placement' => $ref->placement_parent_id !== null,
+                // SRS 17: team member's monthly total + eligibility (DS needs ₹1000 this month).
+                'month_purchase_total' => $this->eligibility->memberMonthlyPurchaseTotal($ref),
+                'ds_eligible' => $this->eligibility->isDirectSellingEligible($ref),
+                'highlight_red' => ! $this->eligibility->isDirectSellingEligible($ref),
             ])->values()->all(),
         ];
     }
