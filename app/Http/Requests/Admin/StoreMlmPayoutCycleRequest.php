@@ -15,6 +15,7 @@ class StoreMlmPayoutCycleRequest extends FormRequest
     {
         return [
             'period_start' => ['required', 'date'],
+            'frequency' => ['nullable', 'in:weekly,monthly'],
             'admin_note' => ['nullable', 'string', 'max:2000'],
         ];
     }

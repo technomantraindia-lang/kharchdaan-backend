@@ -69,17 +69,24 @@
 
     <!-- Payout Generation & Adjustment Forms -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <!-- Generate Weekly Cycle -->
+        <!-- Generate Settlement Cycle (weekly cashback/referral or monthly Direct Selling) -->
         <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 shadow-xs p-5">
             <h2 class="text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
-                <i class="fas fa-calendar-plus text-blue-600"></i> Generate Weekly Settlement Cycle
+                <i class="fas fa-calendar-plus text-blue-600"></i> Generate Settlement Cycle
             </h2>
-            <p class="text-xs text-slate-500 mb-4">Creates a Monday&ndash;Sunday payout cycle aggregating calculated ledger records.</p>
+            <p class="text-xs text-slate-500 mb-4">Weekly (Mon&ndash;Sun) for cashback &amp; referral income, or monthly for Direct Selling income (SRS 18/19).</p>
 
             <form method="POST" action="{{ admin_route('mlm.payouts.cycles.store') }}" class="space-y-3">
                 @csrf
                 <div>
-                    <label for="periodStart" class="block text-xs font-semibold text-slate-600 mb-1">Target Date in Settlement Week</label>
+                    <label for="cycleFrequency" class="block text-xs font-semibold text-slate-600 mb-1">Cycle Type</label>
+                    <select name="frequency" id="cycleFrequency" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition">
+                        <option value="weekly" @selected(old('frequency', 'weekly') === 'weekly')>Weekly &mdash; Cashback &amp; Referral (Mon&ndash;Sun)</option>
+                        <option value="monthly" @selected(old('frequency') === 'monthly')>Monthly &mdash; Direct Selling (calendar month)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="periodStart" class="block text-xs font-semibold text-slate-600 mb-1">Target Date in Settlement Period</label>
                     <input type="date" name="period_start" id="periodStart" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition" value="{{ old('period_start', now()->toDateString()) }}" required>
                 </div>
                 <div>
