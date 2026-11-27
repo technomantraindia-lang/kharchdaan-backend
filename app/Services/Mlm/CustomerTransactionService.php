@@ -138,6 +138,87 @@ class CustomerTransactionService
                 'monthly_volume' => $monthlyVolume,
             ],
             'transactions' => $rows->all(),
+            'downline' => $this->downlineActivity($member, $referralEligible),
+        ];
+    }
+
+    /**
+     * SRS 13/14/17: direct team (downline) purchases with eligibility, plus team performance.
+     * highlight_red = not eligible for CashBack on that transaction (below ₹200, cancelled, failed or refunded).
+     */
+    private function downlineActivity(?Member $member, bool $referralEligible): array
+    {
+        if (! $member) {
+            return [
+                'direct_count' => 0,
+                'eligible_count' => 0,
+                'month_volume' => MlmDecimal::normalize('0'),
+                'monthly_volume' => [],
+                'transactions' => [],
+            ];
+        }
+
+        $referrals = Member::query()
+            ->realDistributors()
+            ->with('user')
+            ->where('sponsor_member_id', $member->id)
+            ->get();
+
+        $membersByUser = $referrals->filter(fn (Member $m) => ! empty($m->user_id))->keyBy('user_id');
+        $orders = $membersByUser->isEmpty()
+            ? collect()
+            : Order::query()
+                ->whereIn('user_id', $membersByUser->keys())
+                ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
+                ->latest('id')
+                ->limit(300)
+                ->get();
+
+        $transactions = $orders->map(function (Order $order) use ($membersByUser, $referralEligible) {
+            $downline = $membersByUser->get($order->user_id);
+            $amount = MlmDecimal::normalize((string) $order->total);
+            $meets200 = bccomp($amount, '200', 2) >= 0;
+            $live = ! in_array($order->status, ['cancelled', 'failed', 'refunded'], true);
+            $cashbackEligible = $meets200 && $live;
+
+            return [
+                'order_id' => $order->id,
+                'transaction_id' => $order->order_num,
+                'date' => $order->created_at?->toDateString(),
+                'member_customer_id' => $downline?->customer_id,
+                'member_name' => $downline?->user?->name,
+                'amount' => $amount,
+                'status' => $order->status,
+                'cashback_eligible' => $cashbackEligible,
+                'referral_eligible' => $cashbackEligible && $referralEligible,
+                'highlight_red' => ! $cashbackEligible,
+            ];
+        })->values();
+
+        $monthStart = now()->startOfMonth();
+        $monthVolume = $orders
+            ->filter(fn (Order $o) => $o->created_at?->gte($monthStart))
+            ->reduce(fn (string $sum, Order $o): string => MlmDecimal::add($sum, MlmDecimal::normalize((string) $o->total)), MlmDecimal::normalize('0'));
+
+        $monthlyVolume = $orders
+            ->groupBy(fn (Order $o) => $o->created_at?->format('Y-m') ?? 'unknown')
+            ->map(fn (Collection $group, string $month) => [
+                'month' => $month,
+                'count' => $group->count(),
+                'volume' => MlmDecimal::normalize((string) $group->sum(fn (Order $o) => (float) $o->total)),
+            ])
+            ->sortKeys()
+            ->values()
+            ->all();
+
+        $eligibleCount = $referrals->filter(fn (Member $m) => $this->eligibility->isDirectSellingEligible($m))->count();
+
+        return [
+            'direct_count' => $referrals->count(),
+            'eligible_count' => $eligibleCount,
+            'month_volume' => $monthVolume,
+            'monthly_volume' => $monthlyVolume,
+            'transactions' => $transactions->all(),
         ];
     }
 }
