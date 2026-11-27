@@ -362,6 +362,12 @@ class MlmCalculationService
                 continue;
             }
 
+            // Client rule (Point 38): idle positions earn no income. Income only flows when admin
+            // has assigned an appreciation member to that slot (handled at payout).
+            if (($beneficiary->is_idle_slot || $beneficiary->isVacantEmptySlot()) && ! $beneficiary->appreciation_member_id) {
+                continue;
+            }
+
             // Client req 22/32: upline needs monthly min ₹1000 purchase to earn DS level income.
             if ($level > 0 && ! app(PurchaseEligibilityService::class)->isDirectSellingEligible($beneficiary, $date)) {
                 continue;

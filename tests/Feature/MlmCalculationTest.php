@@ -166,6 +166,38 @@ class MlmCalculationTest extends TestCase
         $this->assertNotSame($sponsor->id, $preview['lines'][1]['member_id']);
     }
 
+    /**
+     * Client rule (Point 38): an idle position earns no level income unless an appreciation member is assigned.
+     */
+    public function test_idle_position_earns_no_level_income_without_appreciation(): void
+    {
+        [, $purchasing] = $this->chain(2);
+        $parent = $purchasing->placementParent;
+        $this->fundMonthlyPurchase($parent, '1000');
+        $service = app(MlmCalculationService::class);
+
+        $before = collect($service->preview($purchasing, '1000', 'IDLE-BASE-001', now(), $this->rule)['lines'])->pluck('member_id');
+        $this->assertTrue($before->contains($parent->id), 'Eligible upline should earn level income.');
+
+        $parent->update(['is_idle_slot' => true, 'idle_slot_label' => 'Idle - Test']);
+        $parent->refresh();
+
+        $after = collect($service->preview($purchasing, '1000', 'IDLE-TEST-001', now(), $this->rule)['lines'])->pluck('member_id');
+        $this->assertFalse($after->contains($parent->id), 'Idle position must not earn level income.');
+    }
+
+    private function fundMonthlyPurchase(Member $member, string $amount): void
+    {
+        \App\Models\Order::create([
+            'order_num' => 'ORD-IDLE-'.$member->id,
+            'user_id' => $member->user_id,
+            'subtotal' => $amount,
+            'total' => $amount,
+            'status' => 'delivered',
+            'pay_status' => 'paid',
+        ]);
+    }
+
     private function chain(int $depth): array
     {
         $root = $this->member('CALC-ROOT-0', 'Calculation Root', '9500000000');
