@@ -55,6 +55,7 @@ class OrderTransitionMatrixTest extends TestCase
 
         $response = $this->actingAs($this->admin)->put(route('admin.orders.update', $order), [
             'status' => 'processing',
+            'pay_status' => 'pending',
         ]);
 
         $response->assertRedirect();
@@ -76,6 +77,7 @@ class OrderTransitionMatrixTest extends TestCase
 
         $response = $this->actingAs($this->admin)->put(route('admin.orders.update', $order), [
             'status' => 'pending',
+            'pay_status' => 'pending',
         ]);
 
         $response->assertSessionHas('error');
@@ -97,6 +99,7 @@ class OrderTransitionMatrixTest extends TestCase
 
         $response = $this->actingAs($this->superAdmin)->put(route('admin.orders.update', $order), [
             'status' => 'pending',
+            'pay_status' => 'pending',
             'override_reason' => 'Customer requested re-fulfillment due to wrong item sent.',
         ]);
 

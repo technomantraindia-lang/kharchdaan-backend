@@ -49,14 +49,15 @@ class PaymentVerificationSafetyTest extends TestCase
             'status' => 'pending',
         ]);
 
+        // Client request: admin can change Payment Status from the order page (persisted, not ignored).
         $response = $this->actingAs($this->admin)->put(route('admin.orders.update', $order), [
             'status' => 'processing',
-            'pay_status' => 'paid', // Passed in arbitrary payload
+            'pay_status' => 'paid',
         ]);
 
         $response->assertRedirect();
         $order->refresh();
-        $this->assertEquals('pending', $order->pay_status); // Must remain pending via normal update
+        $this->assertEquals('paid', $order->pay_status);
     }
 
     public function test_manual_payment_verification_action_succeeds_and_logs_activity(): void

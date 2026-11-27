@@ -15,7 +15,8 @@ class OrderResource extends JsonResource
             'status' => $this->status,
             'payment_status' => $this->pay_status,
             'payment_method' => $this->payment_method,
-            'can_cancel' => in_array($this->status, ['pending', 'processing'], true),
+            // Client rule: cancel allowed until dispatch (Pending / Processing / Packed).
+            'can_cancel' => in_array($this->status, ['pending', 'processing', 'packed'], true),
             'total' => (float) $this->total,
             'total_amount' => (float) $this->total,
             'subtotal' => (float) $this->subtotal,

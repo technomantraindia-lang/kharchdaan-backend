@@ -14,7 +14,8 @@ class OrderService
         'pending' => ['processing', 'cancelled', 'failed'],
         'processing' => ['packed', 'cancelled'],
         'packed' => ['shipped', 'cancelled'],
-        'shipped' => ['delivered', 'cancelled'],
+        // Client rule: no cancellation after dispatch (Shipped). Returns go through the return process.
+        'shipped' => ['delivered'],
         'delivered' => ['refunded'],
         'cancelled' => [],
         'failed' => [],
@@ -63,10 +64,16 @@ class OrderService
 
         $order->update(['status' => $newStatus]);
 
+        $historyNote = $note ?? "Status updated from {$oldStatus} to {$newStatus}" . ($overrideReason ? " (Override: {$overrideReason})" : '');
+        // Client rule: paid online orders cancelled before dispatch are refunded to the original payment method in 5–7 working days.
+        if ($newStatus === 'cancelled' && $order->pay_status === 'paid') {
+            $historyNote .= '. REFUND DUE: return amount to original payment method within 5–7 working days, then mark Pay Status as Refunded.';
+        }
+
         OrderStatusHistory::create([
             'order_id' => $order->id,
             'status' => $newStatus,
-            'note' => $note ?? "Status updated from {$oldStatus} to {$newStatus}" . ($overrideReason ? " (Override: {$overrideReason})" : ''),
+            'note' => $historyNote,
         ]);
 
         ActivityLogService::log(

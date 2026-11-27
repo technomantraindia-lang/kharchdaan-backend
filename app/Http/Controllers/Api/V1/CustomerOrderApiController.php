@@ -87,10 +87,11 @@ class CustomerOrderApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Order not found.'], 404);
         }
 
-        if (! in_array($order->status, ['pending', 'processing'], true)) {
+        // Client rule: customer may cancel any time before dispatch (Pending / Processing / Packed).
+        if (! in_array($order->status, ['pending', 'processing', 'packed'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Only pending or processing orders can be cancelled by the customer.',
+                'message' => 'This order has already been dispatched and can no longer be cancelled. Please use the return process.',
             ], 422);
         }
 
