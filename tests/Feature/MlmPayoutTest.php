@@ -68,6 +68,68 @@ class MlmPayoutTest extends TestCase
         $this->assertSame(2, $firstCycle->ledger_count);
     }
 
+    /**
+     * Client rule (Point 38): idle position income is not paid when its appreciation assignment has expired.
+     */
+    public function test_idle_position_income_is_not_paid_when_appreciation_expired(): void
+    {
+        [, $purchasing] = $this->memberChain();
+        $parent = $purchasing->placementParent;
+        $this->fundPaidOrder($parent, '1000');
+        $parent->update([
+            'is_idle_slot' => true,
+            'idle_slot_label' => 'Idle - Test',
+            'appreciation_member_id' => $purchasing->id,
+            'appreciation_expires_at' => now()->subDay(),
+        ]);
+
+        $date = now()->subMinute();
+        app(MlmCalculationService::class)->calculate($purchasing, '1000', 'IDLE-PAY-EXPIRED', $date, $this->rule, $this->admin);
+
+        $cycle = app(MlmPayoutService::class)->createWeeklyCycle($date, $this->admin);
+
+        // Only the purchaser's own-purchase ledger is paid; the idle position's ledger stays unpaid.
+        $this->assertSame(1, $cycle->ledger_count);
+        $this->assertDatabaseHas('mlm_income_ledgers', [
+            'member_id' => $parent->id,
+            'payout_cycle_id' => null,
+            'status' => MlmIncomeLedger::STATUS_CALCULATED,
+        ]);
+    }
+
+    public function test_idle_position_income_routes_to_valid_appreciation_member(): void
+    {
+        [, $purchasing] = $this->memberChain();
+        $parent = $purchasing->placementParent;
+        $this->fundPaidOrder($parent, '1000');
+        $parent->update([
+            'is_idle_slot' => true,
+            'idle_slot_label' => 'Idle - Test',
+            'appreciation_member_id' => $purchasing->id,
+            'appreciation_expires_at' => now()->addMonth(),
+        ]);
+
+        $date = now()->subMinute();
+        app(MlmCalculationService::class)->calculate($purchasing, '1000', 'IDLE-PAY-VALID', $date, $this->rule, $this->admin);
+
+        $cycle = app(MlmPayoutService::class)->createWeeklyCycle($date, $this->admin);
+
+        // Own-purchase ledger plus the redirected idle-position ledger.
+        $this->assertSame(2, $cycle->ledger_count);
+    }
+
+    private function fundPaidOrder(Member $member, string $amount): void
+    {
+        Order::create([
+            'order_num' => 'ORD-PAYIDLE-'.$member->id,
+            'user_id' => $member->user_id,
+            'subtotal' => $amount,
+            'total' => $amount,
+            'status' => 'delivered',
+            'pay_status' => 'paid',
+        ]);
+    }
+
     public function test_weekly_cycle_can_be_paid_and_failed_then_reprocessed(): void
     {
         [, $purchasing] = $this->memberChain();

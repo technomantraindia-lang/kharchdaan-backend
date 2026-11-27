@@ -292,11 +292,12 @@ class MlmTreeTemporaryPromotionTest extends TestCase
             ->first();
         $this->assertNull($candidateLine2);
 
+        // Client rule (Point 38): an idle position earns nothing once its assignment has expired,
+        // so the idle slot itself is no longer paid either.
         $idleSlotLine = \App\Models\MlmPayoutLine::where('payout_cycle_id', $cycle2->id)
             ->where('member_id', $idleSlot->id)
             ->first();
-        $this->assertNotNull($idleSlotLine);
-        $this->assertEquals('300.000000000000000000', (string) $idleSlotLine->gross_income);
+        $this->assertNull($idleSlotLine);
     }
 
     private function createMember(

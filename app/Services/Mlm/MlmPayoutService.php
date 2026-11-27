@@ -85,7 +85,29 @@ class MlmPayoutService
 
             // Group ledgers by recipient (routing Idle Slot income to Appreciation Beneficiary for Double Income)
             $grouped = [];
+            $processedLedgerCount = 0;
             foreach ($ledgers as $ledger) {
+                $member = $ledger->member;
+                $beneficiaryId = $ledger->member_id;
+
+                $isIdleSlot = $member && ($member->is_idle_slot || in_array($member->customer_id, [
+                    'C25070004','C25070005','C25070006','C25070007','C25070008','C25070009',
+                    'C25070010','C25070011','C25070012','C25070013','C25070014','C25070015',
+                ], true));
+                if ($isIdleSlot) {
+                    $appreciationValid = $member->appreciation_member_id
+                        && (! $member->appreciation_expires_at || $member->appreciation_expires_at->isFuture());
+
+                    // Client rule (Point 38): idle positions earn nothing unless a valid appreciation
+                    // assignment routes the income to another member. Otherwise the ledger stays
+                    // CALCULATED and is not paid in this cycle (also covers ledgers calculated before the fix).
+                    if (! $appreciationValid) {
+                        continue;
+                    }
+
+                    $beneficiaryId = $member->appreciation_member_id;
+                }
+
                 $total = MlmDecimal::add($total, (string) $ledger->calculated_amount);
                 if (in_array($ledger->income_type, [MlmIncomeLedger::TYPE_ADJUSTMENT, MlmIncomeLedger::TYPE_REVERSAL], true)) {
                     $adjustments = MlmDecimal::add($adjustments, (string) $ledger->calculated_amount);
@@ -96,17 +118,7 @@ class MlmPayoutService
                     'payout_cycle_id' => $cycle->id,
                     'status' => MlmIncomeLedger::STATUS_PENDING_APPROVAL,
                 ]);
-
-                $member = $ledger->member;
-                $beneficiaryId = $ledger->member_id;
-                if ($member && ($member->is_idle_slot || in_array($member->customer_id, [
-                    'C25070004','C25070005','C25070006','C25070007','C25070008','C25070009',
-                    'C25070010','C25070011','C25070012','C25070013','C25070014','C25070015',
-                ], true)) && $member->appreciation_member_id) {
-                    if (! $member->appreciation_expires_at || $member->appreciation_expires_at->isFuture()) {
-                        $beneficiaryId = $member->appreciation_member_id;
-                    }
-                }
+                $processedLedgerCount++;
 
                 $grouped[$beneficiaryId][] = $ledger;
             }
@@ -137,7 +149,7 @@ class MlmPayoutService
             }
 
             $cycle->update([
-                'status' => $ledgers->isEmpty()
+                'status' => $processedLedgerCount === 0
                     ? MlmPayoutCycle::STATUS_PENDING_CALCULATION
                     : MlmPayoutCycle::STATUS_PENDING_APPROVAL,
                 'total_amount' => $total,
@@ -145,7 +157,7 @@ class MlmPayoutService
                 'gross_income' => $gross,
                 'adjustment_amount' => $adjustments,
                 'total_members' => count($grouped),
-                'ledger_count' => $ledgers->count(),
+                'ledger_count' => $processedLedgerCount,
                 'calculation_date' => now(),
             ]);
 
